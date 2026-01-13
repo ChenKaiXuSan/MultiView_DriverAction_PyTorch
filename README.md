@@ -1,98 +1,117 @@
-<div align="center">    
- 
-# Your Project Name     
+# Third-Person Multi-View Driver Action Analysis
 
-[![Paper](http://img.shields.io/badge/paper-arxiv.1001.2234-B31B1B.svg)](https://www.nature.com/articles/nature14539)
-[![Conference](http://img.shields.io/badge/NeurIPS-2019-4b44ce.svg)](https://papers.nips.cc/book/advances-in-neural-information-processing-systems-31-2018)
-[![Conference](http://img.shields.io/badge/ICLR-2019-4b44ce.svg)](https://papers.nips.cc/book/advances-in-neural-information-processing-systems-31-2018)
-[![Conference](http://img.shields.io/badge/AnyConference-year-4b44ce.svg)](https://papers.nips.cc/book/advances-in-neural-information-processing-systems-31-2018)  
-<!--
-ARXIV   
-[![Paper](http://img.shields.io/badge/arxiv-math.co:1480.1111-B31B1B.svg)](https://www.nature.com/articles/nature14539)
--->
-![CI testing](https://github.com/PyTorchLightning/deep-learning-project-template/workflows/CI%20testing/badge.svg?branch=master&event=push)
+This repository presents a **third-person multi-view video framework for driver action analysis**, designed to study **system-level perception** under **driver visual field impairments**.
 
+We observe drivers using **three external cameras (left, front, right)** and analyze driver actions from a **system perspective**, where the sensing system has access to richer visual information than the driver.
 
-<!--  
-Conference   
--->   
-</div>
- 
-## Description   
-This github repository is a template for deep learning projects. It is based on PyTorch Lightning and contains the following features:
-- DataModule
-- Model
-- Trainer
-- Test helper
+This project targets research in **IEEE Systems, Man, and Cybernetics (SMC)**, focusing on **human–system cooperative perception** rather than pure action classification.
 
-## How to run   
-First, install dependencies   
-```bash
-# clone project   
-git clone [url]
+---
 
-# install project   
-cd deep-learning-project-template 
-pip install -e .   
-pip install -r requirements.txt
- ```   
- Next, navigate to any file and run it.   
- ```bash
-# module folder
-cd project
+## 🔍 Research Motivation
 
-# run module (example: mnist as your main contribution)   
-python lit_classifier_main.py    
-```
+Drivers with **visual field impairments** may have limited perceptual access to their own actions and surrounding cues.  
+In contrast, external sensing systems can observe the same driver from multiple viewpoints.
 
-## Project Organization   
-```txt
-├── README.md          <- The top-level README for developers using this project.
-├── data
-│   ├── external       <- Data from third party sources.
-│   ├── interim        <- Intermediate data that has been transformed.
-│   ├── processed      <- The final, canonical data sets for modeling.
-│   └── raw            <- The original, immutable data dump.
-│
-├── docs               <- A default Sphinx project; see sphinx-doc.org for details
-│
-├── models             <- Trained and serialized models, model predictions, or model summaries
-│
-├── notebooks          <- Jupyter notebooks. Naming convention is a number (for ordering),
-│                         the creator's initials, and a short `-` delimited description, e.g.
-│                         `1.0-jqp-initial-data-exploration`.
-│
-├── project            <- Source code for use in this project.
-│   ├── __init__.py    <- Makes project a Python module
-```
+This work investigates the following question:
 
-## Imports
-This project is setup as a package which means you can now easily import any file into any other file like so:
-```python
-from project.datasets.mnist import mnist
-from project.lit_classifier_main import LitClassifier
-from pytorch_lightning import Trainer
+> **How can a third-person multi-view sensing system robustly analyze driver actions and compensate for human perceptual limitations?**
 
-# model
-model = LitClassifier()
+Key characteristics:
+- The **visual limitation lies in the human**, not in the cameras.
+- The system observes the driver from **multiple external viewpoints**.
+- The goal is **system-level compensation**, not driver replacement.
 
-# data
-train, val, test = mnist()
+---
 
-# train
-trainer = Trainer()
-trainer.fit(model, train, val)
+## ✨ Key Features
 
-# test using the best model!
-trainer.test(test_dataloaders=test)
-```
+- 🎥 **Third-person multi-view input**
+  - Synchronized Left / Front / Right cameras
+- 🚗 **Driver action analysis**
+  - 8 predefined driver action classes
+- 🧠 **Multi-view fusion strategies**
+  - Single-view baselines
+  - Multi-view average fusion
+  - Multi-view concatenation + MLP
+  - *(Optional)* attention-based view weighting
+- 📊 **View contribution analysis**
+  - Leave-One-View-Out (LOVO)
+  - Pairwise view complementarity
+- 🧪 **Robustness evaluation**
+  - View-drop experiments simulating partial sensing failures
 
-### Citation   
-```
-@article{YourName,
-  title={Your Title},
-  author={Your team},
-  journal={Location},
-  year={Year}
+---
+
+## 🗂 Dataset Format (Example)
+
+data/
+├── subject_01/
+│   ├── left/video.mp4
+│   ├── front/video.mp4
+│   ├── right/video.mp4
+│   └── labels.csv
+
+- All three views are temporally synchronized.
+- Labels are provided at frame-level or clip-level.
+- Experiments are split **by subject or recording session** to avoid data leakage.
+
+---
+
+## 🏗 System Overview
+
+Left View  ┐
+Front View ├──► Shared Video Backbone ──► View Fusion ──► Action Prediction
+Right View ┘
+
+The backbone network is shared across views to ensure fair comparison.  
+View fusion is performed at the feature level.
+
+---
+
+## 📊 Evaluation Protocol
+
+### Metrics
+- Accuracy
+- Macro F1-score
+- Per-class Recall
+- Confusion Matrix
+
+### View Contribution Analysis
+- **Single-view performance** (L / F / R)
+- **Leave-One-View-Out (LOVO)**:
+  - Performance drop when removing one view
+- **Pairwise view fusion**:
+  - (L+F), (F+R), (L+R)
+
+### Robustness Tests
+- Random view removal at inference time
+- Performance degradation under partial sensing
+
+These evaluations quantify **independent view quality**, **marginal contribution**, and **view complementarity**.
+
+---
+
+## 🧩 Driver Action Classes (Example)
+
+1. Looking forward
+2. Checking left mirror
+3. Checking right mirror
+4. Operating dashboard
+5. Steering adjustment
+6. Lane checking
+7. Idle driving
+8. Other driver actions
+
+---
+
+## 📄 Citation
+
+If you use this code in academic research, please cite:
+
+@inproceedings{Chen202XSMC,
+title     = {Third-Person Multi-View Driver Action Analysis for Compensating Visual Field Impairments},
+author    = {Chen, Kaixu},
+booktitle = {IEEE International Conference on Systems, Man, and Cybernetics},
+year      = {202X}
 }
-```   
