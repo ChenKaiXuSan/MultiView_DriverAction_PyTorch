@@ -10,7 +10,7 @@ Comment:
 
 Have a good code time :)
 -----
-Last Modified: Sunday June 9th 2024 6:04:51 am
+Last Modified: Tuesday June 24th 2025 2:37:20 pm
 Modified By: the developer formerly known as Kaixu Chen at <chenkaixusan@gmail.com>
 -----
 Copyright (c) 2024 The University of Tsukuba
@@ -35,9 +35,9 @@ from torchmetrics.classification import (
     MulticlassConfusionMatrix
 )
 
-from project.models.make_model import MakeVideoModule
+from project.models.make_model import select_model
 
-class LateFusionModule(LightningModule):
+class LateFusion3DCNNTrainer(LightningModule):
     def __init__(self, hparams):
         super().__init__()
 
@@ -46,8 +46,8 @@ class LateFusionModule(LightningModule):
         self.num_classes = hparams.model.model_class_num
 
         # define model
-        self.stance_cnn = MakeVideoModule(hparams)()
-        self.swing_cnn = MakeVideoModule(hparams)()
+        self.stance_cnn = select_model(hparams)
+        self.swing_cnn = select_model(hparams)
 
         # save the hyperparameters to the file and ckpt
         self.save_hyperparameters()

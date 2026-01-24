@@ -1,6 +1,7 @@
-pytorch-lightning >= 1.0.0rc2
-torch >= 2.2.0
-torchvision >= 0.8.0
+pytorch-lightning 
+pytorchvideo
+torch
+torchvision
 
 # yolo api
 ultralytics
@@ -10,3 +11,14 @@ hydra-core
 
 # for cross validation
 scikit-learn
+
+imblearn
+
+grad-cam
+
+captum
+
+tensorboard
+
+rich
+seaborn
