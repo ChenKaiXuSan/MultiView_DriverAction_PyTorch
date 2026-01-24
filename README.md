@@ -1,98 +1,97 @@
-# Third-Person Multi-View Driver Action Analysis
+# Multi-View Driver Head Action Analysis
 
-This repository presents a **third-person multi-view video framework for driver action analysis**, designed to study **system-level perception** under **driver visual field impairments**.
+**Person Multi-View Sensing for Driver Action Understanding under Visual Field Impairment**
 
-We observe drivers using **three external cameras (left, front, right)** and analyze driver actions from a **system perspective**, where the sensing system has access to richer visual information than the driver.
+This repository provides a **third-person, multi-view video framework** that analyzes driver head/actions from **three external cameras (left/front/right)**.
+Unlike typical in-cabin or driver-centric perception, we study **human–system cooperative perception**: the **driver is perceptually constrained**, while the **system has a richer multi-view observation**.
 
-This project targets research in **IEEE Systems, Man, and Cybernetics (SMC)**, focusing on **human–system cooperative perception** rather than pure action classification.
+Our central goal is not merely higher classification accuracy, but to understand:
 
----
+> **How can a multi-view sensing system infer driver actions robustly and provide compensation signals when the driver’s perceptual access is limited?**
 
-## 🔍 Research Motivation
-
-Drivers with **visual field impairments** may have limited perceptual access to their own actions and surrounding cues.  
-In contrast, external sensing systems can observe the same driver from multiple viewpoints.
-
-This work investigates the following question:
-
-> **How can a third-person multi-view sensing system robustly analyze driver actions and compensate for human perceptual limitations?**
-
-Key characteristics:
-- The **visual limitation lies in the human**, not in the cameras.
-- The system observes the driver from **multiple external viewpoints**.
-- The goal is **system-level compensation**, not driver replacement.
+This framing targets **SIGCHI** audiences interested in **assistive interfaces, cooperative perception, human-centered sensing, and reliability under human constraints**.
 
 ---
 
-## ✨ Key Features
+## Why SIGCHI? Human-Centered Motivation
 
-- 🎥 **Third-person multi-view input**
-  - Synchronized Left / Front / Right cameras
-- 🚗 **Driver action analysis**
-  - 8 predefined driver action classes
-- 🧠 **Multi-view fusion strategies**
-  - Single-view baselines
-  - Multi-view average fusion
-  - Multi-view concatenation + MLP
-  - *(Optional)* attention-based view weighting
-- 📊 **View contribution analysis**
-  - Leave-One-View-Out (LOVO)
-  - Pairwise view complementarity
-- 🧪 **Robustness evaluation**
-  - View-drop experiments simulating partial sensing failures
+Drivers with **visual field impairments** may struggle to perceive (or confirm) their own head movements and surrounding cues.
+However, an external sensing system can observe the same behavior from multiple viewpoints and potentially provide:
+
+- **Awareness support** (e.g., “you checked left mirror” confirmation)
+- **Safety feedback** (e.g., missing checks / delayed checks)
+- **Robust monitoring** under partial sensor failure
+
+**Key premise:** the limitation lies in the human’s perception—not in camera sensing.
 
 ---
 
-## 🗂 Dataset Format (Example)
+## Contributions
 
+This project contributes:
+
+1. **A third-person multi-view driver action analysis pipeline** for studying human–system cooperative perception under visual constraints.
+2. **View contribution and complementarity analysis**, quantifying how each viewpoint helps (or fails) across actions.
+3. **Robustness evaluation under view dropout**, approximating real-world sensing degradation.
+4. _(Optional)_ A modular baseline suite that enables **fair comparison** of fusion strategies with a shared backbone.
+
+---
+
+## System Overview
+
+**Left / Front / Right videos** are synchronized and processed with a **shared backbone** (weight-tied across views) for fairness.
+
+```
+Left  ┐
+Front ├──► Shared Backbone (per-view) ─► Feature Fusion ─► Action Prediction
+Right ┘
+```
+
+Fusion is performed at the **feature level**:
+
+- Average fusion
+- Concatenation + MLP
+- Optional view-weighting (attention / reliability scoring)
+
+---
+
+## Key Features
+
+### Multi-View Inputs
+
+- 🎥 Synchronized **Left / Front / Right** third-person cameras
+
+### Driver Action Understanding
+
+- 🧠 8 predefined action classes (extensible)
+- Frame-level or clip-level labeling supported
+
+### Fusion & Analysis
+
+- 🔀 Single-view baselines
+- 🔀 Multi-view fusion strategies (avg / concat / weighting)
+- 📊 View contribution analysis: **Single-view**, **LOVO**, **pairwise complementarity**
+- 🧪 Robustness tests: **view drop at inference**
+
+---
+
+## Dataset Structure
+
+```
 data/
 ├── subject_01/
 │   ├── left/video.mp4
 │   ├── front/video.mp4
 │   ├── right/video.mp4
 │   └── labels.csv
+```
 
-- All three views are temporally synchronized.
-- Labels are provided at frame-level or clip-level.
-- Experiments are split **by subject or recording session** to avoid data leakage.
-
----
-
-## 🏗 System Overview
-
-Left View  ┐
-Front View ├──► Shared Video Backbone ──► View Fusion ──► Action Prediction
-Right View ┘
-
-The backbone network is shared across views to ensure fair comparison.  
-View fusion is performed at the feature level.
+- Views are **temporally synchronized**
+- Experiments should be split **by subject/session** to avoid leakage
 
 ---
 
-## 📊 Evaluation Protocol
-
-### Metrics
-- Accuracy
-- Macro F1-score
-- Per-class Recall
-- Confusion Matrix
-
-### View Contribution Analysis
-- **Single-view performance** (L / F / R)
-- **Leave-One-View-Out (LOVO)**:
-  - Performance drop when removing one view
-- **Pairwise view fusion**:
-  - (L+F), (F+R), (L+R)
-
-### Robustness Tests
-- Random view removal at inference time
-- Performance degradation under partial sensing
-
-These evaluations quantify **independent view quality**, **marginal contribution**, and **view complementarity**.
-
----
-
-## 🧩 Driver Action Classes (Example)
+## Driver Action Classes (Example)
 
 1. Looking forward
 2. Checking left mirror
@@ -105,13 +104,65 @@ These evaluations quantify **independent view quality**, **marginal contribution
 
 ---
 
-## 📄 Citation
+## Evaluation
 
-If you use this code in academic research, please cite:
+### Metrics (for performance + human-centered reliability)
 
-@inproceedings{Chen202XSMC,
-title     = {Third-Person Multi-View Driver Action Analysis for Compensating Visual Field Impairments},
-author    = {Chen, Kaixu},
-booktitle = {IEEE International Conference on Systems, Man, and Cybernetics},
-year      = {202X}
+- Accuracy
+- Macro F1
+- Per-class recall
+- Confusion matrix
+
+### View Contribution
+
+- **Single-view**: L / F / R
+- **Leave-One-View-Out (LOVO)**: quantify marginal utility
+- **Pairwise fusion**: (L+F), (F+R), (L+R)
+
+### Robustness (system reliability)
+
+- Random view removal at inference
+- Performance degradation curves under partial sensing
+
+These analyses measure:
+
+- **Independent view quality**
+- **Marginal contribution**
+- **Complementarity**
+- **Graceful degradation**
+
+---
+
+## Reproducibility
+
+- Deterministic seed setting
+- Subject/session split config
+- Modular fusion components
+- Logging of confusion matrices and per-class recall
+
+> SIGCHI 会很看重：你能不能把实验跑得出来、能不能解释系统什么时候会失败。
+
+---
+
+## Ethics & Intended Use
+
+This repository is intended for **research on assistive sensing** and **human–system cooperative perception**, not for surveillance or punitive monitoring.
+If you plan to deploy in real settings, consider:
+
+- consent + transparency
+- data minimization
+- privacy protection
+- bias across impairment types and driving contexts
+
+---
+
+## Citation
+
+```bibtex
+@inproceedings{Chen202XCHI,
+  title     = {Third-Person Multi-View Driver Action Analysis for Cooperative Perception under Visual Field Impairment},
+  author    = {Chen, Kaixu},
+  booktitle = {CHI Conference on Human Factors in Computing Systems},
+  year      = {202X}
 }
+```
