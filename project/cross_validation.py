@@ -7,6 +7,11 @@ Created Date: Friday March 22nd 2024
 Author: Kaixu Chen
 -----
 Comment:
+This module defines a cross-validation strategy based on GroupKFold,
+按照 person_id 进行分组划分，确保同一人的数据不会同时出现在训练集和验证集中。
+根据label文件夹中的标注文件，配对对应的视频文件，构建样本列表。
+划分结果会被保存到指定的index_mapping目录下的index.json文件中，以便后续加载使用。
+不实用person22，23的数据。
 
 Have a good code time :)
 -----
@@ -19,18 +24,15 @@ HISTORY:
 Date      	By	Comments
 ----------	---	---------------------------------------------------------
 
-22-03-2024	Kaixu Chen	add different class number mapping, and add the cross validation process.
 """
 
-import os, json, shutil, copy, random
+import json
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
-from imblearn.over_sampling import RandomOverSampler
-from imblearn.under_sampling import RandomUnderSampler
+from sklearn.model_selection import GroupKFold
 
-
-from sklearn.model_selection import StratifiedGroupKFold, train_test_split, GroupKFold
-from pathlib import Path
 
 label_mapping_Dict: Dict = {
     0: "left",
@@ -44,321 +46,224 @@ label_mapping_Dict: Dict = {
     8: "front",
 }
 
+environment_mapping_Dict: Dict = {
+    0: "夜多い",  # night_high
+    1: "夜少ない",  # night_low
+    2: "昼多い",  # day_high
+    3: "昼少ない",  # day_low
+}
+
+
+# 反向映射：label文件名里的 (day/night, high/low) -> 文件夹名
+ENV_KEY_TO_FOLDER = {
+    ("night", "high"): "夜多い",
+    ("night", "low"): "夜少ない",
+    ("day", "high"): "昼多い",
+    ("day", "low"): "昼少ない",
+}
+
+# 你期望的相机视频文件（按需增减）
+CAM_NAMES = ["front", "right", "left"]
+
+
+@dataclass
+class Sample:
+    person_id: str  # "01"
+    env_folder: str  # "夜多"
+    env_key: str  # "night_high"
+    label_path: Path  # .../label/person_01_night_high_h265.json
+    videos: Dict[str, Path]  # {"front": ..., "right": ..., "left": ...}
+
 
 class DefineCrossValidation(object):
-    """process:
-    cross validation >  train/val split
-    fold: [train/val]: [path]
+    """
+    New behavior:
+      - build samples from:
+          videos/{person}/{env_folder}/{cam}.mp4
+          label/person_{person}_{day|night}_{high|low}_h265.json
+      - GroupKFold split by person_id
+      - no sampler
     """
 
     def __init__(self, config) -> None:
-        # TODO: 需要先整理vidoe/label到cv里面
-        self.video_path: Path = Path(config.data.data_info_path)  # json file path
-        self.gait_seg_idx_path: Path = Path(
+        self.video_path: Path = Path(
+            config.data.video_path
+        )  # e.g. /workspace/data/videos
+        self.annotation_path: Path = Path(
+            config.data.annotation_path
+        )  # e.g. /workspace/data/label
+
+        self.fold_count: int = int(config.data.fold)
+        self.index_mapping: Path = Path(
             config.data.index_mapping
-        )  # used for training path mapping
+        )  # folder to save/load index.json
 
-        self.K: int = config.train.fold
-        self.sampler: str = config.data.sampling  # data balance, [over, under, none]
-
-        self.class_num: int = config.model.model_class_num
-        self.clip_duration: int = config.train.clip_duration
-
-        self.raw_video_path = config.data.video_path
-
+    # --------- helpers ---------
     @staticmethod
-    def random_sampler(X: list, y: list, train_idx: list, val_idx: list, sampler):
-        # train
-        train_mapped_path = []
-        new_X_path = [X[i] for i in train_idx]
-
-        sampled_X, sampled_y = sampler.fit_resample(
-            [[i] for i in range(len(new_X_path))], [y[i] for i in train_idx]
-        )
-
-        # map sampled_X to new_X_path
-        for i in sampled_X:
-            train_mapped_path.append(new_X_path[i[0]])
-
-        # val
-        val_mapped_path = []
-        new_X_path = [X[i] for i in val_idx]
-
-        sampled_X, sampled_y = sampler.fit_resample(
-            [[i] for i in range(len(new_X_path))], [y[i] for i in val_idx]
-        )
-
-        # map
-        for i in sampled_X:
-            val_mapped_path.append(new_X_path[i[0]])
-
-        return train_mapped_path, val_mapped_path
-
-    def process_cross_validation(self, video_dict: dict) -> Tuple[List, List, List]:
-        _path = video_dict
-
-        X = []  # patient index
-        y = []  # patient class index
-        groups = []  # different patient groups
-
-        disease_to_num = {
-            disease: idx
-            for idx, disease in class_num_mapping_Dict[self.class_num].items()
-        }
-        element_to_num = {}
-
-        name_map = set()
-
-        # process one disease in one loop.
-        for disease, path in _path.items():
-            patient_list = sorted(list(path))
-
-            for p in patient_list:
-                name, _ = p.name.split("-")
-                #  FIXME: 我觉得HipOA是造成数据不平衡的原因，所以我把HipOA的数据去掉了
-                if "HipOA" not in name:
-                    name_map.add(name)
-
-        for idx, element in enumerate(name_map):
-            element_to_num[element] = idx
-
-        for disease, path in _path.items():
-            patient_list = sorted(list(path))
-            for i in range(len(patient_list)):
-                name, _ = patient_list[i].name.split("-")
-
-                label = disease_to_num[disease]
-
-                # FIXME: 我举得HipOA是造成数据不平衡的原因，所以我把HipOA的数据去掉了
-                if "HipOA" not in name:
-                    X.append(patient_list[i])  # true path in Path
-                    y.append(label)  # label, 0, 1, 2
-                    groups.append(element_to_num[name])  # number of different patient
-
-        return X, y, groups
-
-    def make_dataset_with_video(self, val_dataset_idx: list, fold: int, flag: str):
-        temp_path = (
-            self.gait_seg_idx_path
-            / str(self.class_num)
-            / self.sampler
-            / str(fold)
-            / str(flag)
-        )
-        val_idx = val_dataset_idx
-
-        _class_map = class_num_mapping_Dict[self.class_num]
-        _disease_to_num = {disease: idx for idx, disease in _class_map.items()}
-
-        shutil.rmtree(temp_path, ignore_errors=True)
-
-        for path in val_idx:
-            with open(path) as f:
-                file_info_dict = json.load(f)
-
-            video_name = file_info_dict["video_name"]
-            # * change the video path to fit the different server.
-            file_info_dict["video_path"] = (
-                self.raw_video_path
-                + "/"
-                + "/".join(file_info_dict["video_path"].split("/")[-4:])
-            )
-            video_path = file_info_dict["video_path"]
-            video_disease = file_info_dict["disease"]
-
-            if video_disease not in _disease_to_num.keys():
-                video_disease = "non-ASD"
-
-            if not (temp_path / video_disease).exists():
-                (temp_path / video_disease).mkdir(parents=True, exist_ok=False)
-
-            shutil.copy(video_path, temp_path / video_disease / (video_name + ".mp4"))
-
-            # update the json file with the video path
-            with open(path, "w") as f:
-                json.dump(file_info_dict, f, indent=4)
-
-        return temp_path
-
-    @staticmethod
-    def magic_move(train_mapped_path, val_mapped_path):
-        new_train_mapped_path = copy.deepcopy(train_mapped_path)
-        new_val_mapped_path = copy.deepcopy(val_mapped_path)
-
-        # train magic
-        train_tmp_dict = {}
-        for i in train_mapped_path:
-            # not move ASD
-            if "ASD" in i.name:
-                continue
-
-            train_tmp_dict[i.name.split("-")[0]] = i
-
-        val_tmp_dict = {}
-        for i in val_mapped_path:
-            # not move ASD
-            if "ASD" in i.name:
-                continue
-            val_tmp_dict[i.name.split("-")[0]] = i
-
-        for k, v in train_tmp_dict.items():
-            new_val_mapped_path.append(v)
-
-            rm_idx = new_train_mapped_path.index(v)
-            new_train_mapped_path.pop(rm_idx)
-
-        for k, v in val_tmp_dict.items():
-            new_train_mapped_path.append(v)
-
-            rm_idx = new_val_mapped_path.index(v)
-            new_val_mapped_path.pop(rm_idx)
-
-        return new_train_mapped_path, new_val_mapped_path
-
-    @staticmethod
-    def map_class_num(class_num: int, raw_video_path: Path) -> Dict:
-        _class_num = class_num_mapping_Dict[class_num]
-
-        res_dict = {v: [] for k, v in _class_num.items()}
-
-        for disease in raw_video_path.iterdir():
-            for one_json_file in disease.iterdir():
-                if disease.name in res_dict.keys():
-                    res_dict[disease.name].append(one_json_file)
-                elif disease.name == "log":
-                    continue
-                else:
-                    res_dict["non-ASD"].append(one_json_file)
-
-        return res_dict
-
-    def prepare(self):
-        """define cross validation first, with the K.
-        #! the 1 fold and K fold should return the same format.
-        fold: [train/val]: [path]
-
-        Args:
-            video_path (str): the index of the video path, in .json format.
-            K (int, optional): crossed number of validation. Defaults to 5, can be 1 or K.
-
-        Returns:
-            list: the format like upper.
+    def _parse_label_filename(p: Path) -> Tuple[str, str, str]:
         """
-        K = self.K
+        person_01_night_high_h265.json -> ("01", "night", "high")
+        """
+        stem = p.stem  # person_01_night_high_h265
+        parts = stem.split("_")
+        # 最少应满足：person, 01, night, high, h265
+        if len(parts) < 5 or parts[0] != "person":
+            raise ValueError(f"Unexpected label filename: {p.name}")
+        person_id = parts[1]
+        daynight = parts[2]
+        highlow = parts[3]
+        return person_id, daynight, highlow
 
-        ans_fold = {}
+    def _collect_one_sample(self, label_path: Path) -> Sample | None:
+        person_id, daynight, highlow = self._parse_label_filename(label_path)
 
-        mapped_class_Dict = self.map_class_num(self.class_num, self.video_path)
+        # label中的环境 -> 视频文件夹中文名
+        if (daynight, highlow) not in ENV_KEY_TO_FOLDER:
+            # 不认识的命名就跳过
+            return None
 
-        # define the cross validation
-        # X: video path, in path.Path foramt. len = 1954
-        # y: label, in list format. len = 1954, type defined by class_num_mapping_Dict.
-        # groups: different patient, in list format. It means unique patient index. [54]
-        X, y, groups = self.process_cross_validation(mapped_class_Dict)
+        env_folder = ENV_KEY_TO_FOLDER[(daynight, highlow)]
+        env_key = f"{daynight}_{highlow}"
 
-        sgkf = StratifiedGroupKFold(n_splits=K)
+        # video root: videos/01/夜多/
+        vid_dir = self.video_path / person_id / env_folder
+        if not vid_dir.exists():
+            # 你的数据可能是 videos/01/... 但 label 是 person_01...
+            # 如果视频路径是 01 而 person_id 是 "01" 这没问题；
+            # 如果是 "1" vs "01" 才会找不到，需要你统一命名
+            return None
 
-        for i, (train_index, test_index) in enumerate(
-            sgkf.split(X=X, y=y, groups=groups)
-        ):
-            if self.sampler in ["over", "under"]:
-                if self.sampler == "over":
-                    ros = RandomOverSampler(random_state=42)
-                elif self.sampler == "under":
-                    ros = RandomUnderSampler(random_state=42)
+        videos: Dict[str, Path] = {}
+        for cam in CAM_NAMES:
+            mp4 = vid_dir / f"{cam}.mp4"
+            if mp4.exists():
+                videos[cam] = mp4
 
-                train_mapped_path, val_mapped_path = self.random_sampler(
-                    X, y, train_index, test_index, ros
-                )
+        # 至少要有一个视频才算 sample
+        if len(videos) == 0:
+            return None
 
-            else:
-                train_mapped_path = [X[i] for i in train_index]
-                val_mapped_path = [X[i] for i in test_index]
+        return Sample(
+            person_id=person_id,
+            env_folder=env_folder,
+            env_key=env_key,
+            label_path=label_path,
+            videos=videos,
+        )
 
-            # FIXME: magic move
-            train_mapped_path, val_mapped_path = self.magic_move(
-                train_mapped_path, val_mapped_path
+    def build_samples(self) -> List[Sample]:
+        """
+        Scan label directory, pair videos, return samples list.
+        """
+        label_files = sorted(self.annotation_path.glob("person_*_*.json"))
+        samples: List[Sample] = []
+        for lp in label_files:
+            try:
+                s = self._collect_one_sample(lp)
+            except Exception:
+                s = None
+            if s is not None:
+                samples.append(s)
+        return samples
+
+    def split_by_person(
+        self, samples: List[Sample]
+    ) -> Dict[int, Dict[str, List[Sample]]]:
+        """
+        GroupKFold by person_id
+        """
+        if self.fold_count <= 1:
+            # fold=1 时，给一个“全量train + 空val”或你也可以改成 train_test_split
+            return {0: {"train": samples, "val": []}}
+
+        groups = [s.person_id for s in samples]
+        indices = list(range(len(samples)))
+
+        gkf = GroupKFold(n_splits=self.fold_count)
+        fold_dict: Dict[int, Dict[str, List[Sample]]] = {}
+
+        for fold, (tr_idx, va_idx) in enumerate(gkf.split(indices, groups=groups)):
+            train_samples = [samples[i] for i in tr_idx]
+            val_samples = [samples[i] for i in va_idx]
+            fold_dict[fold] = {"train": train_samples, "val": val_samples}
+
+        return fold_dict
+
+    # --------- main entry ---------
+    def prepare(self):
+        samples = self.build_samples()
+        if len(samples) == 0:
+            raise RuntimeError(
+                f"No valid samples found. Please check:\n"
+                f"  video_path={self.video_path}\n"
+                f"  annotation_path={self.annotation_path}\n"
+                f"  label filename format: person_XX_(day|night)_(high|low)_h265.json\n"
+                f"  video structure: videos/XX/(夜多|夜少|昼多|昼少)/(front|right|left).mp4"
             )
 
-            # TODO: here merge the multi info into one .pt file.
-
-            # make the val data path
-            train_video_path = self.make_dataset_with_video(
-                train_mapped_path, i, "train"
-            )
-            val_video_path = self.make_dataset_with_video(val_mapped_path, i, "val")
-
-            # * here used for gait labeled method, or load video from path
-            ans_fold[i] = [
-                train_mapped_path,
-                val_mapped_path,
-                train_video_path,
-                val_video_path,
-            ]
-
-        return ans_fold, X, y, groups
+        fold_samples = self.split_by_person(samples)
+        return fold_samples
 
     def __call__(self, *args: Any, **kwds: Any) -> Any:
-        target_path = self.gait_seg_idx_path / str(self.class_num) / self.sampler
+        """
+        Save/load fold index json
+        """
+        target_dir = self.index_mapping
+        target_dir.mkdir(parents=True, exist_ok=True)
+        index_file = target_dir / "index.json"
 
-        # * when json file changed, need to reprocess the dataset.
-        if not os.path.exists(target_path):
-            fold_dataset_idx, *_ = self.prepare()
+        if not index_file.exists():
+            fold_samples = self.prepare()
 
-            json_fold_dataset_idx = copy.deepcopy(fold_dataset_idx)
+            # serialize
+            serial: Dict[str, Any] = {}
+            for fold, d in fold_samples.items():
+                serial[str(fold)] = {
+                    "train": [
+                        {
+                            "person_id": s.person_id,
+                            "env_folder": s.env_folder,
+                            "env_key": s.env_key,
+                            "label_path": str(s.label_path),
+                            "videos": {k: str(v) for k, v in s.videos.items()},
+                        }
+                        for s in d["train"]
+                    ],
+                    "val": [
+                        {
+                            "person_id": s.person_id,
+                            "env_folder": s.env_folder,
+                            "env_key": s.env_key,
+                            "label_path": str(s.label_path),
+                            "videos": {k: str(v) for k, v in s.videos.items()},
+                        }
+                        for s in d["val"]
+                    ],
+                }
 
-            for k, v in fold_dataset_idx.items():
-                # train mapping path, include the gait cycle index
-                train_mapping_idx = v[0]
-                json_fold_dataset_idx[k][0] = [str(i) for i in train_mapping_idx]
+            with open(index_file, "w", encoding="utf-8") as f:
+                json.dump(serial, f, ensure_ascii=False, indent=2)
 
-                val_mapping_idx = v[1]
-                json_fold_dataset_idx[k][1] = [str(i) for i in val_mapping_idx]
+            return fold_samples
 
-                # train video path
-                train_video_idx = v[2]
-                json_fold_dataset_idx[k][2] = str(train_video_idx)
+        # load
+        with open(index_file, "r", encoding="utf-8") as f:
+            serial = json.load(f)
 
-                # val video path
-                val_dataset_idx = v[3]
-                json_fold_dataset_idx[k][3] = str(val_dataset_idx)
+        fold_samples: Dict[int, Dict[str, List[Sample]]] = {}
+        for kfold, d in serial.items():
+            fold = int(kfold)
+            fold_samples[fold] = {"train": [], "val": []}
+            for split in ["train", "val"]:
+                for item in d[split]:
+                    fold_samples[fold][split].append(
+                        Sample(
+                            person_id=item["person_id"],
+                            env_folder=item["env_folder"],
+                            env_key=item["env_key"],
+                            label_path=Path(item["label_path"]),
+                            videos={kk: Path(vv) for kk, vv in item["videos"].items()},
+                        )
+                    )
 
-            with open(
-                (
-                    self.gait_seg_idx_path
-                    / str(self.class_num)
-                    / self.sampler
-                    / "index.json"
-                ),
-                "w",
-            ) as f:
-                json.dump(json_fold_dataset_idx, f, sort_keys=True, indent=4)
-
-        elif os.path.exists(target_path):
-            with open(target_path / "index.json", "r") as f:
-                fold_dataset_idx = json.load(f)
-
-            # unpack the
-            for k, v in fold_dataset_idx.items():
-                # train mapping, include the gait cycle index
-                train_mapping_idx = v[0]
-                fold_dataset_idx[k][0] = [Path(i) for i in train_mapping_idx]
-
-                # val mapping, include the gait cycle index
-                val_mapping_idx = v[1]
-                fold_dataset_idx[k][1] = [Path(i) for i in val_mapping_idx]
-
-                # train video path
-                train_video_idx = v[2]
-                fold_dataset_idx[k][2] = Path(train_video_idx)
-
-                # val video path
-                val_dataset_idx = v[3]
-                fold_dataset_idx[k][3] = Path(val_dataset_idx)
-
-        else:
-            raise ValueError(
-                "the gait seg idx path is not exist, please check the path."
-            )
-
-        return fold_dataset_idx
+        return fold_samples

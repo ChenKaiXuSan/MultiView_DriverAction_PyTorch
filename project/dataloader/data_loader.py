@@ -38,13 +38,6 @@ from project.dataloader.utils import (
     Div255,
     UniformTemporalSubsample,
 )
-from project.dataloader.whole_video_dataset import whole_video_dataset
-
-disease_to_num_mapping_Dict: Dict = {
-    2: {"ASD": 0, "non-ASD": 1},
-    3: {"ASD": 0, "DHS": 1, "LCS_HipOA": 2},
-    4: {"ASD": 0, "DHS": 1, "LCS_HipOA": 2, "normal": 3},
-}
 
 
 class DriverDataModule(LightningDataModule):
@@ -62,55 +55,17 @@ class DriverDataModule(LightningDataModule):
 
         # * this is the dataset idx, which include the train/val dataset idx.
         self._dataset_idx = dataset_idx
-        self._doctor_res_path = opt.data.doctor_results_path
-        self._skeleton_path = opt.data.skeleton_path
 
         self._class_num = opt.model.model_class_num
 
-        self._experiment = opt.train.experiment
+        self._experiment = opt.experiment
         self._backbone = opt.model.backbone
-
-        self._attn_map = opt.train.attn_map
 
         self.mapping_transform = Compose(
             [
                 UniformTemporalSubsample(self.uniform_temporal_subsample_num),
                 Div255(),
                 Resize(size=[self._img_size, self._img_size]),
-            ]
-        )
-
-        self.train_video_transform = Compose(
-            [
-                ApplyTransformToKey(
-                    key="video",
-                    transform=Compose(
-                        [
-                            Div255(),
-                            Resize(size=[self._img_size, self._img_size]),
-                            UniformTemporalSubsample(
-                                self.uniform_temporal_subsample_num
-                            ),
-                        ]
-                    ),
-                ),
-            ]
-        )
-
-        self.val_video_transform = Compose(
-            [
-                ApplyTransformToKey(
-                    key="video",
-                    transform=Compose(
-                        [
-                            Div255(),
-                            Resize(size=[self._img_size, self._img_size]),
-                            UniformTemporalSubsample(
-                                self.uniform_temporal_subsample_num
-                            ),
-                        ]
-                    ),
-                ),
             ]
         )
 
@@ -130,116 +85,78 @@ class DriverDataModule(LightningDataModule):
             stage (Optional[str], optional): trainer.stage, in ('fit', 'validate', 'test', 'predict'). Defaults to None.
         """
 
-        if self._attn_map:
-            # train dataset
-            self.train_gait_dataset = whole_video_dataset(
-                experiment=self._experiment,
-                dataset_idx=self._dataset_idx[
-                    0
-                ],  # train mapped path, include gait cycle index.
-                transform=self.mapping_transform,
-                skeleton_path=self._skeleton_path,
-                doctor_res_path=self._doctor_res_path,
-                clip_duration=self._clip_duration,
-            )
+        # train dataset
+        self.train_gait_dataset = whole_video_dataset(
+            experiment=self._experiment,
+            dataset_idx=self._dataset_idx["train"],
+            transform=self.mapping_transform,
+        )
 
-            # val dataset
-            self.val_gait_dataset = whole_video_dataset(
-                experiment=self._experiment,
-                dataset_idx=self._dataset_idx[
-                    1
-                ],  # val mapped path, include gait cycle index.
-                transform=self.mapping_transform,
-                doctor_res_path=self._doctor_res_path,
-                skeleton_path=self._skeleton_path,
-                clip_duration=self._clip_duration,
-            )
+        # val dataset
+        self.val_gait_dataset = whole_video_dataset(
+            experiment=self._experiment,
+            dataset_idx=self._dataset_idx["val"],
+            transform=self.mapping_transform,
+        )
 
-            # test dataset
-            self.test_gait_dataset = whole_video_dataset(
-                experiment=self._experiment,
-                dataset_idx=self._dataset_idx[
-                    1
-                ],  # val mapped path, include gait cycle index.
-                transform=self.mapping_transform,
-                doctor_res_path=self._doctor_res_path,
-                skeleton_path=self._skeleton_path,
-                clip_duration=self._clip_duration,
-            )
+        # test dataset
+        self.test_gait_dataset = whole_video_dataset(
+            experiment=self._experiment,
+            dataset_idx=self._dataset_idx["val"],
+            transform=self.mapping_transform,
+        )
 
-        else:
-            # train dataset
-            self.train_gait_dataset = labeled_video_dataset(
-                data_path=self._dataset_idx[2],
-                clip_sampler=make_clip_sampler("uniform", self._clip_duration),
-                transform=self.train_video_transform,
-            )
+    # def collate_fn(self, batch):
+    #     """this function process the batch data, and return the batch data.
 
-            # val dataset
-            self.val_gait_dataset = labeled_video_dataset(
-                data_path=self._dataset_idx[3],
-                clip_sampler=make_clip_sampler("uniform", self._clip_duration),
-                transform=self.val_video_transform,
-            )
+    #     Args:
+    #         batch (list): the batch from the dataset.
+    #         The batch include the one patient info from the json file.
+    #         Here we only cat the one patient video tensor, and label tensor.
 
-            # test dataset
-            self.test_gait_dataset = labeled_video_dataset(
-                data_path=self._dataset_idx[3],
-                clip_sampler=make_clip_sampler("uniform", self._clip_duration),
-                transform=self.val_video_transform,
-            )
+    #     Returns:
+    #         dict: {video: torch.tensor, label: torch.tensor, info: list}
+    #     """
 
-    def collate_fn(self, batch):
-        """this function process the batch data, and return the batch data.
+    #     batch_label = []
+    #     batch_video = []
+    #     batch_attn_map = []
 
-        Args:
-            batch (list): the batch from the dataset.
-            The batch include the one patient info from the json file.
-            Here we only cat the one patient video tensor, and label tensor.
+    #     # * mapping label
+    #     for i in batch:
+    #         # logging.info(i['video'].shape)
+    #         gait_num, *_ = i["video"].shape
+    #         disease = i["disease"]
 
-        Returns:
-            dict: {video: torch.tensor, label: torch.tensor, info: list}
-        """
+    #         batch_video.append(i["video"])
+    #         batch_attn_map.append(i["attn_map"])
 
-        batch_label = []
-        batch_video = []
-        batch_attn_map = []
+    #         for _ in range(gait_num):
+    #             if disease in disease_to_num_mapping_Dict[self._class_num].keys():
+    #                 assert (
+    #                     disease_to_num_mapping_Dict[self._class_num][disease]
+    #                     == i["label"]
+    #                 ), "The disease label mapping is not correct!"
 
-        # * mapping label
-        for i in batch:
-            # logging.info(i['video'].shape)
-            gait_num, *_ = i["video"].shape
-            disease = i["disease"]
+    #                 batch_label.append(
+    #                     disease_to_num_mapping_Dict[self._class_num][disease]
+    #                 )
+    #             else:
+    #                 # * if the disease not in the mapping dict, then set the label to non-ASD.
+    #                 batch_label.append(
+    #                     disease_to_num_mapping_Dict[self._class_num]["non-ASD"]
+    #                 )
 
-            batch_video.append(i["video"])
-            batch_attn_map.append(i["attn_map"])
-
-            for _ in range(gait_num):
-                if disease in disease_to_num_mapping_Dict[self._class_num].keys():
-                    assert (
-                        disease_to_num_mapping_Dict[self._class_num][disease]
-                        == i["label"]
-                    ), "The disease label mapping is not correct!"
-
-                    batch_label.append(
-                        disease_to_num_mapping_Dict[self._class_num][disease]
-                    )
-                else:
-                    # * if the disease not in the mapping dict, then set the label to non-ASD.
-                    batch_label.append(
-                        disease_to_num_mapping_Dict[self._class_num]["non-ASD"]
-                    )
-
-        # video, b, c, t, h, w, which include the video frame
-        # attn_map, b, c, t, h, w, which include the attn map
-        # label, b, which include the label of the video
-        # sample info, the raw sample info
-        return {
-            "video": torch.cat(batch_video, dim=0),
-            "label": torch.tensor(batch_label),
-            "attn_map": torch.cat(batch_attn_map, dim=0),
-            "info": batch,
-        }
+    #     # video, b, c, t, h, w, which include the video frame
+    #     # attn_map, b, c, t, h, w, which include the attn map
+    #     # label, b, which include the label of the video
+    #     # sample info, the raw sample info
+    #     return {
+    #         "video": torch.cat(batch_video, dim=0),
+    #         "label": torch.tensor(batch_label),
+    #         "attn_map": torch.cat(batch_attn_map, dim=0),
+    #         "info": batch,
+    #     }
 
     def train_dataloader(self) -> DataLoader:
         """
@@ -255,7 +172,6 @@ class DriverDataModule(LightningDataModule):
             pin_memory=False,
             shuffle=True,
             drop_last=True,
-            collate_fn=self.collate_fn,  # FIXME: the collate_fn can be removed, because the dataset already have the collate_fn.
         )
 
         return train_data_loader
@@ -274,7 +190,6 @@ class DriverDataModule(LightningDataModule):
             pin_memory=False,
             shuffle=False,
             drop_last=True,
-            collate_fn=self.collate_fn,
         )
 
         return val_data_loader
@@ -293,7 +208,6 @@ class DriverDataModule(LightningDataModule):
             pin_memory=False,
             shuffle=False,
             drop_last=True,
-            collate_fn=self.collate_fn,
         )
 
         return test_data_loader

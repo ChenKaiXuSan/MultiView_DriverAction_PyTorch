@@ -72,34 +72,33 @@ def train(hparams: DictConfig, dataset_idx, fold: int):
 
     # * select experiment
     # TODO: add more experiment trainer here.
-    if hparams.model.backbone == "3dcnn":
-        if hparams.model.fuse_method == "pose_atn":
-            classification_module = PoseAttnTrainer(hparams)
-        elif hparams.model.fuse_method == "se_atn":
-            classification_module = SEAttnTrainer(hparams)
-        # elif hparams.model.fuse_method == "cross_atn":
-        #     classification_module = CrossAttentionTrainer(hparams)
-        elif hparams.model.fuse_method in ["add", "mul", "concat", "avg"]:
-            classification_module = EarlyFusion3DCNNTrainer(hparams)
-        elif hparams.model.fuse_method == "late":
-            classification_module = LateFusion3DCNNTrainer(hparams)
-        elif hparams.model.fuse_method == "none":
-            classification_module = Res3DCNNTrainer(hparams)
-        else:
-            raise ValueError("the experiment fuse method is not supported.")
-    else:
-        raise ValueError("the experiment backbone is not supported.")
+    if hparams.train.view == "multi":
+        if hparams.model.backbone == "3dcnn":
 
+            if hparams.model.fuse_method in ["add", "mul", "concat", "avg"]:
+                classification_module = EarlyFusion3DCNNTrainer(hparams)
+            elif hparams.model.fuse_method == "late":
+                classification_module = LateFusion3DCNNTrainer(hparams)
+            else:
+                raise ValueError("the experiment fuse method is not supported.")
+        else:
+            raise ValueError("the experiment backbone is not supported.")
+    elif hparams.train.view == "single":
+        classification_module = Res3DCNNTrainer(hparams)
+    else:
+        raise ValueError("the experiment view is not supported.")
+
+    # * prepare data module
     data_module = DriverDataModule(hparams, dataset_idx)
 
     # for the tensorboard
     tb_logger = TensorBoardLogger(
-        save_dir=os.path.join(hparams.train.log_path, "tb_logs"),
+        save_dir=os.path.join(hparams.log_path, "tb_logs"),
         name="fold_" + str(fold),  # here should be str type.
     )
 
     cvs_logger = CSVLogger(
-        save_dir=os.path.join(hparams.train.log_path, "csv_logs"),
+        save_dir=os.path.join(hparams.log_path, "csv_logs"),
         name="fold_" + str(fold) + "_csv",  # here should be str type.
     )
 
@@ -110,7 +109,7 @@ def train(hparams: DictConfig, dataset_idx, fold: int):
     # define the checkpoint becavier.
     model_check_point = ModelCheckpoint(
         dirpath=os.path.join(
-            hparams.train.log_path, "checkpoints", "fold_" + str(fold)
+            hparams.log_path, "checkpoints", "fold_" + str(fold)
         ),
         filename="{epoch}-{val/loss:.2f}-{val/video_acc:.4f}",
         auto_insert_metric_name=False,

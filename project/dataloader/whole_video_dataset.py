@@ -1,138 +1,226 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
-"""
-File: /workspace/code/project/dataloader/video_dataset.py
-Project: /workspace/code/project/dataloader
-Created Date: Tuesday April 22nd 2025
-Author: Kaixu Chen
------
-Comment:
-
-Have a good code time :)
------
-Last Modified: Tuesday April 22nd 2025 11:18:09 am
-Modified By: the developer formerly known as Kaixu Chen at <chenkaixusan@gmail.com>
------
-Copyright (c) 2025 The University of Tsukuba
------
-HISTORY:
-Date      	By	Comments
-----------	---	---------------------------------------------------------
-
-"""
 
 from __future__ import annotations
 
 import logging
-import json
-
-from typing import Any, Callable, Dict, Optional, Tuple
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Callable, Dict, Optional, Literal
 
 import torch
-
+from torch.utils.data import Dataset
 from torchvision.io import read_video
+
+from project.dataloader.prepare_label_dict import prepare_label_dict
+from project.cross_validation import Sample, label_mapping_Dict
 
 logger = logging.getLogger(__name__)
 
+ViewName = Literal["front", "left", "right"]
 
-class LabeledVideoDataset(torch.utils.data.Dataset):
+
+class LabeledVideoDataset(Dataset):
+    """
+    Multi-view labeled video dataset.
+
+    Output (default):
+        sample["video"][view] : Tensor (B, C, T, H, W)  # per-second clips
+        sample["label"]       : Tensor (B,) or (B, num_classes) depending on your label logic
+        sample["meta"]        : dict
+    """
+
     def __init__(
         self,
         experiment: str,
-        labeled_video_paths: list[Tuple[str, Optional[dict]]],
-        transform: Optional[Callable[[dict], Any]] = None,
+        index_mapping: list[Sample],
+        transform: Optional[Callable[[torch.Tensor], torch.Tensor]] = None,
+        drop_last: bool = True,
+        decode_audio: bool = False,
     ) -> None:
         super().__init__()
-
-        self._transform = transform
-        self._labeled_videos = labeled_video_paths
-        # self._index_map = self.prepare_video_mapping_info(
-        #     labeled_video_paths=labeled_video_paths,
-        #     clip_duration=clip_duration,
-        # )
         self._experiment = experiment
+        self._index_mapping = index_mapping
+        self._transform = transform
+        self._drop_last = bool(drop_last)
+        self._decode_audio = bool(decode_audio)
 
-        if "True" in self._experiment:
-            self.attn_map = MedAttnMap(doctor_res_path, skeleton_path)
+    def __len__(self) -> int:
+        return len(self._index_mapping)
 
-    def __len__(self):
-        return len(self._labeled_videos)
+    def _split_into_clips(self, v_cthw: torch.Tensor, fps: int) -> torch.Tensor:
+        """
+        Split (C,T,H,W) into (B,C,Tc,H,W) clips, where Tc = fps * clip_len_sec.
+        """
+        c, t, h, w = v_cthw.shape
+        clip_t = fps * 1
+        if clip_t <= 0:
+            raise ValueError(f"Invalid clip_t computed from fps={fps}, clip_len_sec=1")
 
-    def move_transform(self, vframes: torch.Tensor, fps: int) -> torch.Tensor:
-        t, *_ = vframes.shape
+        if t < clip_t:
+            # too short: return empty
+            return v_cthw.new_empty((0, c, clip_t, h, w))
 
-        batch_res = []
+        n_full = t // clip_t if self._drop_last else (t + clip_t - 1) // clip_t
+        clips = []
 
-        for f in range(0, t, fps):
-            one_sec_vframes = vframes[f : f + fps, :, :, :]
+        for i in range(n_full):
+            s = i * clip_t
+            e = s + clip_t
+            if e <= t:
+                clip = v_cthw[:, s:e, :, :]
+            else:
+                if self._drop_last:
+                    break
+                # pad last clip (replicate last frame)
+                pad = e - t
+                last = v_cthw[:, -1:, :, :].expand(c, pad, h, w)
+                clip = torch.cat([v_cthw[:, s:t, :, :], last], dim=1)
 
             if self._transform is not None:
-                transformed_img = self._transform(one_sec_vframes)
+                # transform expects (C,T,H,W) -> (C,T,H,W)
+                clip = self._transform(clip)
+            clips.append(clip)
 
-                batch_res.append(transformed_img.permute(1, 0, 2, 3))  # c, t, h, w
-            else:
-                logger.warning("no transform")
-                batch_res.append(one_sec_vframes.permute(1, 0, 2, 3))  # c, t, h, w
+        if len(clips) == 0:
+            return v_cthw.new_empty((0, c, clip_t, h, w))
 
-        return torch.stack(batch_res, dim=0)  # b, c, t, h, w
+        return torch.stack(clips, dim=0)  # (B,C,Tc,H,W)
 
-    def __getitem__(self, index) -> dict[str, Any]:
-        with open(self._labeled_videos[index]) as f:
-            file_info_dict = json.load(f)
+    def _load_one_view(self, path: Path) -> tuple[torch.Tensor, int]:
+        """
+        Load one view video and return (video_cthw, fps).
+        """
+        # torchvision read_video -> (T,H,W,C), audio, info
+        vframes, aframes, info = read_video(
+            str(path), pts_unit="sec", output_format="TCHW"
+        )
+        fps = int(info.get("video_fps", 0))
+        if fps <= 0:
+            raise ValueError(f"Invalid fps={fps} for video: {path}")
 
-        # load video info from json file
-        video_name = file_info_dict["video_name"]
-        video_path = file_info_dict["video_path"]
+        return vframes, fps
 
-        vframes, _, info = read_video(video_path, output_format="TCHW", pts_unit="sec")
+    def _move_transform(self, video: torch.Tensor) -> torch.Tensor:
+        """
+        Move transform to outside after splitting into clips.
+        This is optional and depends on your transform logic.
+        """
+        if self._transform:
+            t, c, h, w = video.shape
+            video = self._transform(video)  # T,C,H,W
+        return video
 
-        label = file_info_dict["label"]
-        disease = file_info_dict["disease"]
-        # gait_cycle_index = file_info_dict["gait_cycle_index"]
-        # bbox_none_index = file_info_dict["none_index"]
-        # bbox = file_info_dict["bbox"]
+    def split_frame_with_label(
+        self,
+        front_view: torch.Tensor,
+        left_view: torch.Tensor,
+        right_view: torch.Tensor,
+        label_timeline_list: Dict[str, Any],
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """
+        Split video frames according to labels.
 
-        attn_map = self.attn_map(
-            video_name=video_name,
-            video_path=video_path,
-            disease=disease,
-            vframes=vframes,
+        Args:
+            video: (C,T,H,W)
+            labels: {"label_name": [{"start": s, "end": e}, ...]}
+
+        Returns:
+            Tensor: (B,C,T,H,W)
+        """
+        assert (
+            front_view.shape[1] == left_view.shape[1] == right_view.shape[1]
+        ), "All views must have the same number of frames"
+
+        labels = []
+        mapped_labels = []
+        batch_front_views = []
+        batch_left_views = []
+        batch_right_views = []
+
+        # TODO: 目前这里指根据标签时间线切分视频帧，当时后面如果没有标签的帧会丢弃，也要补齐为front吗
+        
+        # label, num:{"start": s, "end": e}
+        for item in label_timeline_list:
+            start = int(item["start"])
+            end = int(item["end"])
+            label = item["label"]
+            # T, C, H, W
+            batch_front_views.append(self._move_transform(front_view[start:end, ...]))
+            batch_left_views.append(self._move_transform(left_view[start:end, ...]))
+            batch_right_views.append(self._move_transform(right_view[start:end, ...]))
+            for num, mapped_label in label_mapping_Dict.items():
+                if mapped_label == label:
+                    labels.append(label)
+                    mapped_labels.append(num)
+
+        return (
+            torch.stack(batch_front_views, dim=0),
+            torch.stack(batch_left_views, dim=0),
+            torch.stack(batch_right_views, dim=0),
+            labels,
+            mapped_labels,
         )
 
-        # transform the video frames
-        transformed_vframes = self.move_transform(vframes, int(info["video_fps"]))
-        transformed_attn_map = self.move_transform(attn_map, int(info["video_fps"]))
+    def __getitem__(self, index: int) -> dict[str, Any]:
+        item = self._index_mapping[index]
 
-        sample_info_dict = {
-            "video": transformed_vframes,
-            "label": label,
-            "attn_map": transformed_attn_map,
-            "disease": disease,
-            "video_name": video_name,
-            "video_index": index,
-            # "bbox_none_index": bbox_none_index,
+        # load 3 views
+        front_view_frames: torch.Tensor = self._load_one_view(item.videos["front"])[0]
+        left_view_frames: torch.Tensor = self._load_one_view(item.videos["left"])[0]
+        right_view_frames: torch.Tensor = self._load_one_view(item.videos["right"])[0]
+        assert (
+            front_view_frames.shape[0]
+            == left_view_frames.shape[0]
+            == right_view_frames.shape[0]
+        ), "All views must have the same number of frames"
+
+        # labels
+        label_dict = prepare_label_dict(
+            item.label_path, total_end=front_view_frames.shape[0]
+        )
+
+        (
+            batch_front_views,
+            batch_left_views,
+            batch_right_views,
+            labels,
+            mapped_labels,
+        ) = self.split_frame_with_label(
+            front_view_frames,
+            left_view_frames,
+            right_view_frames,
+            label_dict["timeline_list"],
+        )
+
+        sample = {
+            "video": {
+                "front": batch_front_views,  # (B,C,T,H,W)
+                "left": batch_left_views,  # (B,C,T,H,W)
+                "right": batch_right_views,  # (B,C,T,H,W)
+            },
+            "label": mapped_labels,  # List[int]
+            "label_info": labels,
+            "meta": {
+                "experiment": self._experiment,
+                "index": index,
+                "person_id": item.person_id,
+                "env_folder": item.env_folder,
+                "env_key": item.env_key,
+            },
         }
-
-        # logger.info(f"the video name is {video_name}")
-        # logger.info(f"the batch size is {transformed_vframes.shape}")
-
-        return sample_info_dict
+        return sample
 
 
 def whole_video_dataset(
     experiment: str,
-    transform: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None,
-    dataset_idx: list = [],
-    doctor_res_path: str = "",
-    skeleton_path: str = "",
-    clip_duration: int = 1,
+    dataset_idx: list[VideoIndexItem],
+    transform: Optional[Callable[[torch.Tensor], torch.Tensor]] = None,
+    drop_last: bool = True,
 ) -> LabeledVideoDataset:
-    dataset = LabeledVideoDataset(
+    return LabeledVideoDataset(
         experiment=experiment,
         transform=transform,
-        labeled_video_paths=dataset_idx,
-        doctor_res_path=doctor_res_path,
-        skeleton_path=skeleton_path,
+        index_mapping=dataset_idx,
+        drop_last=drop_last,
     )
-
-    return dataset

@@ -5,6 +5,23 @@
       "type": "debugpy",
       "request": "launch",
       "module": "enter-your-module-name"
-    }
+    },
+    {
+      "name": "train_main",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "project.main",
+      "python": "/opt/conda/envs/direction/bin/python",
+      "cwd": "/workspace/MultiView_DriverAction_PyTorch",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "args": [
+        // "model.backbone=3dcnn",
+        // "model.model_class_num=3",
+        // "model.fuse_method=none",
+        // "train.gpu=1",
+        "data.num_workers=0",
+      ]
+    },
   ]
 }
