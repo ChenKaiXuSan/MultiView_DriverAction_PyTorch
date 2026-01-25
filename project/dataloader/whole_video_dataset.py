@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
-
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Literal
+from typing import Any, Callable, Dict, Optional, Literal, List, Tuple
 
 import torch
 from torch.utils.data import Dataset
 from torchvision.io import read_video
 
 from project.dataloader.prepare_label_dict import prepare_label_dict
-from project.cross_validation import Sample, label_mapping_Dict
+from project.map_config import VideoSample, label_mapping_Dict
 
 logger = logging.getLogger(__name__)
 
@@ -24,183 +22,230 @@ class LabeledVideoDataset(Dataset):
     """
     Multi-view labeled video dataset.
 
-    Output (default):
-        sample["video"][view] : Tensor (B, C, T, H, W)  # per-second clips
-        sample["label"]       : Tensor (B,) or (B, num_classes) depending on your label logic
+    Output:
+        sample["video"][view] : Tensor (B, T, C, H, W)  # segments split by label timeline
+        sample["label"]       : LongTensor (B,)
+        sample["label_info"]  : List[str]
         sample["meta"]        : dict
     """
 
     def __init__(
         self,
         experiment: str,
-        index_mapping: list[Sample],
+        index_mapping: List[Sample],
         transform: Optional[Callable[[torch.Tensor], torch.Tensor]] = None,
-        drop_last: bool = True,
         decode_audio: bool = False,
     ) -> None:
         super().__init__()
         self._experiment = experiment
         self._index_mapping = index_mapping
         self._transform = transform
-        self._drop_last = bool(drop_last)
         self._decode_audio = bool(decode_audio)
+
+        # label mapping: {class_id: "label_name"} -> {"label_name": class_id}
+        self._label_to_id: Dict[str, int] = {
+            v: int(k) for k, v in label_mapping_Dict.items()
+        }
 
     def __len__(self) -> int:
         return len(self._index_mapping)
 
-    def _split_into_clips(self, v_cthw: torch.Tensor, fps: int) -> torch.Tensor:
+    # ---------------- IO ----------------
+    def _load_one_view(self, path: Path) -> Tuple[torch.Tensor, int]:
         """
-        Split (C,T,H,W) into (B,C,Tc,H,W) clips, where Tc = fps * clip_len_sec.
+        Load one view video and return (video_tchw, fps).
+
+        read_video(output_format="TCHW") returns:
+            vframes: (T, C, H, W)
         """
-        c, t, h, w = v_cthw.shape
-        clip_t = fps * 1
-        if clip_t <= 0:
-            raise ValueError(f"Invalid clip_t computed from fps={fps}, clip_len_sec=1")
-
-        if t < clip_t:
-            # too short: return empty
-            return v_cthw.new_empty((0, c, clip_t, h, w))
-
-        n_full = t // clip_t if self._drop_last else (t + clip_t - 1) // clip_t
-        clips = []
-
-        for i in range(n_full):
-            s = i * clip_t
-            e = s + clip_t
-            if e <= t:
-                clip = v_cthw[:, s:e, :, :]
-            else:
-                if self._drop_last:
-                    break
-                # pad last clip (replicate last frame)
-                pad = e - t
-                last = v_cthw[:, -1:, :, :].expand(c, pad, h, w)
-                clip = torch.cat([v_cthw[:, s:t, :, :], last], dim=1)
-
-            if self._transform is not None:
-                # transform expects (C,T,H,W) -> (C,T,H,W)
-                clip = self._transform(clip)
-            clips.append(clip)
-
-        if len(clips) == 0:
-            return v_cthw.new_empty((0, c, clip_t, h, w))
-
-        return torch.stack(clips, dim=0)  # (B,C,Tc,H,W)
-
-    def _load_one_view(self, path: Path) -> tuple[torch.Tensor, int]:
-        """
-        Load one view video and return (video_cthw, fps).
-        """
-        # torchvision read_video -> (T,H,W,C), audio, info
         vframes, aframes, info = read_video(
-            str(path), pts_unit="sec", output_format="TCHW"
+            str(path),
+            pts_unit="sec",
+            output_format="TCHW",
         )
         fps = int(info.get("video_fps", 0))
         if fps <= 0:
             raise ValueError(f"Invalid fps={fps} for video: {path}")
-
         return vframes, fps
 
-    def _move_transform(self, video: torch.Tensor) -> torch.Tensor:
+    def _apply_transform(self, video_tchw: torch.Tensor) -> torch.Tensor:
         """
-        Move transform to outside after splitting into clips.
-        This is optional and depends on your transform logic.
+        Apply transform on a segment.
+
+        Expect transform: (T,C,H,W) -> (T,C,H,W) or compatible.
         """
-        if self._transform:
-            t, c, h, w = video.shape
-            video = self._transform(video)  # T,C,H,W
-        return video
+        if self._transform is None:
+            return video_tchw
+        return self._transform(video_tchw)
+
+    # ---------------- Timeline utils ----------------
+    @staticmethod
+    def _fill_tail_as_front(
+        timeline: List[Dict[str, Any]],
+        total_frames: int,
+        front_label: str = "front",
+    ) -> List[Dict[str, Any]]:
+        """
+        If the timeline doesn't cover [0, total_frames), fill uncovered gaps as front.
+        Assumes timeline items have int-like start/end and end is exclusive.
+        """
+        if total_frames <= 0:
+            return []
+
+        # sort by start
+        tl = sorted(
+            (
+                {
+                    "start": int(x["start"]),
+                    "end": int(x["end"]),
+                    "label": str(x["label"]),
+                }
+                for x in timeline
+                if x is not None and "start" in x and "end" in x and "label" in x
+            ),
+            key=lambda d: (d["start"], d["end"]),
+        )
+
+        filled: List[Dict[str, Any]] = []
+        cur = 0
+
+        for seg in tl:
+            s, e, lb = seg["start"], seg["end"], seg["label"]
+            s = max(0, min(s, total_frames))
+            e = max(0, min(e, total_frames))
+            if e <= s:
+                continue
+
+            # gap before this seg
+            if s > cur:
+                filled.append({"start": cur, "end": s, "label": front_label})
+
+            filled.append({"start": s, "end": e, "label": lb})
+            cur = max(cur, e)
+
+        # tail gap
+        if cur < total_frames:
+            filled.append({"start": cur, "end": total_frames, "label": front_label})
+
+        return filled
 
     def split_frame_with_label(
         self,
-        front_view: torch.Tensor,
-        left_view: torch.Tensor,
-        right_view: torch.Tensor,
-        label_timeline_list: Dict[str, Any],
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        front_view: torch.Tensor,  # (T,C,H,W)
+        left_view: torch.Tensor,  # (T,C,H,W)
+        right_view: torch.Tensor,  # (T,C,H,W)
+        timeline_list: List[Dict[str, Any]],
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, List[str], torch.LongTensor]:
         """
-        Split video frames according to labels.
-
-        Args:
-            video: (C,T,H,W)
-            labels: {"label_name": [{"start": s, "end": e}, ...]}
+        Split video frames according to label timeline.
 
         Returns:
-            Tensor: (B,C,T,H,W)
+            batch_front: (B, Tseg, C, H, W)  (NOTE: variable Tseg across segments -> stacking requires equal length)
+            ...
+        Important:
+            If segments have variable length, torch.stack will fail.
+            In that case you should pad to same length or keep as list.
         """
         assert (
-            front_view.shape[1] == left_view.shape[1] == right_view.shape[1]
+            front_view.shape[0] == left_view.shape[0] == right_view.shape[0]
         ), "All views must have the same number of frames"
 
-        labels = []
-        mapped_labels = []
-        batch_front_views = []
-        batch_left_views = []
-        batch_right_views = []
+        T = int(front_view.shape[0])
 
-        # TODO: 目前这里指根据标签时间线切分视频帧，当时后面如果没有标签的帧会丢弃，也要补齐为front吗
-        
-        # label, num:{"start": s, "end": e}
-        for item in label_timeline_list:
-            start = int(item["start"])
-            end = int(item["end"])
-            label = item["label"]
-            # T, C, H, W
-            batch_front_views.append(self._move_transform(front_view[start:end, ...]))
-            batch_left_views.append(self._move_transform(left_view[start:end, ...]))
-            batch_right_views.append(self._move_transform(right_view[start:end, ...]))
-            for num, mapped_label in label_mapping_Dict.items():
-                if mapped_label == label:
-                    labels.append(label)
-                    mapped_labels.append(num)
-
-        return (
-            torch.stack(batch_front_views, dim=0),
-            torch.stack(batch_left_views, dim=0),
-            torch.stack(batch_right_views, dim=0),
-            labels,
-            mapped_labels,
+        # 1) fill uncovered as front
+        timeline = self._fill_tail_as_front(
+            timeline_list, total_frames=T, front_label="front"
         )
 
-    def __getitem__(self, index: int) -> dict[str, Any]:
+        batch_front: List[torch.Tensor] = []
+        batch_left: List[torch.Tensor] = []
+        batch_right: List[torch.Tensor] = []
+        labels: List[str] = []
+        mapped: List[int] = []
+
+        for seg in timeline:
+            s, e, lb = int(seg["start"]), int(seg["end"]), str(seg["label"])
+            if e <= s:
+                continue
+
+            seg_front = self._apply_transform(front_view[s:e])
+            seg_left = self._apply_transform(left_view[s:e])
+            seg_right = self._apply_transform(right_view[s:e])
+
+            batch_front.append(seg_front)
+            batch_left.append(seg_left)
+            batch_right.append(seg_right)
+
+            labels.append(lb)
+            mapped.append(self._label_to_id.get(lb, -1))  # unknown -> -1
+
+        # ⚠️ 如果每段长度不同，这里 stack 会报错。
+        # 你有两种选择：
+        #  A) 先 padding 到同样长度再 stack
+        #  B) 保持 list 形式返回（推荐用于变长）
+        #
+        # 这里为了兼容你原逻辑，我保留 stack，但你要确保每段长度一致或你已对 timeline 做了固定长度切分。
+        batch_front_t = torch.stack(batch_front, dim=0).permute(
+            0, 2, 1, 3, 4
+        )  # (B,T,C,H,W) > (B,C,T,H,W)
+        batch_left_t = torch.stack(batch_left, dim=0).permute(
+            0, 2, 1, 3, 4
+        )  # (B,T,C,H,W) > (B,C,T,H,W)
+        batch_right_t = torch.stack(batch_right, dim=0).permute(
+            0, 2, 1, 3, 4
+        )  # (B,T,C,H,W) > (B,C,T,H,W)
+
+        mapped_t = torch.tensor(mapped, dtype=torch.long)
+
+        return batch_front_t, batch_left_t, batch_right_t, labels, mapped_t
+
+    def __getitem__(self, index: int) -> Dict[str, Any]:
         item = self._index_mapping[index]
 
-        # load 3 views
-        front_view_frames: torch.Tensor = self._load_one_view(item.videos["front"])[0]
-        left_view_frames: torch.Tensor = self._load_one_view(item.videos["left"])[0]
-        right_view_frames: torch.Tensor = self._load_one_view(item.videos["right"])[0]
+        # load 3 views (T,C,H,W)
+        front_frames, _ = self._load_one_view(item.videos["front"])
+        left_frames, _ = self._load_one_view(item.videos["left"])
+        right_frames, _ = self._load_one_view(item.videos["right"])
+
         assert (
-            front_view_frames.shape[0]
-            == left_view_frames.shape[0]
-            == right_view_frames.shape[0]
+            front_frames.shape[0] == left_frames.shape[0] == right_frames.shape[0]
         ), "All views must have the same number of frames"
 
-        # labels
+        # labels (ensure total_end = T)
         label_dict = prepare_label_dict(
-            item.label_path, total_end=front_view_frames.shape[0]
+            item.label_path, total_end=int(front_frames.shape[0])
         )
+        timeline_list = label_dict.get("timeline_list", [])
 
         (
-            batch_front_views,
-            batch_left_views,
-            batch_right_views,
+            batch_front,
+            batch_left,
+            batch_right,
             labels,
             mapped_labels,
         ) = self.split_frame_with_label(
-            front_view_frames,
-            left_view_frames,
-            right_view_frames,
-            label_dict["timeline_list"],
+            front_frames,
+            left_frames,
+            right_frames,
+            timeline_list,
         )
 
-        sample = {
+        assert (
+            batch_front.shape[0]
+            == batch_left.shape[0]
+            == batch_right.shape[0]
+            == mapped_labels.shape[0]
+            == len(labels)
+        ), "Batch size mismatch after splitting"
+
+        return {
             "video": {
-                "front": batch_front_views,  # (B,C,T,H,W)
-                "left": batch_left_views,  # (B,C,T,H,W)
-                "right": batch_right_views,  # (B,C,T,H,W)
+                "front": batch_front,
+                "left": batch_left,
+                "right": batch_right,
             },
-            "label": mapped_labels,  # List[int]
-            "label_info": labels,
+            "label": mapped_labels,  # LongTensor (B,)
+            "label_info": labels,  # List[str]
             "meta": {
                 "experiment": self._experiment,
                 "index": index,
@@ -209,18 +254,15 @@ class LabeledVideoDataset(Dataset):
                 "env_key": item.env_key,
             },
         }
-        return sample
 
 
 def whole_video_dataset(
     experiment: str,
-    dataset_idx: list[VideoIndexItem],
+    dataset_idx: List[Sample],
     transform: Optional[Callable[[torch.Tensor], torch.Tensor]] = None,
-    drop_last: bool = True,
 ) -> LabeledVideoDataset:
     return LabeledVideoDataset(
         experiment=experiment,
         transform=transform,
         index_mapping=dataset_idx,
-        drop_last=drop_last,
     )

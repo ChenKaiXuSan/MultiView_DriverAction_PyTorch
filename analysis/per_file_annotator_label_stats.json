@@ -1,0 +1,6135 @@
+[
+    {
+        "file": "label/person_01_day_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "5": {
+                "n_classes": 7,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "right_down",
+                    "right_up",
+                    "up"
+                ],
+                "counts": {
+                    "down": 82,
+                    "right": 17,
+                    "left": 15,
+                    "up": 8,
+                    "right_up": 1,
+                    "right_down": 1,
+                    "left_down": 1
+                },
+                "n_total": 125
+            },
+            "3": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "right_down",
+                    "up"
+                ],
+                "counts": {
+                    "down": 81,
+                    "right": 11,
+                    "left": 11,
+                    "up": 6,
+                    "left_down": 1,
+                    "right_down": 1
+                },
+                "n_total": 111
+            },
+            "4": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "right_down"
+                ],
+                "counts": {
+                    "down": 53,
+                    "left_down": 13,
+                    "right": 9,
+                    "left": 8,
+                    "left_up": 1,
+                    "right_down": 1
+                },
+                "n_total": 85
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "left_up",
+            "right",
+            "right_down",
+            "right_up",
+            "up"
+        ],
+        "n_union_classes": 8
+    },
+    {
+        "file": "label/person_01_day_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "5": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "right_down",
+                    "right_up",
+                    "up"
+                ],
+                "counts": {
+                    "down": 91,
+                    "right": 30,
+                    "left": 13,
+                    "up": 8,
+                    "right_up": 1,
+                    "right_down": 1
+                },
+                "n_total": 144
+            },
+            "3": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right"
+                ],
+                "counts": {
+                    "down": 83,
+                    "right": 18,
+                    "left": 11,
+                    "left_down": 1
+                },
+                "n_total": 113
+            },
+            "4": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 67,
+                    "right": 13,
+                    "left": 11,
+                    "left_down": 4,
+                    "up": 1
+                },
+                "n_total": 96
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "right",
+            "right_down",
+            "right_up",
+            "up"
+        ],
+        "n_union_classes": 7
+    },
+    {
+        "file": "label/person_01_night_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "5": {
+                "n_classes": 7,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "right_down",
+                    "right_up",
+                    "up"
+                ],
+                "counts": {
+                    "down": 90,
+                    "up": 21,
+                    "right": 21,
+                    "left": 8,
+                    "right_down": 2,
+                    "left_down": 2,
+                    "right_up": 1
+                },
+                "n_total": 145
+            },
+            "3": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 84,
+                    "right": 12,
+                    "left": 4,
+                    "up": 3
+                },
+                "n_total": 103
+            },
+            "4": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 48,
+                    "left_down": 11,
+                    "right": 5,
+                    "left": 3,
+                    "up": 1
+                },
+                "n_total": 68
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "right",
+            "right_down",
+            "right_up",
+            "up"
+        ],
+        "n_union_classes": 7
+    },
+    {
+        "file": "label/person_01_night_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "3": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 84,
+                    "up": 14,
+                    "right": 11,
+                    "left_down": 6,
+                    "left_up": 3,
+                    "left": 1
+                },
+                "n_total": 119
+            },
+            "4": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left_down",
+                    "right",
+                    "right_down",
+                    "up"
+                ],
+                "counts": {
+                    "down": 56,
+                    "left_down": 13,
+                    "right": 9,
+                    "up": 3,
+                    "right_down": 1
+                },
+                "n_total": 82
+            },
+            "5": {
+                "n_classes": 8,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "right_down",
+                    "right_up",
+                    "up"
+                ],
+                "counts": {
+                    "down": 78,
+                    "left_down": 16,
+                    "right": 12,
+                    "right_up": 9,
+                    "left_up": 5,
+                    "left": 5,
+                    "right_down": 3,
+                    "up": 3
+                },
+                "n_total": 131
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "left_up",
+            "right",
+            "right_down",
+            "right_up",
+            "up"
+        ],
+        "n_union_classes": 8
+    },
+    {
+        "file": "label/person_02_day_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 31,
+                    "left_down": 2,
+                    "right": 2,
+                    "up": 2,
+                    "left": 1
+                },
+                "n_total": 38
+            },
+            "5": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 32,
+                    "up": 8,
+                    "left": 5,
+                    "right": 4
+                },
+                "n_total": 49
+            },
+            "3": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 31,
+                    "up": 6,
+                    "left": 3,
+                    "right": 2
+                },
+                "n_total": 42
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "right",
+            "up"
+        ],
+        "n_union_classes": 5
+    },
+    {
+        "file": "label/person_02_day_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "right_down",
+                    "up"
+                ],
+                "counts": {
+                    "down": 34,
+                    "left_down": 6,
+                    "left": 4,
+                    "right": 2,
+                    "right_down": 1,
+                    "up": 1
+                },
+                "n_total": 48
+            },
+            "5": {
+                "n_classes": 8,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "right_down",
+                    "right_up",
+                    "up"
+                ],
+                "counts": {
+                    "down": 38,
+                    "left": 8,
+                    "right": 7,
+                    "left_down": 5,
+                    "left_up": 4,
+                    "up": 2,
+                    "right_up": 1,
+                    "right_down": 1
+                },
+                "n_total": 66
+            },
+            "3": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "right_down",
+                    "up"
+                ],
+                "counts": {
+                    "down": 30,
+                    "left_down": 6,
+                    "left": 4,
+                    "up": 3,
+                    "right": 2,
+                    "right_down": 1
+                },
+                "n_total": 46
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "left_up",
+            "right",
+            "right_down",
+            "right_up",
+            "up"
+        ],
+        "n_union_classes": 8
+    },
+    {
+        "file": "label/person_02_night_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "right_up"
+                ],
+                "counts": {
+                    "down": 26,
+                    "right": 2,
+                    "left": 1,
+                    "right_up": 1,
+                    "left_down": 1
+                },
+                "n_total": 31
+            },
+            "5": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 26,
+                    "left": 6,
+                    "up": 5,
+                    "right": 4,
+                    "left_down": 3,
+                    "left_up": 1
+                },
+                "n_total": 45
+            },
+            "3": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 20,
+                    "left_down": 8,
+                    "up": 6,
+                    "right": 4,
+                    "left": 2
+                },
+                "n_total": 40
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "left_up",
+            "right",
+            "right_up",
+            "up"
+        ],
+        "n_union_classes": 7
+    },
+    {
+        "file": "label/person_02_night_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 3,
+                "classes": [
+                    "down",
+                    "left_down",
+                    "right"
+                ],
+                "counts": {
+                    "down": 22,
+                    "right": 2,
+                    "left_down": 1
+                },
+                "n_total": 25
+            },
+            "5": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 23,
+                    "up": 3,
+                    "left_down": 2,
+                    "right": 2,
+                    "left": 1,
+                    "left_up": 1
+                },
+                "n_total": 32
+            },
+            "3": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left_down",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 21,
+                    "left_down": 3,
+                    "up": 2,
+                    "right": 1
+                },
+                "n_total": 27
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "left_up",
+            "right",
+            "up"
+        ],
+        "n_union_classes": 6
+    },
+    {
+        "file": "label/person_03_day_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 2,
+                "classes": [
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "right": 6,
+                    "left": 6
+                },
+                "n_total": 12
+            },
+            "5": {
+                "n_classes": 2,
+                "classes": [
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "right": 7,
+                    "left": 7
+                },
+                "n_total": 14
+            },
+            "3": {
+                "n_classes": 4,
+                "classes": [
+                    "left",
+                    "right",
+                    "right_up",
+                    "up"
+                ],
+                "counts": {
+                    "left": 6,
+                    "right": 5,
+                    "up": 2,
+                    "right_up": 1
+                },
+                "n_total": 14
+            }
+        },
+        "union_classes": [
+            "left",
+            "right",
+            "right_up",
+            "up"
+        ],
+        "n_union_classes": 4
+    },
+    {
+        "file": "label/person_03_day_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 2,
+                "classes": [
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 8,
+                    "right": 5
+                },
+                "n_total": 13
+            },
+            "5": {
+                "n_classes": 4,
+                "classes": [
+                    "left",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "left": 9,
+                    "right": 8,
+                    "up": 2,
+                    "left_up": 1
+                },
+                "n_total": 20
+            },
+            "3": {
+                "n_classes": 3,
+                "classes": [
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "left": 10,
+                    "right": 7,
+                    "up": 1
+                },
+                "n_total": 18
+            }
+        },
+        "union_classes": [
+            "left",
+            "left_up",
+            "right",
+            "up"
+        ],
+        "n_union_classes": 4
+    },
+    {
+        "file": "label/person_03_night_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 5,
+                "classes": [
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "right_down"
+                ],
+                "counts": {
+                    "right": 6,
+                    "left": 6,
+                    "left_up": 1,
+                    "left_down": 1,
+                    "right_down": 1
+                },
+                "n_total": 15
+            },
+            "5": {
+                "n_classes": 4,
+                "classes": [
+                    "left",
+                    "left_down",
+                    "right",
+                    "right_down"
+                ],
+                "counts": {
+                    "left": 13,
+                    "right": 7,
+                    "left_down": 1,
+                    "right_down": 1
+                },
+                "n_total": 22
+            },
+            "3": {
+                "n_classes": 5,
+                "classes": [
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "right_down"
+                ],
+                "counts": {
+                    "left": 7,
+                    "right": 7,
+                    "left_down": 1,
+                    "right_down": 1,
+                    "left_up": 1
+                },
+                "n_total": 17
+            }
+        },
+        "union_classes": [
+            "left",
+            "left_down",
+            "left_up",
+            "right",
+            "right_down"
+        ],
+        "n_union_classes": 5
+    },
+    {
+        "file": "label/person_03_night_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 2,
+                "classes": [
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 8,
+                    "right": 6
+                },
+                "n_total": 14
+            },
+            "5": {
+                "n_classes": 2,
+                "classes": [
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 11,
+                    "right": 7
+                },
+                "n_total": 18
+            },
+            "3": {
+                "n_classes": 3,
+                "classes": [
+                    "left",
+                    "left_down",
+                    "right"
+                ],
+                "counts": {
+                    "left": 8,
+                    "right": 5,
+                    "left_down": 1
+                },
+                "n_total": 14
+            }
+        },
+        "union_classes": [
+            "left",
+            "left_down",
+            "right"
+        ],
+        "n_union_classes": 3
+    },
+    {
+        "file": "label/person_04_day_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 15,
+                    "right": 5,
+                    "left": 2,
+                    "up": 1
+                },
+                "n_total": 23
+            },
+            "5": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "right_down",
+                    "up"
+                ],
+                "counts": {
+                    "down": 16,
+                    "right": 8,
+                    "up": 2,
+                    "left": 2,
+                    "right_down": 1
+                },
+                "n_total": 29
+            },
+            "3": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "right_down",
+                    "right_up",
+                    "up"
+                ],
+                "counts": {
+                    "down": 17,
+                    "right": 5,
+                    "up": 2,
+                    "left": 2,
+                    "right_down": 1,
+                    "right_up": 1
+                },
+                "n_total": 28
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "right",
+            "right_down",
+            "right_up",
+            "up"
+        ],
+        "n_union_classes": 6
+    },
+    {
+        "file": "label/person_04_day_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "right_down",
+                    "up"
+                ],
+                "counts": {
+                    "down": 15,
+                    "right": 10,
+                    "left": 10,
+                    "up": 4,
+                    "right_down": 1,
+                    "left_up": 1
+                },
+                "n_total": 41
+            },
+            "5": {
+                "n_classes": 8,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "right_down",
+                    "right_up",
+                    "up"
+                ],
+                "counts": {
+                    "down": 25,
+                    "right": 13,
+                    "left": 12,
+                    "up": 5,
+                    "right_down": 5,
+                    "left_down": 3,
+                    "right_up": 2,
+                    "left_up": 2
+                },
+                "n_total": 67
+            },
+            "3": {
+                "n_classes": 8,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "right_down",
+                    "right_up",
+                    "up"
+                ],
+                "counts": {
+                    "down": 26,
+                    "right": 14,
+                    "left": 13,
+                    "up": 6,
+                    "left_down": 4,
+                    "right_down": 3,
+                    "right_up": 2,
+                    "left_up": 2
+                },
+                "n_total": 70
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "left_up",
+            "right",
+            "right_down",
+            "right_up",
+            "up"
+        ],
+        "n_union_classes": 8
+    },
+    {
+        "file": "label/person_04_night_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "right_down"
+                ],
+                "counts": {
+                    "down": 23,
+                    "left": 2,
+                    "left_down": 2,
+                    "right": 2,
+                    "right_down": 1
+                },
+                "n_total": 30
+            },
+            "5": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "right_up"
+                ],
+                "counts": {
+                    "down": 29,
+                    "right": 6,
+                    "left_down": 5,
+                    "left": 3,
+                    "right_up": 2,
+                    "left_up": 1
+                },
+                "n_total": 46
+            },
+            "3": {
+                "n_classes": 8,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "right_down",
+                    "right_up",
+                    "up"
+                ],
+                "counts": {
+                    "down": 24,
+                    "left_down": 8,
+                    "right": 6,
+                    "left": 2,
+                    "right_up": 2,
+                    "left_up": 2,
+                    "right_down": 1,
+                    "up": 1
+                },
+                "n_total": 46
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "left_up",
+            "right",
+            "right_down",
+            "right_up",
+            "up"
+        ],
+        "n_union_classes": 8
+    },
+    {
+        "file": "label/person_04_night_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 34,
+                    "up": 3,
+                    "right": 3,
+                    "left": 3
+                },
+                "n_total": 43
+            },
+            "3": {
+                "n_classes": 7,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "right_down",
+                    "right_up",
+                    "up"
+                ],
+                "counts": {
+                    "down": 34,
+                    "up": 12,
+                    "right": 7,
+                    "left": 6,
+                    "right_up": 2,
+                    "left_down": 2,
+                    "right_down": 1
+                },
+                "n_total": 64
+            },
+            "5": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "right_up",
+                    "up"
+                ],
+                "counts": {
+                    "down": 34,
+                    "right": 12,
+                    "up": 9,
+                    "left": 6,
+                    "right_up": 3
+                },
+                "n_total": 64
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "right",
+            "right_down",
+            "right_up",
+            "up"
+        ],
+        "n_union_classes": 7
+    },
+    {
+        "file": "label/person_05_day_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 3,
+                "classes": [
+                    "down",
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 59,
+                    "right": 9,
+                    "down": 2
+                },
+                "n_total": 70
+            },
+            "3": {
+                "n_classes": 3,
+                "classes": [
+                    "down",
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 69,
+                    "right": 17,
+                    "down": 1
+                },
+                "n_total": 87
+            },
+            "5": {
+                "n_classes": 3,
+                "classes": [
+                    "down",
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 73,
+                    "right": 19,
+                    "down": 2
+                },
+                "n_total": 94
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "right"
+        ],
+        "n_union_classes": 3
+    },
+    {
+        "file": "label/person_05_day_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 4,
+                "classes": [
+                    "left",
+                    "left_up",
+                    "right",
+                    "right_down"
+                ],
+                "counts": {
+                    "left": 19,
+                    "right": 7,
+                    "left_up": 1,
+                    "right_down": 1
+                },
+                "n_total": 28
+            },
+            "3": {
+                "n_classes": 3,
+                "classes": [
+                    "left",
+                    "right",
+                    "right_up"
+                ],
+                "counts": {
+                    "left": 22,
+                    "right": 10,
+                    "right_up": 1
+                },
+                "n_total": 33
+            },
+            "5": {
+                "n_classes": 4,
+                "classes": [
+                    "left",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "left": 21,
+                    "right": 14,
+                    "left_up": 1,
+                    "up": 1
+                },
+                "n_total": 37
+            }
+        },
+        "union_classes": [
+            "left",
+            "left_up",
+            "right",
+            "right_down",
+            "right_up",
+            "up"
+        ],
+        "n_union_classes": 6
+    },
+    {
+        "file": "label/person_05_night_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 3,
+                "classes": [
+                    "down",
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 44,
+                    "right": 18,
+                    "down": 1
+                },
+                "n_total": 63
+            },
+            "3": {
+                "n_classes": 2,
+                "classes": [
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 47,
+                    "right": 26
+                },
+                "n_total": 73
+            },
+            "5": {
+                "n_classes": 4,
+                "classes": [
+                    "left",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "left": 53,
+                    "right": 26,
+                    "left_up": 1,
+                    "up": 1
+                },
+                "n_total": 81
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_up",
+            "right",
+            "up"
+        ],
+        "n_union_classes": 5
+    },
+    {
+        "file": "label/person_05_night_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "right_down"
+                ],
+                "counts": {
+                    "left": 49,
+                    "right": 11,
+                    "left_down": 5,
+                    "down": 2,
+                    "right_down": 1
+                },
+                "n_total": 68
+            },
+            "3": {
+                "n_classes": 2,
+                "classes": [
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 56,
+                    "right": 13
+                },
+                "n_total": 69
+            },
+            "5": {
+                "n_classes": 3,
+                "classes": [
+                    "down",
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 61,
+                    "right": 16,
+                    "down": 1
+                },
+                "n_total": 78
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "right",
+            "right_down"
+        ],
+        "n_union_classes": 5
+    },
+    {
+        "file": "label/person_06_day_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "right_up",
+                    "up"
+                ],
+                "counts": {
+                    "down": 12,
+                    "right": 9,
+                    "left": 5,
+                    "up": 5,
+                    "left_up": 1,
+                    "right_up": 1
+                },
+                "n_total": 33
+            },
+            "3": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 15,
+                    "right": 12,
+                    "left_up": 3,
+                    "up": 3,
+                    "left": 2
+                },
+                "n_total": 35
+            },
+            "5": {
+                "n_classes": 8,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "right_down",
+                    "right_up",
+                    "up"
+                ],
+                "counts": {
+                    "down": 16,
+                    "right": 15,
+                    "left": 9,
+                    "left_up": 6,
+                    "up": 6,
+                    "right_down": 6,
+                    "right_up": 2,
+                    "left_down": 1
+                },
+                "n_total": 61
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "left_up",
+            "right",
+            "right_down",
+            "right_up",
+            "up"
+        ],
+        "n_union_classes": 8
+    },
+    {
+        "file": "label/person_06_day_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "right_down",
+                    "up"
+                ],
+                "counts": {
+                    "down": 6,
+                    "right": 6,
+                    "left": 4,
+                    "up": 3,
+                    "right_down": 1
+                },
+                "n_total": 20
+            },
+            "3": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "right_down",
+                    "up"
+                ],
+                "counts": {
+                    "up": 9,
+                    "down": 7,
+                    "right": 7,
+                    "left": 5,
+                    "right_down": 1,
+                    "left_up": 1
+                },
+                "n_total": 30
+            },
+            "5": {
+                "n_classes": 7,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "right_down",
+                    "right_up",
+                    "up"
+                ],
+                "counts": {
+                    "right": 14,
+                    "up": 11,
+                    "down": 11,
+                    "left": 7,
+                    "right_down": 5,
+                    "left_up": 2,
+                    "right_up": 1
+                },
+                "n_total": 51
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_up",
+            "right",
+            "right_down",
+            "right_up",
+            "up"
+        ],
+        "n_union_classes": 7
+    },
+    {
+        "file": "label/person_06_night_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 7,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "right_down",
+                    "right_up",
+                    "up"
+                ],
+                "counts": {
+                    "left": 12,
+                    "down": 5,
+                    "right": 5,
+                    "up": 3,
+                    "left_up": 1,
+                    "right_up": 1,
+                    "right_down": 1
+                },
+                "n_total": 28
+            },
+            "3": {
+                "n_classes": 7,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "right_up",
+                    "up"
+                ],
+                "counts": {
+                    "left": 15,
+                    "right": 13,
+                    "up": 9,
+                    "down": 5,
+                    "left_up": 2,
+                    "left_down": 1,
+                    "right_up": 1
+                },
+                "n_total": 46
+            },
+            "5": {
+                "n_classes": 7,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "right_down",
+                    "right_up",
+                    "up"
+                ],
+                "counts": {
+                    "left": 25,
+                    "right": 15,
+                    "up": 14,
+                    "down": 10,
+                    "left_up": 8,
+                    "right_down": 2,
+                    "right_up": 1
+                },
+                "n_total": 75
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "left_up",
+            "right",
+            "right_down",
+            "right_up",
+            "up"
+        ],
+        "n_union_classes": 8
+    },
+    {
+        "file": "label/person_06_night_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "right_down",
+                    "up"
+                ],
+                "counts": {
+                    "down": 9,
+                    "left": 7,
+                    "right": 7,
+                    "up": 2,
+                    "right_down": 1,
+                    "left_down": 1
+                },
+                "n_total": 27
+            },
+            "3": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "right_down",
+                    "right_up",
+                    "up"
+                ],
+                "counts": {
+                    "left": 9,
+                    "right": 9,
+                    "down": 5,
+                    "up": 4,
+                    "right_down": 2,
+                    "right_up": 1
+                },
+                "n_total": 30
+            },
+            "5": {
+                "n_classes": 7,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "right_down",
+                    "up"
+                ],
+                "counts": {
+                    "down": 20,
+                    "right": 19,
+                    "left": 11,
+                    "up": 9,
+                    "left_up": 3,
+                    "right_down": 2,
+                    "left_down": 1
+                },
+                "n_total": 65
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "left_up",
+            "right",
+            "right_down",
+            "right_up",
+            "up"
+        ],
+        "n_union_classes": 8
+    },
+    {
+        "file": "label/person_07_day_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 3,
+                "classes": [
+                    "down",
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 15,
+                    "right": 6,
+                    "down": 3
+                },
+                "n_total": 24
+            },
+            "3": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "left": 15,
+                    "right": 13,
+                    "down": 2,
+                    "up": 2
+                },
+                "n_total": 32
+            },
+            "5": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "left": 20,
+                    "right": 12,
+                    "down": 2,
+                    "up": 2
+                },
+                "n_total": 36
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "right",
+            "up"
+        ],
+        "n_union_classes": 4
+    },
+    {
+        "file": "label/person_07_day_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "right_up"
+                ],
+                "counts": {
+                    "left": 11,
+                    "right": 4,
+                    "right_up": 3,
+                    "left_up": 2,
+                    "down": 1
+                },
+                "n_total": 21
+            },
+            "3": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "left": 13,
+                    "right": 9,
+                    "up": 2,
+                    "down": 1
+                },
+                "n_total": 25
+            },
+            "5": {
+                "n_classes": 4,
+                "classes": [
+                    "left",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "left": 10,
+                    "right": 10,
+                    "left_up": 1,
+                    "up": 1
+                },
+                "n_total": 22
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_up",
+            "right",
+            "right_up",
+            "up"
+        ],
+        "n_union_classes": 6
+    },
+    {
+        "file": "label/person_07_night_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "left": 18,
+                    "right": 11,
+                    "left_up": 4,
+                    "up": 1,
+                    "down": 1
+                },
+                "n_total": 35
+            },
+            "3": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "left": 17,
+                    "right": 13,
+                    "up": 4,
+                    "left_up": 1,
+                    "down": 1
+                },
+                "n_total": 36
+            },
+            "5": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right"
+                ],
+                "counts": {
+                    "left": 20,
+                    "right": 13,
+                    "left_up": 8,
+                    "down": 2
+                },
+                "n_total": 43
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_up",
+            "right",
+            "up"
+        ],
+        "n_union_classes": 5
+    },
+    {
+        "file": "label/person_07_night_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 4,
+                "classes": [
+                    "left",
+                    "left_up",
+                    "right",
+                    "right_up"
+                ],
+                "counts": {
+                    "left": 13,
+                    "right": 10,
+                    "right_up": 2,
+                    "left_up": 1
+                },
+                "n_total": 26
+            },
+            "3": {
+                "n_classes": 3,
+                "classes": [
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "left": 13,
+                    "right": 12,
+                    "up": 1
+                },
+                "n_total": 26
+            },
+            "5": {
+                "n_classes": 3,
+                "classes": [
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "left": 15,
+                    "right": 14,
+                    "up": 1
+                },
+                "n_total": 30
+            }
+        },
+        "union_classes": [
+            "left",
+            "left_up",
+            "right",
+            "right_up",
+            "up"
+        ],
+        "n_union_classes": 5
+    },
+    {
+        "file": "label/person_08_day_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 3,
+                "classes": [
+                    "down",
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "down": 8,
+                    "right": 5,
+                    "left": 1
+                },
+                "n_total": 14
+            },
+            "3": {
+                "n_classes": 3,
+                "classes": [
+                    "down",
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "down": 11,
+                    "right": 6,
+                    "left": 5
+                },
+                "n_total": 22
+            },
+            "5": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "right": 10,
+                    "down": 8,
+                    "left": 4,
+                    "up": 1
+                },
+                "n_total": 23
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "right",
+            "up"
+        ],
+        "n_union_classes": 4
+    },
+    {
+        "file": "label/person_08_day_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "right_up",
+                    "up"
+                ],
+                "counts": {
+                    "down": 9,
+                    "right": 9,
+                    "left": 6,
+                    "up": 1,
+                    "right_up": 1,
+                    "left_up": 1
+                },
+                "n_total": 27
+            },
+            "3": {
+                "n_classes": 7,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "right_up",
+                    "up"
+                ],
+                "counts": {
+                    "left": 16,
+                    "right": 15,
+                    "down": 10,
+                    "left_down": 2,
+                    "up": 1,
+                    "left_up": 1,
+                    "right_up": 1
+                },
+                "n_total": 46
+            },
+            "5": {
+                "n_classes": 8,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "right_down",
+                    "right_up",
+                    "up"
+                ],
+                "counts": {
+                    "left": 18,
+                    "right": 15,
+                    "down": 7,
+                    "left_up": 3,
+                    "left_down": 3,
+                    "up": 1,
+                    "right_down": 1,
+                    "right_up": 1
+                },
+                "n_total": 49
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "left_up",
+            "right",
+            "right_down",
+            "right_up",
+            "up"
+        ],
+        "n_union_classes": 8
+    },
+    {
+        "file": "label/person_08_night_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "right": 6,
+                    "down": 4,
+                    "left": 4,
+                    "up": 3
+                },
+                "n_total": 17
+            },
+            "3": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "right": 8,
+                    "left": 7,
+                    "down": 6,
+                    "up": 3,
+                    "left_up": 1
+                },
+                "n_total": 25
+            },
+            "5": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "left": 10,
+                    "right": 7,
+                    "down": 6,
+                    "up": 4,
+                    "left_up": 2
+                },
+                "n_total": 29
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_up",
+            "right",
+            "up"
+        ],
+        "n_union_classes": 5
+    },
+    {
+        "file": "label/person_08_night_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 7,
+                    "right": 6,
+                    "up": 1,
+                    "left": 1
+                },
+                "n_total": 15
+            },
+            "3": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right"
+                ],
+                "counts": {
+                    "right": 6,
+                    "down": 4,
+                    "left": 3,
+                    "left_up": 2
+                },
+                "n_total": 15
+            },
+            "5": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "right_down",
+                    "up"
+                ],
+                "counts": {
+                    "right": 11,
+                    "down": 5,
+                    "left": 5,
+                    "left_up": 4,
+                    "up": 2,
+                    "right_down": 1
+                },
+                "n_total": 28
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_up",
+            "right",
+            "right_down",
+            "up"
+        ],
+        "n_union_classes": 6
+    },
+    {
+        "file": "label/person_09_day_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "right_down",
+                    "up"
+                ],
+                "counts": {
+                    "down": 11,
+                    "left": 9,
+                    "right": 3,
+                    "left_down": 2,
+                    "up": 1,
+                    "right_down": 1
+                },
+                "n_total": 27
+            },
+            "3": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "left": 10,
+                    "left_down": 7,
+                    "right": 4,
+                    "down": 2,
+                    "up": 2,
+                    "left_up": 2
+                },
+                "n_total": 27
+            },
+            "5": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "left": 12,
+                    "down": 8,
+                    "up": 5,
+                    "right": 4,
+                    "left_down": 1
+                },
+                "n_total": 30
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "left_up",
+            "right",
+            "right_down",
+            "up"
+        ],
+        "n_union_classes": 7
+    },
+    {
+        "file": "label/person_09_day_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 12,
+                    "left": 10,
+                    "right": 8,
+                    "up": 2
+                },
+                "n_total": 32
+            },
+            "3": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "left": 11,
+                    "right": 11,
+                    "down": 6,
+                    "up": 2,
+                    "left_up": 1
+                },
+                "n_total": 31
+            },
+            "5": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "left": 24,
+                    "down": 23,
+                    "right": 19,
+                    "up": 12,
+                    "left_up": 1
+                },
+                "n_total": 79
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_up",
+            "right",
+            "up"
+        ],
+        "n_union_classes": 5
+    },
+    {
+        "file": "label/person_09_night_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 16,
+                    "left": 10,
+                    "right": 8,
+                    "up": 1
+                },
+                "n_total": 35
+            },
+            "3": {
+                "n_classes": 7,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "right_down",
+                    "up"
+                ],
+                "counts": {
+                    "down": 17,
+                    "left": 15,
+                    "right": 10,
+                    "up": 7,
+                    "left_down": 2,
+                    "right_down": 1,
+                    "left_up": 1
+                },
+                "n_total": 53
+            },
+            "5": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "right_up",
+                    "up"
+                ],
+                "counts": {
+                    "down": 26,
+                    "left": 18,
+                    "right": 11,
+                    "up": 10,
+                    "left_down": 2,
+                    "right_up": 1
+                },
+                "n_total": 68
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "left_up",
+            "right",
+            "right_down",
+            "right_up",
+            "up"
+        ],
+        "n_union_classes": 8
+    },
+    {
+        "file": "label/person_09_night_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "up": 9,
+                    "left": 7,
+                    "down": 7,
+                    "right": 4
+                },
+                "n_total": 27
+            },
+            "3": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "up": 13,
+                    "left": 8,
+                    "down": 7,
+                    "right": 4,
+                    "left_down": 1
+                },
+                "n_total": 33
+            },
+            "5": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 18,
+                    "up": 11,
+                    "left": 8,
+                    "right": 7,
+                    "left_down": 1
+                },
+                "n_total": 45
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "right",
+            "up"
+        ],
+        "n_union_classes": 5
+    },
+    {
+        "file": "label/person_10_day_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right"
+                ],
+                "counts": {
+                    "left": 19,
+                    "right": 10,
+                    "down": 3,
+                    "left_down": 1
+                },
+                "n_total": 33
+            },
+            "3": {
+                "n_classes": 3,
+                "classes": [
+                    "down",
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 16,
+                    "right": 5,
+                    "down": 1
+                },
+                "n_total": 22
+            },
+            "5": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right"
+                ],
+                "counts": {
+                    "left": 17,
+                    "right": 10,
+                    "down": 2,
+                    "left_down": 1
+                },
+                "n_total": 30
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "right"
+        ],
+        "n_union_classes": 4
+    },
+    {
+        "file": "label/person_10_day_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right"
+                ],
+                "counts": {
+                    "left": 18,
+                    "right": 5,
+                    "down": 2,
+                    "left_up": 1
+                },
+                "n_total": 26
+            },
+            "3": {
+                "n_classes": 3,
+                "classes": [
+                    "down",
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 16,
+                    "right": 7,
+                    "down": 2
+                },
+                "n_total": 25
+            },
+            "5": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "left": 13,
+                    "right": 12,
+                    "down": 2,
+                    "up": 1,
+                    "left_up": 1
+                },
+                "n_total": 29
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_up",
+            "right",
+            "up"
+        ],
+        "n_union_classes": 5
+    },
+    {
+        "file": "label/person_10_night_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "right_down"
+                ],
+                "counts": {
+                    "left": 15,
+                    "right": 6,
+                    "down": 2,
+                    "right_down": 1,
+                    "left_down": 1
+                },
+                "n_total": 25
+            },
+            "3": {
+                "n_classes": 3,
+                "classes": [
+                    "left",
+                    "left_down",
+                    "right"
+                ],
+                "counts": {
+                    "left": 7,
+                    "right": 5,
+                    "left_down": 1
+                },
+                "n_total": 13
+            },
+            "5": {
+                "n_classes": 2,
+                "classes": [
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 14,
+                    "right": 13
+                },
+                "n_total": 27
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "right",
+            "right_down"
+        ],
+        "n_union_classes": 5
+    },
+    {
+        "file": "label/person_10_night_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 2,
+                "classes": [
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 18,
+                    "right": 6
+                },
+                "n_total": 24
+            },
+            "3": {
+                "n_classes": 2,
+                "classes": [
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 17,
+                    "right": 9
+                },
+                "n_total": 26
+            },
+            "5": {
+                "n_classes": 3,
+                "classes": [
+                    "left",
+                    "left_up",
+                    "right"
+                ],
+                "counts": {
+                    "left": 19,
+                    "right": 15,
+                    "left_up": 1
+                },
+                "n_total": 35
+            }
+        },
+        "union_classes": [
+            "left",
+            "left_up",
+            "right"
+        ],
+        "n_union_classes": 3
+    },
+    {
+        "file": "label/person_11_day_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 22,
+                    "right": 10,
+                    "left": 9,
+                    "up": 7,
+                    "left_down": 2
+                },
+                "n_total": 50
+            },
+            "3": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 17,
+                    "right": 13,
+                    "left": 13,
+                    "up": 9,
+                    "left_up": 1,
+                    "left_down": 1
+                },
+                "n_total": 54
+            },
+            "5": {
+                "n_classes": 7,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "right_down",
+                    "up"
+                ],
+                "counts": {
+                    "down": 28,
+                    "right": 15,
+                    "left": 15,
+                    "left_up": 3,
+                    "left_down": 1,
+                    "right_down": 1,
+                    "up": 1
+                },
+                "n_total": 64
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "left_up",
+            "right",
+            "right_down",
+            "up"
+        ],
+        "n_union_classes": 7
+    },
+    {
+        "file": "label/person_11_day_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "4": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "right_up",
+                    "up"
+                ],
+                "counts": {
+                    "down": 26,
+                    "right": 13,
+                    "left": 13,
+                    "up": 6,
+                    "left_up": 3,
+                    "right_up": 1
+                },
+                "n_total": 62
+            },
+            "3": {
+                "n_classes": 7,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "right_up",
+                    "up"
+                ],
+                "counts": {
+                    "down": 22,
+                    "right": 14,
+                    "left": 14,
+                    "up": 9,
+                    "left_down": 4,
+                    "left_up": 1,
+                    "right_up": 1
+                },
+                "n_total": 65
+            },
+            "5": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 27,
+                    "left": 19,
+                    "right": 16,
+                    "left_down": 9,
+                    "up": 5,
+                    "left_up": 4
+                },
+                "n_total": 80
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "left_up",
+            "right",
+            "right_up",
+            "up"
+        ],
+        "n_union_classes": 7
+    },
+    {
+        "file": "label/person_11_night_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "3": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 26,
+                    "right": 8,
+                    "up": 7,
+                    "left": 7
+                },
+                "n_total": 48
+            },
+            "4": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 30,
+                    "left": 8,
+                    "right": 8,
+                    "up": 3,
+                    "left_up": 1
+                },
+                "n_total": 50
+            },
+            "5": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 33,
+                    "left": 14,
+                    "right": 11,
+                    "left_up": 5,
+                    "up": 2
+                },
+                "n_total": 65
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_up",
+            "right",
+            "up"
+        ],
+        "n_union_classes": 5
+    },
+    {
+        "file": "label/person_11_night_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "3": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 31,
+                    "left": 16,
+                    "right": 13,
+                    "up": 5,
+                    "left_down": 5
+                },
+                "n_total": 70
+            },
+            "4": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 42,
+                    "left": 16,
+                    "right": 12,
+                    "up": 6
+                },
+                "n_total": 76
+            },
+            "5": {
+                "n_classes": 7,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "right_down",
+                    "up"
+                ],
+                "counts": {
+                    "down": 33,
+                    "left": 19,
+                    "right": 17,
+                    "left_down": 13,
+                    "left_up": 4,
+                    "right_down": 3,
+                    "up": 2
+                },
+                "n_total": 91
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "left_up",
+            "right",
+            "right_down",
+            "up"
+        ],
+        "n_union_classes": 7
+    },
+    {
+        "file": "label/person_12_day_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "3": {
+                "n_classes": 2,
+                "classes": [
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "right": 1,
+                    "left": 1
+                },
+                "n_total": 2
+            },
+            "4": {
+                "n_classes": 2,
+                "classes": [
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "right": 1,
+                    "left": 1
+                },
+                "n_total": 2
+            },
+            "5": {
+                "n_classes": 2,
+                "classes": [
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "right": 1,
+                    "left": 1
+                },
+                "n_total": 2
+            }
+        },
+        "union_classes": [
+            "left",
+            "right"
+        ],
+        "n_union_classes": 2
+    },
+    {
+        "file": "label/person_12_day_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "3": {
+                "n_classes": 3,
+                "classes": [
+                    "down",
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "right": 1,
+                    "left": 1,
+                    "down": 1
+                },
+                "n_total": 3
+            },
+            "4": {
+                "n_classes": 2,
+                "classes": [
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "right": 2,
+                    "left": 1
+                },
+                "n_total": 3
+            },
+            "5": {
+                "n_classes": 2,
+                "classes": [
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "right": 2,
+                    "left": 1
+                },
+                "n_total": 3
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "right"
+        ],
+        "n_union_classes": 3
+    },
+    {
+        "file": "label/person_12_night_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "3": {
+                "n_classes": 3,
+                "classes": [
+                    "down",
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 2,
+                    "down": 2,
+                    "right": 1
+                },
+                "n_total": 5
+            },
+            "4": {
+                "n_classes": 3,
+                "classes": [
+                    "left",
+                    "left_down",
+                    "right"
+                ],
+                "counts": {
+                    "left": 1,
+                    "right": 1,
+                    "left_down": 1
+                },
+                "n_total": 3
+            },
+            "5": {
+                "n_classes": 3,
+                "classes": [
+                    "down",
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 2,
+                    "right": 1,
+                    "down": 1
+                },
+                "n_total": 4
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "right"
+        ],
+        "n_union_classes": 4
+    },
+    {
+        "file": "label/person_12_night_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "3": {
+                "n_classes": 3,
+                "classes": [
+                    "down",
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 1,
+                    "right": 1,
+                    "down": 1
+                },
+                "n_total": 3
+            },
+            "4": {
+                "n_classes": 2,
+                "classes": [
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "right": 1,
+                    "left": 1
+                },
+                "n_total": 2
+            },
+            "5": {
+                "n_classes": 3,
+                "classes": [
+                    "down",
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 3,
+                    "right": 1,
+                    "down": 1
+                },
+                "n_total": 5
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "right"
+        ],
+        "n_union_classes": 3
+    },
+    {
+        "file": "label/person_13_day_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "3": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "left": 22,
+                    "down": 15,
+                    "right": 12,
+                    "up": 5,
+                    "left_down": 5,
+                    "left_up": 1
+                },
+                "n_total": 60
+            },
+            "4": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 27,
+                    "left": 18,
+                    "right": 11,
+                    "up": 5,
+                    "left_down": 2
+                },
+                "n_total": 63
+            },
+            "5": {
+                "n_classes": 7,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "right_down",
+                    "up"
+                ],
+                "counts": {
+                    "down": 28,
+                    "left": 28,
+                    "right": 17,
+                    "up": 8,
+                    "left_down": 6,
+                    "left_up": 2,
+                    "right_down": 1
+                },
+                "n_total": 90
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "left_up",
+            "right",
+            "right_down",
+            "up"
+        ],
+        "n_union_classes": 7
+    },
+    {
+        "file": "label/person_13_day_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "3": {
+                "n_classes": 7,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "right_up",
+                    "up"
+                ],
+                "counts": {
+                    "left_down": 27,
+                    "left": 14,
+                    "right": 14,
+                    "down": 7,
+                    "up": 5,
+                    "right_up": 1,
+                    "left_up": 1
+                },
+                "n_total": 69
+            },
+            "4": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "right_down",
+                    "up"
+                ],
+                "counts": {
+                    "down": 33,
+                    "left": 13,
+                    "right": 8,
+                    "left_down": 5,
+                    "up": 4,
+                    "right_down": 1
+                },
+                "n_total": 64
+            },
+            "5": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "right_down",
+                    "up"
+                ],
+                "counts": {
+                    "down": 35,
+                    "left": 17,
+                    "right": 16,
+                    "left_down": 11,
+                    "right_down": 3,
+                    "up": 2
+                },
+                "n_total": 84
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "left_up",
+            "right",
+            "right_down",
+            "right_up",
+            "up"
+        ],
+        "n_union_classes": 8
+    },
+    {
+        "file": "label/person_13_night_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "3": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 24,
+                    "left": 15,
+                    "up": 12,
+                    "right": 12,
+                    "left_down": 8,
+                    "left_up": 1
+                },
+                "n_total": 72
+            },
+            "4": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 37,
+                    "left": 14,
+                    "up": 12,
+                    "right": 11,
+                    "left_down": 1,
+                    "left_up": 1
+                },
+                "n_total": 76
+            },
+            "5": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 39,
+                    "left": 20,
+                    "right": 18,
+                    "left_up": 7,
+                    "up": 6,
+                    "left_down": 3
+                },
+                "n_total": 93
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "left_up",
+            "right",
+            "up"
+        ],
+        "n_union_classes": 6
+    },
+    {
+        "file": "label/person_13_night_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "3": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "right_up",
+                    "up"
+                ],
+                "counts": {
+                    "left": 25,
+                    "down": 19,
+                    "right": 18,
+                    "up": 11,
+                    "left_down": 9,
+                    "right_up": 1
+                },
+                "n_total": 83
+            },
+            "4": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "right_down",
+                    "up"
+                ],
+                "counts": {
+                    "down": 28,
+                    "left": 21,
+                    "right": 17,
+                    "up": 7,
+                    "right_down": 2,
+                    "left_down": 1
+                },
+                "n_total": 76
+            },
+            "5": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "right_up",
+                    "up"
+                ],
+                "counts": {
+                    "down": 35,
+                    "left": 25,
+                    "right": 21,
+                    "up": 9,
+                    "right_up": 1,
+                    "left_down": 1
+                },
+                "n_total": 92
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "right",
+            "right_down",
+            "right_up",
+            "up"
+        ],
+        "n_union_classes": 7
+    },
+    {
+        "file": "label/person_14_day_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "3": {
+                "n_classes": 2,
+                "classes": [
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 21,
+                    "right": 7
+                },
+                "n_total": 28
+            },
+            "4": {
+                "n_classes": 2,
+                "classes": [
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 17,
+                    "right": 7
+                },
+                "n_total": 24
+            },
+            "5": {
+                "n_classes": 3,
+                "classes": [
+                    "left",
+                    "left_down",
+                    "right"
+                ],
+                "counts": {
+                    "left": 21,
+                    "right": 10,
+                    "left_down": 1
+                },
+                "n_total": 32
+            }
+        },
+        "union_classes": [
+            "left",
+            "left_down",
+            "right"
+        ],
+        "n_union_classes": 3
+    },
+    {
+        "file": "label/person_14_day_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "3": {
+                "n_classes": 3,
+                "classes": [
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "left": 23,
+                    "right": 5,
+                    "up": 2
+                },
+                "n_total": 30
+            },
+            "4": {
+                "n_classes": 3,
+                "classes": [
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "left": 25,
+                    "right": 7,
+                    "up": 4
+                },
+                "n_total": 36
+            },
+            "5": {
+                "n_classes": 2,
+                "classes": [
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 26,
+                    "right": 10
+                },
+                "n_total": 36
+            }
+        },
+        "union_classes": [
+            "left",
+            "right",
+            "up"
+        ],
+        "n_union_classes": 3
+    },
+    {
+        "file": "label/person_14_night_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "5": {
+                "n_classes": 3,
+                "classes": [
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "left": 15,
+                    "right": 5,
+                    "up": 2
+                },
+                "n_total": 22
+            },
+            "3": {
+                "n_classes": 3,
+                "classes": [
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "left": 13,
+                    "right": 2,
+                    "up": 1
+                },
+                "n_total": 16
+            },
+            "4": {
+                "n_classes": 3,
+                "classes": [
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "left": 15,
+                    "right": 4,
+                    "up": 1
+                },
+                "n_total": 20
+            }
+        },
+        "union_classes": [
+            "left",
+            "right",
+            "up"
+        ],
+        "n_union_classes": 3
+    },
+    {
+        "file": "label/person_14_night_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "5": {
+                "n_classes": 3,
+                "classes": [
+                    "down",
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 27,
+                    "right": 6,
+                    "down": 2
+                },
+                "n_total": 35
+            },
+            "3": {
+                "n_classes": 2,
+                "classes": [
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 24,
+                    "right": 6
+                },
+                "n_total": 30
+            },
+            "4": {
+                "n_classes": 3,
+                "classes": [
+                    "down",
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 21,
+                    "right": 6,
+                    "down": 1
+                },
+                "n_total": 28
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "right"
+        ],
+        "n_union_classes": 3
+    },
+    {
+        "file": "label/person_15_day_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "5": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "left": 23,
+                    "right": 14,
+                    "up": 1,
+                    "down": 1
+                },
+                "n_total": 39
+            },
+            "3": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right"
+                ],
+                "counts": {
+                    "left": 23,
+                    "right": 10,
+                    "left_up": 1,
+                    "down": 1
+                },
+                "n_total": 35
+            },
+            "4": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "left": 21,
+                    "right": 13,
+                    "up": 1,
+                    "down": 1
+                },
+                "n_total": 36
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_up",
+            "right",
+            "up"
+        ],
+        "n_union_classes": 5
+    },
+    {
+        "file": "label/person_15_day_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "5": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "left": 19,
+                    "right": 16,
+                    "down": 2,
+                    "up": 1
+                },
+                "n_total": 38
+            },
+            "3": {
+                "n_classes": 3,
+                "classes": [
+                    "down",
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 21,
+                    "right": 11,
+                    "down": 3
+                },
+                "n_total": 35
+            },
+            "4": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right"
+                ],
+                "counts": {
+                    "left": 20,
+                    "right": 13,
+                    "down": 2,
+                    "left_up": 1
+                },
+                "n_total": 36
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_up",
+            "right",
+            "up"
+        ],
+        "n_union_classes": 5
+    },
+    {
+        "file": "label/person_15_night_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "3": {
+                "n_classes": 3,
+                "classes": [
+                    "down",
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 24,
+                    "right": 11,
+                    "down": 2
+                },
+                "n_total": 37
+            },
+            "5": {
+                "n_classes": 3,
+                "classes": [
+                    "down",
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 26,
+                    "right": 15,
+                    "down": 2
+                },
+                "n_total": 43
+            },
+            "4": {
+                "n_classes": 3,
+                "classes": [
+                    "down",
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 21,
+                    "right": 10,
+                    "down": 1
+                },
+                "n_total": 32
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "right"
+        ],
+        "n_union_classes": 3
+    },
+    {
+        "file": "label/person_15_night_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "3": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right"
+                ],
+                "counts": {
+                    "left": 21,
+                    "right": 14,
+                    "down": 1,
+                    "left_up": 1
+                },
+                "n_total": 37
+            },
+            "5": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "left": 25,
+                    "right": 23,
+                    "up": 2,
+                    "left_up": 2,
+                    "down": 1
+                },
+                "n_total": 53
+            },
+            "4": {
+                "n_classes": 4,
+                "classes": [
+                    "left",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "left": 23,
+                    "right": 12,
+                    "up": 1,
+                    "left_up": 1
+                },
+                "n_total": 37
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_up",
+            "right",
+            "up"
+        ],
+        "n_union_classes": 5
+    },
+    {
+        "file": "label/person_16_day_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "3": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 51,
+                    "right": 19,
+                    "left": 5,
+                    "left_down": 2,
+                    "left_up": 2,
+                    "up": 1
+                },
+                "n_total": 80
+            },
+            "5": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 52,
+                    "right": 21,
+                    "left": 5,
+                    "up": 2,
+                    "left_down": 2,
+                    "left_up": 1
+                },
+                "n_total": 83
+            },
+            "4": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 51,
+                    "right": 16,
+                    "left": 5,
+                    "up": 3
+                },
+                "n_total": 75
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "left_up",
+            "right",
+            "up"
+        ],
+        "n_union_classes": 6
+    },
+    {
+        "file": "label/person_16_day_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "3": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 65,
+                    "right": 15,
+                    "left": 4,
+                    "up": 2,
+                    "left_down": 1,
+                    "left_up": 1
+                },
+                "n_total": 88
+            },
+            "5": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "right_down",
+                    "up"
+                ],
+                "counts": {
+                    "down": 63,
+                    "right": 16,
+                    "left": 9,
+                    "up": 3,
+                    "left_down": 2,
+                    "right_down": 1
+                },
+                "n_total": 94
+            },
+            "4": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 66,
+                    "right": 15,
+                    "left": 5,
+                    "up": 3
+                },
+                "n_total": 89
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "left_up",
+            "right",
+            "right_down",
+            "up"
+        ],
+        "n_union_classes": 7
+    },
+    {
+        "file": "label/person_16_night_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "3": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 47,
+                    "right": 8,
+                    "up": 5,
+                    "left": 3
+                },
+                "n_total": 63
+            },
+            "5": {
+                "n_classes": 7,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "right_down",
+                    "up"
+                ],
+                "counts": {
+                    "down": 48,
+                    "right": 6,
+                    "left": 3,
+                    "up": 2,
+                    "right_down": 1,
+                    "left_up": 1,
+                    "left_down": 1
+                },
+                "n_total": 62
+            },
+            "4": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 46,
+                    "right": 7,
+                    "left": 2,
+                    "up": 1,
+                    "left_down": 1
+                },
+                "n_total": 57
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "left_up",
+            "right",
+            "right_down",
+            "up"
+        ],
+        "n_union_classes": 7
+    },
+    {
+        "file": "label/person_16_night_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "3": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 45,
+                    "right": 12,
+                    "up": 6,
+                    "left": 6,
+                    "left_up": 2,
+                    "left_down": 1
+                },
+                "n_total": 72
+            },
+            "5": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 46,
+                    "right": 12,
+                    "left": 6,
+                    "left_up": 5,
+                    "up": 1,
+                    "left_down": 1
+                },
+                "n_total": 71
+            },
+            "4": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 48,
+                    "right": 11,
+                    "left": 4,
+                    "left_up": 3,
+                    "up": 2
+                },
+                "n_total": 68
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "left_up",
+            "right",
+            "up"
+        ],
+        "n_union_classes": 6
+    },
+    {
+        "file": "label/person_17_day_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "3": {
+                "n_classes": 2,
+                "classes": [
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "right": 7,
+                    "left": 6
+                },
+                "n_total": 13
+            },
+            "5": {
+                "n_classes": 2,
+                "classes": [
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "right": 6,
+                    "left": 5
+                },
+                "n_total": 11
+            },
+            "4": {
+                "n_classes": 2,
+                "classes": [
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "right": 5,
+                    "left": 3
+                },
+                "n_total": 8
+            }
+        },
+        "union_classes": [
+            "left",
+            "right"
+        ],
+        "n_union_classes": 2
+    },
+    {
+        "file": "label/person_17_day_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "3": {
+                "n_classes": 2,
+                "classes": [
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 4,
+                    "right": 3
+                },
+                "n_total": 7
+            },
+            "5": {
+                "n_classes": 3,
+                "classes": [
+                    "left",
+                    "right",
+                    "right_up"
+                ],
+                "counts": {
+                    "right": 5,
+                    "left": 3,
+                    "right_up": 1
+                },
+                "n_total": 9
+            },
+            "4": {
+                "n_classes": 2,
+                "classes": [
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "right": 5,
+                    "left": 4
+                },
+                "n_total": 9
+            }
+        },
+        "union_classes": [
+            "left",
+            "right",
+            "right_up"
+        ],
+        "n_union_classes": 3
+    },
+    {
+        "file": "label/person_17_night_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "3": {
+                "n_classes": 2,
+                "classes": [
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "right": 4,
+                    "left": 4
+                },
+                "n_total": 8
+            },
+            "5": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "right_up",
+                    "up"
+                ],
+                "counts": {
+                    "left": 6,
+                    "right": 5,
+                    "right_up": 1,
+                    "left_up": 1,
+                    "down": 1,
+                    "up": 1
+                },
+                "n_total": 15
+            },
+            "4": {
+                "n_classes": 3,
+                "classes": [
+                    "down",
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "right": 4,
+                    "left": 4,
+                    "down": 2
+                },
+                "n_total": 10
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_up",
+            "right",
+            "right_up",
+            "up"
+        ],
+        "n_union_classes": 6
+    },
+    {
+        "file": "label/person_17_night_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "3": {
+                "n_classes": 2,
+                "classes": [
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "right": 5,
+                    "left": 3
+                },
+                "n_total": 8
+            },
+            "5": {
+                "n_classes": 2,
+                "classes": [
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "right": 7,
+                    "left": 3
+                },
+                "n_total": 10
+            },
+            "4": {
+                "n_classes": 3,
+                "classes": [
+                    "down",
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "right": 6,
+                    "left": 4,
+                    "down": 1
+                },
+                "n_total": 11
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "right"
+        ],
+        "n_union_classes": 3
+    },
+    {
+        "file": "label/person_18_day_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "3": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right"
+                ],
+                "counts": {
+                    "left": 17,
+                    "right": 16,
+                    "left_down": 2,
+                    "down": 1
+                },
+                "n_total": 36
+            },
+            "5": {
+                "n_classes": 4,
+                "classes": [
+                    "left",
+                    "left_up",
+                    "right",
+                    "right_up"
+                ],
+                "counts": {
+                    "left": 17,
+                    "right": 15,
+                    "left_up": 3,
+                    "right_up": 2
+                },
+                "n_total": 37
+            },
+            "4": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "left": 18,
+                    "right": 15,
+                    "up": 2,
+                    "down": 1
+                },
+                "n_total": 36
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "left_up",
+            "right",
+            "right_up",
+            "up"
+        ],
+        "n_union_classes": 7
+    },
+    {
+        "file": "label/person_18_day_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "3": {
+                "n_classes": 3,
+                "classes": [
+                    "left",
+                    "left_down",
+                    "right"
+                ],
+                "counts": {
+                    "right": 9,
+                    "left": 8,
+                    "left_down": 2
+                },
+                "n_total": 19
+            },
+            "5": {
+                "n_classes": 2,
+                "classes": [
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 11,
+                    "right": 9
+                },
+                "n_total": 20
+            },
+            "4": {
+                "n_classes": 2,
+                "classes": [
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 8,
+                    "right": 8
+                },
+                "n_total": 16
+            }
+        },
+        "union_classes": [
+            "left",
+            "left_down",
+            "right"
+        ],
+        "n_union_classes": 3
+    },
+    {
+        "file": "label/person_18_night_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "3": {
+                "n_classes": 2,
+                "classes": [
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 8,
+                    "right": 4
+                },
+                "n_total": 12
+            },
+            "5": {
+                "n_classes": 2,
+                "classes": [
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 10,
+                    "right": 4
+                },
+                "n_total": 14
+            },
+            "4": {
+                "n_classes": 2,
+                "classes": [
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 9,
+                    "right": 4
+                },
+                "n_total": 13
+            }
+        },
+        "union_classes": [
+            "left",
+            "right"
+        ],
+        "n_union_classes": 2
+    },
+    {
+        "file": "label/person_18_night_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "3": {
+                "n_classes": 3,
+                "classes": [
+                    "left",
+                    "left_down",
+                    "right"
+                ],
+                "counts": {
+                    "right": 11,
+                    "left": 10,
+                    "left_down": 2
+                },
+                "n_total": 23
+            },
+            "5": {
+                "n_classes": 3,
+                "classes": [
+                    "left",
+                    "left_down",
+                    "right"
+                ],
+                "counts": {
+                    "right": 13,
+                    "left": 12,
+                    "left_down": 1
+                },
+                "n_total": 26
+            },
+            "4": {
+                "n_classes": 3,
+                "classes": [
+                    "down",
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 13,
+                    "right": 12,
+                    "down": 1
+                },
+                "n_total": 26
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "right"
+        ],
+        "n_union_classes": 4
+    },
+    {
+        "file": "label/person_19_day_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "3": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "left": 8,
+                    "right": 7,
+                    "up": 3,
+                    "left_down": 2,
+                    "down": 1
+                },
+                "n_total": 21
+            },
+            "5": {
+                "n_classes": 3,
+                "classes": [
+                    "left",
+                    "left_down",
+                    "right"
+                ],
+                "counts": {
+                    "right": 8,
+                    "left": 7,
+                    "left_down": 2
+                },
+                "n_total": 17
+            },
+            "4": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "right": 8,
+                    "left": 6,
+                    "up": 2,
+                    "down": 1,
+                    "left_up": 1
+                },
+                "n_total": 18
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "left_up",
+            "right",
+            "up"
+        ],
+        "n_union_classes": 6
+    },
+    {
+        "file": "label/person_19_day_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "3": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 3,
+                    "left": 3,
+                    "right": 3,
+                    "up": 1
+                },
+                "n_total": 10
+            },
+            "5": {
+                "n_classes": 2,
+                "classes": [
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "right": 3,
+                    "left": 2
+                },
+                "n_total": 5
+            },
+            "4": {
+                "n_classes": 3,
+                "classes": [
+                    "down",
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "right": 4,
+                    "down": 2,
+                    "left": 2
+                },
+                "n_total": 8
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "right",
+            "up"
+        ],
+        "n_union_classes": 4
+    },
+    {
+        "file": "label/person_19_night_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "3": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "left": 7,
+                    "up": 5,
+                    "down": 3,
+                    "right": 2
+                },
+                "n_total": 17
+            },
+            "5": {
+                "n_classes": 3,
+                "classes": [
+                    "down",
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 4,
+                    "right": 3,
+                    "down": 1
+                },
+                "n_total": 8
+            },
+            "4": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "left": 5,
+                    "down": 5,
+                    "right": 4,
+                    "up": 3
+                },
+                "n_total": 17
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "right",
+            "up"
+        ],
+        "n_union_classes": 4
+    },
+    {
+        "file": "label/person_19_night_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "3": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "left": 11,
+                    "right": 4,
+                    "up": 1,
+                    "down": 1
+                },
+                "n_total": 17
+            },
+            "5": {
+                "n_classes": 3,
+                "classes": [
+                    "down",
+                    "left",
+                    "right"
+                ],
+                "counts": {
+                    "left": 12,
+                    "right": 4,
+                    "down": 1
+                },
+                "n_total": 17
+            },
+            "4": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right"
+                ],
+                "counts": {
+                    "left": 11,
+                    "right": 3,
+                    "down": 2,
+                    "left_up": 1
+                },
+                "n_total": 17
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_up",
+            "right",
+            "up"
+        ],
+        "n_union_classes": 5
+    },
+    {
+        "file": "label/person_20_day_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "3": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "right_down",
+                    "up"
+                ],
+                "counts": {
+                    "down": 74,
+                    "right": 8,
+                    "up": 4,
+                    "left_down": 3,
+                    "left": 3,
+                    "right_down": 1
+                },
+                "n_total": 93
+            },
+            "5": {
+                "n_classes": 7,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "right_down",
+                    "up"
+                ],
+                "counts": {
+                    "down": 43,
+                    "left_down": 29,
+                    "right": 9,
+                    "left": 7,
+                    "right_down": 4,
+                    "up": 2,
+                    "left_up": 1
+                },
+                "n_total": 95
+            },
+            "4": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 57,
+                    "right": 9,
+                    "left": 7,
+                    "up": 3
+                },
+                "n_total": 76
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "left_up",
+            "right",
+            "right_down",
+            "up"
+        ],
+        "n_union_classes": 7
+    },
+    {
+        "file": "label/person_20_day_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "3": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "right_down",
+                    "up"
+                ],
+                "counts": {
+                    "down": 60,
+                    "right": 14,
+                    "left": 12,
+                    "up": 3,
+                    "left_up": 1,
+                    "right_down": 1
+                },
+                "n_total": 91
+            },
+            "5": {
+                "n_classes": 7,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "right_down",
+                    "up"
+                ],
+                "counts": {
+                    "down": 40,
+                    "left": 15,
+                    "left_down": 14,
+                    "right": 12,
+                    "up": 3,
+                    "right_down": 2,
+                    "left_up": 1
+                },
+                "n_total": 87
+            },
+            "4": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 39,
+                    "right": 15,
+                    "left": 9,
+                    "up": 1
+                },
+                "n_total": 64
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "left_up",
+            "right",
+            "right_down",
+            "up"
+        ],
+        "n_union_classes": 7
+    },
+    {
+        "file": "label/person_20_night_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "3": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 64,
+                    "left": 16,
+                    "right": 8,
+                    "left_down": 4,
+                    "up": 2
+                },
+                "n_total": 94
+            },
+            "5": {
+                "n_classes": 8,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "right_down",
+                    "right_up",
+                    "up"
+                ],
+                "counts": {
+                    "down": 41,
+                    "left": 16,
+                    "left_down": 13,
+                    "right": 12,
+                    "up": 6,
+                    "right_up": 3,
+                    "right_down": 1,
+                    "left_up": 1
+                },
+                "n_total": 93
+            },
+            "4": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 35,
+                    "left": 11,
+                    "right": 8,
+                    "left_down": 4,
+                    "up": 4
+                },
+                "n_total": 62
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "left_up",
+            "right",
+            "right_down",
+            "right_up",
+            "up"
+        ],
+        "n_union_classes": 8
+    },
+    {
+        "file": "label/person_20_night_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "3": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 56,
+                    "right": 12,
+                    "left": 10,
+                    "left_down": 2,
+                    "up": 2
+                },
+                "n_total": 82
+            },
+            "5": {
+                "n_classes": 8,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "right_down",
+                    "right_up",
+                    "up"
+                ],
+                "counts": {
+                    "down": 32,
+                    "left_down": 25,
+                    "right": 10,
+                    "left": 9,
+                    "up": 1,
+                    "right_up": 1,
+                    "left_up": 1,
+                    "right_down": 1
+                },
+                "n_total": 80
+            },
+            "4": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 47,
+                    "left": 10,
+                    "right": 8,
+                    "up": 3,
+                    "left_up": 1
+                },
+                "n_total": 69
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "left_up",
+            "right",
+            "right_down",
+            "right_up",
+            "up"
+        ],
+        "n_union_classes": 8
+    },
+    {
+        "file": "label/person_21_day_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "3": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 37,
+                    "right": 17,
+                    "left": 16,
+                    "up": 11,
+                    "left_up": 1
+                },
+                "n_total": 82
+            },
+            "5": {
+                "n_classes": 7,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "right_down",
+                    "right_up",
+                    "up"
+                ],
+                "counts": {
+                    "down": 42,
+                    "left": 23,
+                    "right": 22,
+                    "up": 7,
+                    "left_up": 4,
+                    "right_up": 2,
+                    "right_down": 1
+                },
+                "n_total": 101
+            },
+            "4": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "right_down",
+                    "up"
+                ],
+                "counts": {
+                    "down": 38,
+                    "left": 18,
+                    "right": 14,
+                    "up": 7,
+                    "right_down": 1,
+                    "left_up": 1
+                },
+                "n_total": 79
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_up",
+            "right",
+            "right_down",
+            "right_up",
+            "up"
+        ],
+        "n_union_classes": 7
+    },
+    {
+        "file": "label/person_21_day_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "5": {
+                "n_classes": 7,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "right_down",
+                    "up"
+                ],
+                "counts": {
+                    "down": 26,
+                    "right": 15,
+                    "left": 11,
+                    "left_up": 8,
+                    "up": 7,
+                    "left_down": 1,
+                    "right_down": 1
+                },
+                "n_total": 69
+            },
+            "3": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 24,
+                    "up": 11,
+                    "left": 11,
+                    "right": 10,
+                    "left_up": 1
+                },
+                "n_total": 57
+            },
+            "4": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 23,
+                    "right": 11,
+                    "left": 10,
+                    "up": 6,
+                    "left_up": 3,
+                    "left_down": 1
+                },
+                "n_total": 54
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "left_up",
+            "right",
+            "right_down",
+            "up"
+        ],
+        "n_union_classes": 7
+    },
+    {
+        "file": "label/person_21_night_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "5": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "right_down",
+                    "up"
+                ],
+                "counts": {
+                    "left": 20,
+                    "down": 19,
+                    "right": 17,
+                    "up": 10,
+                    "left_up": 8,
+                    "right_down": 3
+                },
+                "n_total": 77
+            },
+            "3": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "right": 22,
+                    "down": 17,
+                    "left": 15,
+                    "up": 11,
+                    "left_up": 4,
+                    "left_down": 1
+                },
+                "n_total": 70
+            },
+            "4": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "left": 19,
+                    "right": 18,
+                    "down": 17,
+                    "left_up": 11,
+                    "up": 6
+                },
+                "n_total": 71
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "left_up",
+            "right",
+            "right_down",
+            "up"
+        ],
+        "n_union_classes": 7
+    },
+    {
+        "file": "label/person_21_night_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "5": {
+                "n_classes": 8,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "right_down",
+                    "right_up",
+                    "up"
+                ],
+                "counts": {
+                    "down": 19,
+                    "left": 14,
+                    "right": 11,
+                    "left_up": 5,
+                    "up": 3,
+                    "left_down": 2,
+                    "right_down": 1,
+                    "right_up": 1
+                },
+                "n_total": 56
+            },
+            "3": {
+                "n_classes": 7,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "right_down",
+                    "up"
+                ],
+                "counts": {
+                    "down": 18,
+                    "left": 15,
+                    "right": 10,
+                    "up": 3,
+                    "left_up": 2,
+                    "left_down": 1,
+                    "right_down": 1
+                },
+                "n_total": 50
+            },
+            "4": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 17,
+                    "left": 13,
+                    "right": 11,
+                    "up": 5,
+                    "left_up": 2
+                },
+                "n_total": 48
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "left_up",
+            "right",
+            "right_down",
+            "right_up",
+            "up"
+        ],
+        "n_union_classes": 8
+    },
+    {
+        "file": "label/person_24_day_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "5": {
+                "n_classes": 8,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "right_down",
+                    "right_up",
+                    "up"
+                ],
+                "counts": {
+                    "down": 29,
+                    "left": 10,
+                    "left_down": 10,
+                    "right": 3,
+                    "left_up": 3,
+                    "up": 3,
+                    "right_up": 1,
+                    "right_down": 1
+                },
+                "n_total": 60
+            },
+            "3": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 38,
+                    "left": 8,
+                    "up": 5,
+                    "right": 3,
+                    "left_down": 1
+                },
+                "n_total": 55
+            },
+            "4": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 30,
+                    "up": 8,
+                    "left": 8,
+                    "right": 3,
+                    "left_down": 3
+                },
+                "n_total": 52
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "left_up",
+            "right",
+            "right_down",
+            "right_up",
+            "up"
+        ],
+        "n_union_classes": 8
+    },
+    {
+        "file": "label/person_24_day_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "5": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 29,
+                    "left": 7,
+                    "up": 6,
+                    "right": 5,
+                    "left_up": 2,
+                    "left_down": 2
+                },
+                "n_total": 51
+            },
+            "3": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 30,
+                    "left": 5,
+                    "right": 5,
+                    "up": 4,
+                    "left_up": 2
+                },
+                "n_total": 46
+            },
+            "4": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 27,
+                    "left": 5,
+                    "right": 5,
+                    "up": 5,
+                    "left_up": 1
+                },
+                "n_total": 43
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "left_up",
+            "right",
+            "up"
+        ],
+        "n_union_classes": 6
+    },
+    {
+        "file": "label/person_24_night_high_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "5": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 20,
+                    "left": 15,
+                    "right": 6,
+                    "up": 2,
+                    "left_down": 1
+                },
+                "n_total": 44
+            },
+            "3": {
+                "n_classes": 6,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_down",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 25,
+                    "left": 7,
+                    "right": 6,
+                    "up": 4,
+                    "left_up": 2,
+                    "left_down": 1
+                },
+                "n_total": 45
+            },
+            "4": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 21,
+                    "up": 8,
+                    "right": 6,
+                    "left": 5,
+                    "left_up": 2
+                },
+                "n_total": 42
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_down",
+            "left_up",
+            "right",
+            "up"
+        ],
+        "n_union_classes": 6
+    },
+    {
+        "file": "label/person_24_night_low_h265.json",
+        "annotators": [
+            "3",
+            "4",
+            "5"
+        ],
+        "per_annotator": {
+            "5": {
+                "n_classes": 5,
+                "classes": [
+                    "down",
+                    "left",
+                    "left_up",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 20,
+                    "left": 9,
+                    "right": 4,
+                    "up": 1,
+                    "left_up": 1
+                },
+                "n_total": 35
+            },
+            "3": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 18,
+                    "left": 9,
+                    "up": 7,
+                    "right": 4
+                },
+                "n_total": 38
+            },
+            "4": {
+                "n_classes": 4,
+                "classes": [
+                    "down",
+                    "left",
+                    "right",
+                    "up"
+                ],
+                "counts": {
+                    "down": 19,
+                    "left": 8,
+                    "up": 7,
+                    "right": 4
+                },
+                "n_total": 38
+            }
+        },
+        "union_classes": [
+            "down",
+            "left",
+            "left_up",
+            "right",
+            "up"
+        ],
+        "n_union_classes": 5
+    }
+]

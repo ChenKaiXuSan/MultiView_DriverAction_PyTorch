@@ -27,52 +27,17 @@ Date      	By	Comments
 """
 
 import json
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
 from sklearn.model_selection import GroupKFold
-
-
-label_mapping_Dict: Dict = {
-    0: "left",
-    1: "right",
-    2: "down",
-    3: "up",
-    4: "right_up",
-    5: "right_down",
-    6: "left_down",
-    7: "left_up",
-    8: "front",
-}
-
-environment_mapping_Dict: Dict = {
-    0: "夜多い",  # night_high
-    1: "夜少ない",  # night_low
-    2: "昼多い",  # day_high
-    3: "昼少ない",  # day_low
-}
-
-
-# 反向映射：label文件名里的 (day/night, high/low) -> 文件夹名
-ENV_KEY_TO_FOLDER = {
-    ("night", "high"): "夜多い",
-    ("night", "low"): "夜少ない",
-    ("day", "high"): "昼多い",
-    ("day", "low"): "昼少ない",
-}
-
-# 你期望的相机视频文件（按需增减）
-CAM_NAMES = ["front", "right", "left"]
-
-
-@dataclass
-class Sample:
-    person_id: str  # "01"
-    env_folder: str  # "夜多"
-    env_key: str  # "night_high"
-    label_path: Path  # .../label/person_01_night_high_h265.json
-    videos: Dict[str, Path]  # {"front": ..., "right": ..., "left": ...}
+from project.map_config import (
+    label_mapping_Dict,
+    environment_mapping_Dict,
+    ENV_KEY_TO_FOLDER,
+    CAM_NAMES,
+    VideoSample,
+)
 
 
 class DefineCrossValidation(object):
@@ -114,7 +79,7 @@ class DefineCrossValidation(object):
         highlow = parts[3]
         return person_id, daynight, highlow
 
-    def _collect_one_sample(self, label_path: Path) -> Sample | None:
+    def _collect_one_sample(self, label_path: Path) -> VideoSample | None:
         person_id, daynight, highlow = self._parse_label_filename(label_path)
 
         # label中的环境 -> 视频文件夹中文名
@@ -143,7 +108,7 @@ class DefineCrossValidation(object):
         if len(videos) == 0:
             return None
 
-        return Sample(
+        return VideoSample(
             person_id=person_id,
             env_folder=env_folder,
             env_key=env_key,
@@ -151,12 +116,12 @@ class DefineCrossValidation(object):
             videos=videos,
         )
 
-    def build_samples(self) -> List[Sample]:
+    def build_samples(self) -> List[VideoSample]:
         """
         Scan label directory, pair videos, return samples list.
         """
         label_files = sorted(self.annotation_path.glob("person_*_*.json"))
-        samples: List[Sample] = []
+        samples: List[VideoSample] = []
         for lp in label_files:
             try:
                 s = self._collect_one_sample(lp)
@@ -167,8 +132,8 @@ class DefineCrossValidation(object):
         return samples
 
     def split_by_person(
-        self, samples: List[Sample]
-    ) -> Dict[int, Dict[str, List[Sample]]]:
+        self, samples: List[VideoSample]
+    ) -> Dict[int, Dict[str, List[VideoSample]]]:
         """
         GroupKFold by person_id
         """
@@ -180,7 +145,7 @@ class DefineCrossValidation(object):
         indices = list(range(len(samples)))
 
         gkf = GroupKFold(n_splits=self.fold_count)
-        fold_dict: Dict[int, Dict[str, List[Sample]]] = {}
+        fold_dict: Dict[int, Dict[str, List[VideoSample]]] = {}
 
         for fold, (tr_idx, va_idx) in enumerate(gkf.split(indices, groups=groups)):
             train_samples = [samples[i] for i in tr_idx]
@@ -250,14 +215,14 @@ class DefineCrossValidation(object):
         with open(index_file, "r", encoding="utf-8") as f:
             serial = json.load(f)
 
-        fold_samples: Dict[int, Dict[str, List[Sample]]] = {}
+        fold_samples: Dict[int, Dict[str, List[VideoSample]]] = {}
         for kfold, d in serial.items():
             fold = int(kfold)
             fold_samples[fold] = {"train": [], "val": []}
             for split in ["train", "val"]:
                 for item in d[split]:
                     fold_samples[fold][split].append(
-                        Sample(
+                        VideoSample(
                             person_id=item["person_id"],
                             env_folder=item["env_folder"],
                             env_key=item["env_key"],

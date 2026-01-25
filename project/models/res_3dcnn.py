@@ -21,39 +21,11 @@ Date      	By	Comments
 """
 
 import logging
-from typing import List, Optional, Tuple
 import torch
-import torch.nn as nn
 from project.models.base_model import BaseModel
 
 
 logger = logging.getLogger(__name__)
-
-
-# ---------------------------- Main Model Class -------------------------------
-class LateFusionBlock(nn.Module):
-    def __init__(self, in_dim: int, out_dim: int):
-        super().__init__()
-        self.attn_mlp = nn.Sequential(
-            nn.Linear(1, out_dim),
-            nn.ReLU(),
-            nn.Linear(out_dim, out_dim),
-        )
-        self.alpha = nn.Parameter(torch.tensor(0.5))  # 可学习权重参数 α
-
-    def forward(self, main_feat: torch.Tensor, attn_map: torch.Tensor) -> torch.Tensor:
-        """
-        Args:
-            main_feat: 主干网络输出 (B, out_dim)
-            attn_map:  attention map (B, 1, T, H, W)
-
-        Returns:
-            torch.Tensor: 融合后的输出 (B, out_dim)
-        """
-        attn_feat = attn_map.mean(dim=[2, 3, 4])  # (B, 1)
-        attn_proj = self.attn_mlp(attn_feat)  # (B, out_dim)
-        out = self.alpha * main_feat + (1 - self.alpha) * attn_proj
-        return out
 
 
 class Res3DCNN(BaseModel):
@@ -66,20 +38,12 @@ class Res3DCNN(BaseModel):
         super().__init__(hparams=hparams)
 
         self.model_class_num = hparams.model.model_class_num
-        self.fuse_method = hparams.model.fuse_method
 
         self.model = self.init_resnet(
             self.model_class_num,
-            self.fuse_method,
         )
 
-        if self.fuse_method == "late":
-            self.late_fusion = LateFusionBlock(
-                in_dim=self.model_class_num,  # Input dimension from the main feature
-                out_dim=self.model_class_num,  # Output dimension for the attention map
-            )
-
-    def forward(self, video: torch.Tensor, attn_map: torch.Tensor) -> torch.Tensor:
+    def forward(self, video: torch.Tensor) -> torch.Tensor:
         """
         Args:
             video: (B, C, T, H, W)
@@ -89,38 +53,6 @@ class Res3DCNN(BaseModel):
             torch.Tensor: (B, C, T, H, W)
         """
 
-        if self.fuse_method == "late":
-            features = self.model(video)
-            output = self.late_fusion(features, attn_map)
-
-        else:
-            if self.fuse_method == "concat":
-                _input = torch.cat([video, attn_map], dim=1)
-            elif self.fuse_method == "add":
-                _input = video + attn_map
-            elif self.fuse_method == "mul":
-                _input = video * attn_map
-            elif self.fuse_method == "avg":
-                _input = (video + attn_map) / 2
-            elif self.fuse_method == "none":
-                _input = video
-            else:
-                raise KeyError(
-                    f"the fuse method {self.fuse_method} is not in the model zoo"
-                )
-
-            output = self.model(_input)
+        output = self.model(video)
 
         return output
-
-
-if __name__ == "__main__":
-    from omegaconf import OmegaConf
-
-    hparams = OmegaConf.create({"model": {"model_class_num": 3, "fuse_method": "late"}})
-
-    model = Res3DCNN(hparams)
-    video = torch.randn(2, 3, 8, 224, 224)
-    attn_map = torch.randn(2, 1, 8, 224, 224)
-    out = model(video, attn_map)
-    print(out.shape)  # Expected: (2, 3)

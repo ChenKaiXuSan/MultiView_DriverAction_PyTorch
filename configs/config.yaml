@@ -35,11 +35,13 @@ data:
   img_size: 224
 
   batch_size: 1 # load video number
+  video_batch_size: 32
+
   fold: 5 # the fold number of the cross validation
 
 model:
   backbone: 3dcnn # choices=[3dcnn, 2dcnn, cnn_lstm, two_stream], help='the backbone of the model'
-  model_class_num: 3 # the class num of model. 2 > [ASD, non_ASD]. 3 > [ASD, DHS, LCS_HipOA]. 4 > [ASD, DHS, LCS_HipOA, normal]
+  model_class_num: 9 # the class num, left, right, up, down, left_up, left_down, right_up, right_down, front
   use_side_heads: True # whether to use side heads for intermediate supervision
 
   fuse_method: late # add, mul, concat, none, late, avg, cross_atn, se_atn, pose_atn
@@ -57,7 +59,6 @@ train:
   view: multi # single or multi
 
   gpu: 0 # choices=[0, 1], help='the gpu number whicht to train'
-
 
 log_path: logs/train/${experiment}/${now:%Y-%m-%d}/${now:%H-%M-%S}
 experiment: view_${train.view}_${model.backbone}_fuse_method_${model.fuse_method}_${model.ablation_study}_${model.fusion_layers} # the experiment name, used for log path

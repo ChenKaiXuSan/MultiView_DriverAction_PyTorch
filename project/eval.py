@@ -36,7 +36,7 @@ from pytorch_lightning.loggers import CSVLogger
 from pytorch_lightning.callbacks import DeviceStatsMonitor
 
 # DataModule
-from project.dataloader.data_loader import WalkDataModule
+from project.dataloader.data_loader import DriverDataModule
 
 # Trainers (LightningModules)
 from project.trainer.baseline.train_3dcnn import Res3DCNNTrainer
@@ -68,16 +68,15 @@ def _select_module(hparams: DictConfig):
         raise ValueError(f"Unsupported fuse_method: {fm}")
 
 
-
 def _parse_ckpt_metric(path: str) -> Optional[Tuple[int, float, float]]:
     """Parse epoch, val_loss, val_acc from checkpoint filename."""
 
     base = os.path.basename(path)
     epoch, vloss, vacc = base.split("-")[0:3]
     vacc = vacc.replace(".ckpt", "")
-    
+
     return int(epoch), float(vloss), float(vacc)
-    
+
 
 def _find_best_ckpt_for_fold(log_path: str, fold: str | int) -> Optional[str]:
     """

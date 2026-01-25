@@ -34,7 +34,6 @@ from torchvision.transforms import (
 
 from project.dataloader.whole_video_dataset import whole_video_dataset
 from project.dataloader.utils import (
-    ApplyTransformToKey,
     Div255,
     UniformTemporalSubsample,
 )
@@ -105,58 +104,6 @@ class DriverDataModule(LightningDataModule):
             dataset_idx=self._dataset_idx["val"],
             transform=self.mapping_transform,
         )
-
-    # def collate_fn(self, batch):
-    #     """this function process the batch data, and return the batch data.
-
-    #     Args:
-    #         batch (list): the batch from the dataset.
-    #         The batch include the one patient info from the json file.
-    #         Here we only cat the one patient video tensor, and label tensor.
-
-    #     Returns:
-    #         dict: {video: torch.tensor, label: torch.tensor, info: list}
-    #     """
-
-    #     batch_label = []
-    #     batch_video = []
-    #     batch_attn_map = []
-
-    #     # * mapping label
-    #     for i in batch:
-    #         # logging.info(i['video'].shape)
-    #         gait_num, *_ = i["video"].shape
-    #         disease = i["disease"]
-
-    #         batch_video.append(i["video"])
-    #         batch_attn_map.append(i["attn_map"])
-
-    #         for _ in range(gait_num):
-    #             if disease in disease_to_num_mapping_Dict[self._class_num].keys():
-    #                 assert (
-    #                     disease_to_num_mapping_Dict[self._class_num][disease]
-    #                     == i["label"]
-    #                 ), "The disease label mapping is not correct!"
-
-    #                 batch_label.append(
-    #                     disease_to_num_mapping_Dict[self._class_num][disease]
-    #                 )
-    #             else:
-    #                 # * if the disease not in the mapping dict, then set the label to non-ASD.
-    #                 batch_label.append(
-    #                     disease_to_num_mapping_Dict[self._class_num]["non-ASD"]
-    #                 )
-
-    #     # video, b, c, t, h, w, which include the video frame
-    #     # attn_map, b, c, t, h, w, which include the attn map
-    #     # label, b, which include the label of the video
-    #     # sample info, the raw sample info
-    #     return {
-    #         "video": torch.cat(batch_video, dim=0),
-    #         "label": torch.tensor(batch_label),
-    #         "attn_map": torch.cat(batch_attn_map, dim=0),
-    #         "info": batch,
-    #     }
 
     def train_dataloader(self) -> DataLoader:
         """
