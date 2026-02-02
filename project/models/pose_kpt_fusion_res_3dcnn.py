@@ -45,7 +45,7 @@ class PoseKptFusionRes3DCNN(BaseModel):
             self.kpt_gate = nn.Sequential(
                 nn.Linear(self.num_classes * 2, self.kpt_gate_hidden_dim),
                 nn.ReLU(inplace=True),
-                nn.Linear(self.kpt_gate_hidden_dim, 1),
+                nn.Linear(self.kpt_gate_hidden_dim, self.num_classes),
             )
         else:
             self.kpt_gate = None
@@ -69,5 +69,6 @@ class PoseKptFusionRes3DCNN(BaseModel):
             gate_input = torch.cat([video_logits, kpt_logits], dim=1)
             alpha = torch.sigmoid(self.kpt_gate(gate_input))
             return (1.0 - alpha) * video_logits + alpha * kpt_logits
-
-        return (1.0 - self.kpt_fusion_weight) * video_logits + self.kpt_fusion_weight * kpt_logits
+        if self.kpt_fusion_strategy == "weighted":
+            return (1.0 - self.kpt_fusion_weight) * video_logits + self.kpt_fusion_weight * kpt_logits
+        raise ValueError(f"Unknown kpt_fusion_strategy: {self.kpt_fusion_strategy}")
