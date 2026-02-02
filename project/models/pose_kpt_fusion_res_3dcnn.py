@@ -27,13 +27,14 @@ class PoseKptFusionRes3DCNN(BaseModel):
         self.kpt_dropout = float(getattr(model_cfg, "kpt_dropout", 0.1))
         self.kpt_fusion_weight = float(getattr(model_cfg, "kpt_fusion_weight", 0.5))
         self.kpt_fusion_weight = max(0.0, min(1.0, self.kpt_fusion_weight))
-        self.kpt_fusion_strategy = getattr(model_cfg, "kpt_fusion_strategy", "weighted")
-        self.kpt_gate_hidden_dim = int(getattr(model_cfg, "kpt_gate_hidden_dim", 128))
-        if self.kpt_fusion_strategy not in {"gated", "weighted"}:
+        kpt_strategy = getattr(model_cfg, "kpt_fusion_strategy", "weighted")
+        if kpt_strategy not in {"gated", "weighted"}:
             raise ValueError(
-                f"Unknown kpt_fusion_strategy: {self.kpt_fusion_strategy}. "
+                f"Unknown kpt_fusion_strategy: {kpt_strategy}. "
                 "Valid strategies are: 'gated', 'weighted'."
             )
+        self.kpt_fusion_strategy = kpt_strategy
+        self.kpt_gate_hidden_dim = int(getattr(model_cfg, "kpt_gate_hidden_dim", 128))
 
         self.model = self.init_resnet(self.num_classes, self.ckpt)
 
@@ -53,7 +54,7 @@ class PoseKptFusionRes3DCNN(BaseModel):
                 nn.Linear(self.kpt_gate_hidden_dim, self.num_classes),
             )
         else:
-            self.kpt_gate = None
+            self.kpt_gate = nn.Identity()
 
     def forward(self, video: torch.Tensor, kpt: torch.Tensor) -> torch.Tensor:
         video_logits = self.model(video)
