@@ -34,7 +34,6 @@ class PoseKptFusionRes3DCNN(BaseModel):
                 "Valid strategies are: 'gated', 'weighted'."
             )
         self.kpt_fusion_strategy = kpt_strategy
-        self.kpt_gate_hidden_dim = int(getattr(model_cfg, "kpt_gate_hidden_dim", 128))
 
         self.model = self.init_resnet(self.num_classes, self.ckpt)
 
@@ -48,6 +47,7 @@ class PoseKptFusionRes3DCNN(BaseModel):
         )
         self.kpt_head = nn.Linear(self.kpt_hidden_dim, self.num_classes)
         if self.kpt_fusion_strategy == "gated":
+            self.kpt_gate_hidden_dim = int(getattr(model_cfg, "kpt_gate_hidden_dim", 128))
             self.kpt_gate = nn.Sequential(
                 nn.Linear(self.num_classes * 2, self.kpt_gate_hidden_dim),
                 nn.ReLU(inplace=True),
