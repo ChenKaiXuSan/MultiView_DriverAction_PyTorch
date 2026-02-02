@@ -29,6 +29,7 @@ from project.models.cross_attn_res_3dcnn import CrossAttentionRes3DCNN
 from project.models.se_attn_res_3dcnn import SEFusionRes3DCNN
 from project.models.res_3dcnn import Res3DCNN
 from project.models.pose_fusion_res_3dcnn import PoseFusionRes3DCNN
+from project.models.pose_kpt_fusion_res_3dcnn import PoseKptFusionRes3DCNN
 
 def select_model(hparams) -> nn.Module:
     """
@@ -51,6 +52,8 @@ def select_model(hparams) -> nn.Module:
             model = SEFusionRes3DCNN(hparams)
         elif fuse_method == "pose_atn":
             model = PoseFusionRes3DCNN(hparams)
+        elif fuse_method == "kpt_fuse":
+            model = PoseKptFusionRes3DCNN(hparams)
         else:
             model = Res3DCNN(hparams)
     else:

@@ -59,6 +59,11 @@ class DriverDataModule(LightningDataModule):
 
         self._experiment = opt.experiment
         self._backbone = opt.model.backbone
+        self._video_root = getattr(opt.data, "video_path", None)
+        self._kpt_root = getattr(opt.data, "kpt_path", None)
+        self._kpt_ext = getattr(opt.data, "kpt_ext", ".npz")
+        self._kpt_key = getattr(opt.data, "kpt_key", None)
+        self._kpt_num_samples = getattr(opt.train, "kpt_num_samples", None)
 
         self.mapping_transform = Compose(
             [
@@ -89,6 +94,11 @@ class DriverDataModule(LightningDataModule):
             experiment=self._experiment,
             dataset_idx=self._dataset_idx["train"],
             transform=self.mapping_transform,
+            video_root=self._video_root,
+            kpt_root=self._kpt_root,
+            kpt_ext=self._kpt_ext,
+            kpt_key=self._kpt_key,
+            kpt_num_samples=self._kpt_num_samples,
         )
 
         # val dataset
@@ -96,6 +106,11 @@ class DriverDataModule(LightningDataModule):
             experiment=self._experiment,
             dataset_idx=self._dataset_idx["val"],
             transform=self.mapping_transform,
+            video_root=self._video_root,
+            kpt_root=self._kpt_root,
+            kpt_ext=self._kpt_ext,
+            kpt_key=self._kpt_key,
+            kpt_num_samples=self._kpt_num_samples,
         )
 
         # test dataset
@@ -103,6 +118,11 @@ class DriverDataModule(LightningDataModule):
             experiment=self._experiment,
             dataset_idx=self._dataset_idx["val"],
             transform=self.mapping_transform,
+            video_root=self._video_root,
+            kpt_root=self._kpt_root,
+            kpt_ext=self._kpt_ext,
+            kpt_key=self._kpt_key,
+            kpt_num_samples=self._kpt_num_samples,
         )
 
     def train_dataloader(self) -> DataLoader:

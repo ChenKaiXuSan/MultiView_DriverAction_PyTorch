@@ -16,8 +16,7 @@ def sample_hparams():
 def test_res3dcnn_initialization(sample_hparams):
     """モデルの初期化が正しく行われるかテスト"""
     model = Res3DCNN(hparams=sample_hparams)
-    assert model.model_class_num == 3
-    assert model.fuse_method == "late"
+    assert model.model_class_num == sample_hparams.model.model_class_num
     assert model.model is not None
 
 

@@ -60,7 +60,7 @@ def _select_module(hparams: DictConfig):
         return PoseAttnTrainer(hparams)
     elif fm in ["add", "mul", "concat", "avg"]:
         return EarlyFusion3DCNNTrainer(hparams)
-    elif fm == "late":
+    elif fm in ["late", "kpt_fuse"]:
         return LateFusion3DCNNTrainer(hparams)
     elif fm == "none":
         return Res3DCNNTrainer(hparams)
@@ -215,7 +215,7 @@ def _eval_one_fold(hparams: DictConfig, dataset_idx, fold: int) -> Dict[str, flo
 
     # module and data
     module = _select_module(hparams)
-    datamodule = WalkDataModule(hparams, dataset_idx)
+    datamodule = DriverDataModule(hparams, dataset_idx)
 
     # locate ckpt
     ckpt = _find_best_ckpt_for_fold(hparams.eval.input_path, fold)

@@ -6,6 +6,7 @@ import logging
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Literal, List, Tuple
 
+import numpy as np
 import torch
 from torch.utils.data import Dataset
 from torchvision.io import read_video
@@ -32,15 +33,25 @@ class LabeledVideoDataset(Dataset):
     def __init__(
         self,
         experiment: str,
-        index_mapping: List[Sample],
+        index_mapping: List[VideoSample],
         transform: Optional[Callable[[torch.Tensor], torch.Tensor]] = None,
         decode_audio: bool = False,
+        kpt_root: Optional[Path] = None,
+        video_root: Optional[Path] = None,
+        kpt_ext: str = ".npz",
+        kpt_key: Optional[str] = None,
+        kpt_num_samples: Optional[int] = None,
     ) -> None:
         super().__init__()
         self._experiment = experiment
         self._index_mapping = index_mapping
         self._transform = transform
         self._decode_audio = bool(decode_audio)
+        self._kpt_root = Path(kpt_root) if kpt_root else None
+        self._video_root = Path(video_root) if video_root else None
+        self._kpt_ext = kpt_ext
+        self._kpt_key = kpt_key
+        self._kpt_num_samples = kpt_num_samples
 
         # label mapping: {class_id: "label_name"} -> {"label_name": class_id}
         self._label_to_id: Dict[str, int] = {
@@ -67,6 +78,65 @@ class LabeledVideoDataset(Dataset):
         if fps <= 0:
             raise ValueError(f"Invalid fps={fps} for video: {path}")
         return vframes, fps
+
+    def _video_to_kpt_path(self, video_path: Path) -> Path:
+        if self._kpt_root is None:
+            raise ValueError("kpt_root is not configured.")
+        if self._video_root is not None:
+            try:
+                relative = video_path.relative_to(self._video_root)
+            except ValueError:
+                relative = Path(video_path.name)
+        else:
+            relative = Path(video_path.name)
+        return (self._kpt_root / relative).with_suffix(self._kpt_ext)
+
+    def _load_one_kpt(self, path: Path) -> torch.Tensor:
+        if not path.exists():
+            raise FileNotFoundError(f"Missing kpt file: {path}")
+        with np.load(path, allow_pickle=False) as data:
+            if self._kpt_key and self._kpt_key in data:
+                arr = data[self._kpt_key]
+            else:
+                for key in ("kpt_3d", "kpt", "keypoints", "joints_3d", "pose"):
+                    if key in data:
+                        arr = data[key]
+                        break
+                else:
+                    if not data.files:
+                        raise ValueError(f"No arrays found in kpt file: {path}")
+                    arr = data[data.files[0]]
+
+        kpt = torch.as_tensor(arr, dtype=torch.float32)
+        if kpt.ndim == 4 and kpt.shape[0] == 1:
+            kpt = kpt.squeeze(0)
+        if kpt.ndim == 2:
+            kpt = kpt.unsqueeze(-1)
+        if kpt.ndim != 3:
+            raise ValueError(f"Unsupported kpt shape {kpt.shape} in {path}")
+        return kpt
+
+    @staticmethod
+    def _match_length(seq: torch.Tensor, target_len: int) -> torch.Tensor:
+        if seq.shape[0] == target_len:
+            return seq
+        if seq.shape[0] > target_len:
+            return seq[:target_len]
+        pad_len = target_len - seq.shape[0]
+        pad = seq[-1:].repeat(pad_len, *([1] * (seq.dim() - 1)))
+        return torch.cat([seq, pad], dim=0)
+
+    def _subsample_kpt(self, kpt: torch.Tensor) -> torch.Tensor:
+        if self._kpt_num_samples is None:
+            return kpt
+        t = int(kpt.shape[0])
+        if t <= 0:
+            return kpt
+        idx_float = torch.linspace(
+            0, max(t - 1, 0), self._kpt_num_samples, dtype=torch.float32
+        )
+        idx = torch.round(idx_float).long()
+        return kpt.index_select(0, idx)
 
     def _apply_transform(self, video_tchw: torch.Tensor) -> torch.Tensor:
         """
@@ -199,8 +269,46 @@ class LabeledVideoDataset(Dataset):
 
         return batch_front_t, batch_left_t, batch_right_t, labels, mapped_t
 
+    def split_kpt_with_label(
+        self,
+        front_kpt: torch.Tensor,  # (T,J,C)
+        left_kpt: torch.Tensor,  # (T,J,C)
+        right_kpt: torch.Tensor,  # (T,J,C)
+        timeline_list: List[Dict[str, Any]],
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        assert (
+            front_kpt.shape[0] == left_kpt.shape[0] == right_kpt.shape[0]
+        ), "All kpt views must have the same number of frames"
+
+        T = int(front_kpt.shape[0])
+        timeline = self._fill_tail_as_front(
+            timeline_list, total_frames=T, front_label="front"
+        )
+
+        batch_front: List[torch.Tensor] = []
+        batch_left: List[torch.Tensor] = []
+        batch_right: List[torch.Tensor] = []
+
+        for seg in timeline:
+            s, e = int(seg["start"]), int(seg["end"])
+            if e <= s:
+                continue
+
+            seg_front = self._subsample_kpt(front_kpt[s:e])
+            seg_left = self._subsample_kpt(left_kpt[s:e])
+            seg_right = self._subsample_kpt(right_kpt[s:e])
+
+            batch_front.append(seg_front)
+            batch_left.append(seg_left)
+            batch_right.append(seg_right)
+
+        batch_front_t = torch.stack(batch_front, dim=0)
+        batch_left_t = torch.stack(batch_left, dim=0)
+        batch_right_t = torch.stack(batch_right, dim=0)
+        return batch_front_t, batch_left_t, batch_right_t
+
     def __getitem__(self, index: int) -> Dict[str, Any]:
-        item = self._index_mapping[index]
+        item: VideoSample = self._index_mapping[index]
 
         # load 3 views (T,C,H,W)
         front_frames, _ = self._load_one_view(item.videos["front"])
@@ -230,6 +338,25 @@ class LabeledVideoDataset(Dataset):
             timeline_list,
         )
 
+        kpt_data = None
+        if self._kpt_root is not None:
+            front_kpt = self._load_one_kpt(
+                self._video_to_kpt_path(item.videos["front"])
+            )
+            left_kpt = self._load_one_kpt(self._video_to_kpt_path(item.videos["left"]))
+            right_kpt = self._load_one_kpt(
+                self._video_to_kpt_path(item.videos["right"])
+            )
+
+            front_kpt = self._match_length(front_kpt, int(front_frames.shape[0]))
+            left_kpt = self._match_length(left_kpt, int(front_frames.shape[0]))
+            right_kpt = self._match_length(right_kpt, int(front_frames.shape[0]))
+
+            kpt_front, kpt_left, kpt_right = self.split_kpt_with_label(
+                front_kpt, left_kpt, right_kpt, timeline_list
+            )
+            kpt_data = {"front": kpt_front, "left": kpt_left, "right": kpt_right}
+
         assert (
             batch_front.shape[0]
             == batch_left.shape[0]
@@ -238,7 +365,7 @@ class LabeledVideoDataset(Dataset):
             == len(labels)
         ), "Batch size mismatch after splitting"
 
-        return {
+        output = {
             "video": {
                 "front": batch_front,
                 "left": batch_left,
@@ -254,15 +381,28 @@ class LabeledVideoDataset(Dataset):
                 "env_key": item.env_key,
             },
         }
+        if kpt_data is not None:
+            output["kpt"] = kpt_data
+        return output
 
 
 def whole_video_dataset(
     experiment: str,
-    dataset_idx: List[Sample],
+    dataset_idx: List[VideoSample],
     transform: Optional[Callable[[torch.Tensor], torch.Tensor]] = None,
+    kpt_root: Optional[Path] = None,
+    video_root: Optional[Path] = None,
+    kpt_ext: str = ".npz",
+    kpt_key: Optional[str] = None,
+    kpt_num_samples: Optional[int] = None,
 ) -> LabeledVideoDataset:
     return LabeledVideoDataset(
         experiment=experiment,
         transform=transform,
         index_mapping=dataset_idx,
+        kpt_root=kpt_root,
+        video_root=video_root,
+        kpt_ext=kpt_ext,
+        kpt_key=kpt_key,
+        kpt_num_samples=kpt_num_samples,
     )

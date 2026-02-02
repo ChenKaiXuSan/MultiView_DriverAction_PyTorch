@@ -77,7 +77,7 @@ def train(hparams: DictConfig, dataset_idx, fold: int):
 
             if hparams.model.fuse_method in ["add", "mul", "concat", "avg"]:
                 classification_module = EarlyFusion3DCNNTrainer(hparams)
-            elif hparams.model.fuse_method == "late":
+            elif hparams.model.fuse_method in ["late", "kpt_fuse"]:
                 classification_module = LateFusion3DCNNTrainer(hparams)
             else:
                 raise ValueError("the experiment fuse method is not supported.")

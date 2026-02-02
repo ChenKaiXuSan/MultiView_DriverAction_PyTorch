@@ -74,7 +74,10 @@ class Res3DCNNTrainer(LightningModule):
     def training_step(self, batch: dict[str, torch.Tensor], batch_idx: int):
         # prepare the input and label
         video = batch["video"].detach()  # b, c, t, h, w
-        attn_map = batch["attn_map"].detach()  # b, c, t, h, w
+        attn_map = batch["attn_map"]  # b, c, t, h, w
+        if isinstance(attn_map, dict):
+            attn_map = attn_map.get("front", next(iter(attn_map.values())))
+        attn_map = attn_map.detach()
         label = batch["label"].detach().float()  # b
 
         b, c, t, h, w = video.shape
@@ -113,7 +116,10 @@ class Res3DCNNTrainer(LightningModule):
     def validation_step(self, batch: dict[str, torch.Tensor], batch_idx: int):
         # input and model define
         video = batch["video"].detach()  # b, c, t, h, w
-        attn_map = batch["attn_map"].detach()  # b, c, t, h, w
+        attn_map = batch["attn_map"]  # b, c, t, h, w
+        if isinstance(attn_map, dict):
+            attn_map = attn_map.get("front", next(iter(attn_map.values())))
+        attn_map = attn_map.detach()
         label = batch["label"].detach().float()  # b
 
         b, c, t, h, w = video.shape
@@ -167,7 +173,10 @@ class Res3DCNNTrainer(LightningModule):
     def test_step(self, batch: dict[str, torch.Tensor], batch_idx: int):
         # input and model define
         video = batch["video"].detach()  # b, c, t, h, w
-        attn_map = batch["attn_map"].detach()  # b, c, t, h, w
+        attn_map = batch["attn_map"]  # b, c, t, h, w
+        if isinstance(attn_map, dict):
+            attn_map = attn_map.get("front", next(iter(attn_map.values())))
+        attn_map = attn_map.detach()
         label = batch["label"].detach().float()  # b
 
         b, c, t, h, w = video.shape

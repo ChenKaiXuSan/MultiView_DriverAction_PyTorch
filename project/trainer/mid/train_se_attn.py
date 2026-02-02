@@ -74,6 +74,9 @@ class SEAttnTrainer(LightningModule):
     def training_step(self, batch: dict[str, torch.Tensor], batch_idx: int):
         video: torch.Tensor = batch["video"]
         attn_map: torch.Tensor = batch["attn_map"]
+        if isinstance(attn_map, dict):
+            attn_map = attn_map.get("front", next(iter(attn_map.values())))
+        attn_map = attn_map.detach()
         labels: torch.Tensor = batch["label"].long()
         B = video.size(0)
 
@@ -106,6 +109,9 @@ class SEAttnTrainer(LightningModule):
     def validation_step(self, batch: dict[str, torch.Tensor], batch_idx: int):
         video: torch.Tensor = batch["video"]
         attn_map: torch.Tensor = batch["attn_map"]
+        if isinstance(attn_map, dict):
+            attn_map = attn_map.get("front", next(iter(attn_map.values())))
+        attn_map = attn_map.detach()
         labels: torch.Tensor = batch["label"].long()
         B = video.size(0)
 
@@ -149,6 +155,9 @@ class SEAttnTrainer(LightningModule):
     def test_step(self, batch: dict[str, torch.Tensor], batch_idx: int):
         video: torch.Tensor = batch["video"]
         attn_map: torch.Tensor = batch["attn_map"]
+        if isinstance(attn_map, dict):
+            attn_map = attn_map.get("front", next(iter(attn_map.values())))
+        attn_map = attn_map.detach()
         labels: torch.Tensor = batch["label"].long()
         B = video.size(0)
 
