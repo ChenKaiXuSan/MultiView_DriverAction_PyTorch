@@ -54,6 +54,8 @@ model:
   kpt_hidden_dim: 128
   kpt_dropout: 0.1
   kpt_fusion_weight: 0.5
+  kpt_fusion_strategy: weighted
+  kpt_gate_hidden_dim: 128
 
 train:
   # Training config

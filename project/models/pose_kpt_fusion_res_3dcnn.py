@@ -27,6 +27,8 @@ class PoseKptFusionRes3DCNN(BaseModel):
         self.kpt_dropout = float(getattr(model_cfg, "kpt_dropout", 0.1))
         self.kpt_fusion_weight = float(getattr(model_cfg, "kpt_fusion_weight", 0.5))
         self.kpt_fusion_weight = max(0.0, min(1.0, self.kpt_fusion_weight))
+        self.kpt_fusion_strategy = getattr(model_cfg, "kpt_fusion_strategy", "weighted")
+        self.kpt_gate_hidden_dim = int(getattr(model_cfg, "kpt_gate_hidden_dim", 128))
 
         self.model = self.init_resnet(self.num_classes, self.ckpt)
 
@@ -39,6 +41,14 @@ class PoseKptFusionRes3DCNN(BaseModel):
             nn.ReLU(inplace=True),
         )
         self.kpt_head = nn.Linear(self.kpt_hidden_dim, self.num_classes)
+        if self.kpt_fusion_strategy == "gated":
+            self.kpt_gate = nn.Sequential(
+                nn.Linear(self.num_classes * 2, self.kpt_gate_hidden_dim),
+                nn.ReLU(inplace=True),
+                nn.Linear(self.kpt_gate_hidden_dim, 1),
+            )
+        else:
+            self.kpt_gate = None
 
     def forward(self, video: torch.Tensor, kpt: torch.Tensor) -> torch.Tensor:
         video_logits = self.model(video)
@@ -54,5 +64,10 @@ class PoseKptFusionRes3DCNN(BaseModel):
         kpt_feat = self.kpt_mlp(kpt_flat)
         kpt_feat = kpt_feat.view(B, T, J, -1).mean(dim=(1, 2))
         kpt_logits = self.kpt_head(kpt_feat)
+
+        if self.kpt_fusion_strategy == "gated":
+            gate_input = torch.cat([video_logits, kpt_logits], dim=1)
+            alpha = torch.sigmoid(self.kpt_gate(gate_input))
+            return (1.0 - alpha) * video_logits + alpha * kpt_logits
 
         return (1.0 - self.kpt_fusion_weight) * video_logits + self.kpt_fusion_weight * kpt_logits
