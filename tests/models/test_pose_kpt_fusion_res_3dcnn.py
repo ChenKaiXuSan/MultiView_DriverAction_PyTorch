@@ -35,7 +35,7 @@ def test_pose_kpt_fusion_gated_forward_shape(sample_hparams):
 
 
 def test_pose_kpt_fusion_weighted_forward_shape(sample_hparams):
-    weighted_hparams = OmegaConf.create(sample_hparams)
+    weighted_hparams = OmegaConf.merge({}, sample_hparams)
     weighted_hparams.model.kpt_fusion_strategy = "weighted"
     model = PoseKptFusionRes3DCNN(hparams=weighted_hparams)
     model.eval()
