@@ -129,9 +129,7 @@ class LateFusion3DCNNTrainer(LightningModule):
 
         if self.batch_size == 1:
             videos = {k: v.detach().squeeze(0) for k, v in videos.items()}
-            label = label.squeeze()
-            if label.ndim == 0:
-                label = label.unsqueeze(0)
+            label = label.view(-1)
             if kpts is not None:
                 kpts = {k: v.detach().squeeze(0) for k, v in kpts.items()}
         else:

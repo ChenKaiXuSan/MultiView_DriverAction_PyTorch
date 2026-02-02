@@ -25,6 +25,8 @@ class PoseKptFusionRes3DCNN(BaseModel):
         self.ckpt = getattr(model_cfg, "ckpt_path", "")
         self.kpt_hidden_dim = int(getattr(model_cfg, "kpt_hidden_dim", 128))
         self.kpt_dropout = float(getattr(model_cfg, "kpt_dropout", 0.1))
+        self.kpt_fusion_weight = float(getattr(model_cfg, "kpt_fusion_weight", 0.5))
+        self.kpt_fusion_weight = max(0.0, min(1.0, self.kpt_fusion_weight))
 
         self.model = self.init_resnet(self.num_classes, self.ckpt)
 
@@ -53,4 +55,4 @@ class PoseKptFusionRes3DCNN(BaseModel):
         kpt_feat = kpt_feat.view(B, T, J, -1).mean(dim=(1, 2))
         kpt_logits = self.kpt_head(kpt_feat)
 
-        return (video_logits + kpt_logits) / 2.0
+        return (1.0 - self.kpt_fusion_weight) * video_logits + self.kpt_fusion_weight * kpt_logits

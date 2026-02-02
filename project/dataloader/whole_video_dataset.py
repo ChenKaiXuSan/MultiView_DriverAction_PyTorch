@@ -278,7 +278,11 @@ class LabeledVideoDataset(Dataset):
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         assert (
             front_kpt.shape[0] == left_kpt.shape[0] == right_kpt.shape[0]
-        ), "All kpt views must have the same number of frames"
+        ), (
+            "All kpt views must have the same number of frames, "
+            f"got front={front_kpt.shape[0]}, left={left_kpt.shape[0]}, "
+            f"right={right_kpt.shape[0]}"
+        )
 
         T = int(front_kpt.shape[0])
         timeline = self._fill_tail_as_front(

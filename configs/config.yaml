@@ -53,6 +53,7 @@ model:
   kpt_in_dim: 3
   kpt_hidden_dim: 128
   kpt_dropout: 0.1
+  kpt_fusion_weight: 0.5
 
 train:
   # Training config
