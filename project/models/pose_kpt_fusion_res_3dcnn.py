@@ -74,6 +74,4 @@ class PoseKptFusionRes3DCNN(BaseModel):
             gate_input = torch.cat([video_logits, kpt_logits], dim=1)
             alpha = torch.sigmoid(self.kpt_gate(gate_input))
             return (1.0 - alpha) * video_logits + alpha * kpt_logits
-        elif self.kpt_fusion_strategy == "weighted":
-            return (1.0 - self.kpt_fusion_weight) * video_logits + self.kpt_fusion_weight * kpt_logits
-        raise RuntimeError("Unexpected kpt_fusion_strategy validation failure.")
+        return (1.0 - self.kpt_fusion_weight) * video_logits + self.kpt_fusion_weight * kpt_logits
