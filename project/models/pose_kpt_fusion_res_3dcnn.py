@@ -54,7 +54,7 @@ class PoseKptFusionRes3DCNN(BaseModel):
                 nn.Linear(self.kpt_gate_hidden_dim, self.num_classes),
             )
         else:
-            self.kpt_gate = nn.Identity()
+            self.kpt_gate = None
 
     def forward(self, video: torch.Tensor, kpt: torch.Tensor) -> torch.Tensor:
         video_logits = self.model(video)
