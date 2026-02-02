@@ -73,6 +73,7 @@ class PoseKptFusionRes3DCNN(BaseModel):
 
         if self.kpt_fusion_strategy == "gated":
             gate_input = torch.cat([video_logits, kpt_logits], dim=1)
+            # alpha=0 -> only video, alpha=1 -> only kpt
             alpha = torch.sigmoid(self.kpt_gate(gate_input))
             return (1.0 - alpha) * video_logits + alpha * kpt_logits
         return (1.0 - self.kpt_fusion_weight) * video_logits + self.kpt_fusion_weight * kpt_logits
