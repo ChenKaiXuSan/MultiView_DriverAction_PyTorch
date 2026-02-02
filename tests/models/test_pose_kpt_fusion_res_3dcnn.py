@@ -21,7 +21,7 @@ def sample_hparams():
     )
 
 
-def test_pose_kpt_fusion_forward_shape(sample_hparams):
+def test_pose_kpt_fusion_gated_forward_shape(sample_hparams):
     model = PoseKptFusionRes3DCNN(hparams=sample_hparams)
     model.eval()
 
