@@ -72,4 +72,7 @@ class PoseKptFusionRes3DCNN(BaseModel):
         elif self.kpt_fusion_strategy == "weighted":
             return (1.0 - self.kpt_fusion_weight) * video_logits + self.kpt_fusion_weight * kpt_logits
         else:
-            raise ValueError(f"Unknown kpt_fusion_strategy: {self.kpt_fusion_strategy}")
+            raise ValueError(
+                f"Unknown kpt_fusion_strategy: {self.kpt_fusion_strategy}. "
+                "Valid strategies are: 'gated', 'weighted'."
+            )
