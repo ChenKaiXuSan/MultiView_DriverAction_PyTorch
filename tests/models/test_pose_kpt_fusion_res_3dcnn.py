@@ -1,6 +1,7 @@
 import pytest
 import torch
 from omegaconf import OmegaConf
+from copy import deepcopy
 
 from project.models.pose_kpt_fusion_res_3dcnn import PoseKptFusionRes3DCNN
 
@@ -35,7 +36,7 @@ def test_pose_kpt_fusion_gated_forward_shape(sample_hparams):
 
 
 def test_pose_kpt_fusion_weighted_forward_shape(sample_hparams):
-    weighted_hparams = OmegaConf.create(OmegaConf.to_container(sample_hparams))
+    weighted_hparams = deepcopy(sample_hparams)
     weighted_hparams.model.kpt_fusion_strategy = "weighted"
     model = PoseKptFusionRes3DCNN(hparams=weighted_hparams)
     model.eval()
