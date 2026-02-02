@@ -29,6 +29,11 @@ class PoseKptFusionRes3DCNN(BaseModel):
         self.kpt_fusion_weight = max(0.0, min(1.0, self.kpt_fusion_weight))
         self.kpt_fusion_strategy = getattr(model_cfg, "kpt_fusion_strategy", "weighted")
         self.kpt_gate_hidden_dim = int(getattr(model_cfg, "kpt_gate_hidden_dim", 128))
+        if self.kpt_fusion_strategy not in {"gated", "weighted"}:
+            raise ValueError(
+                f"Unknown kpt_fusion_strategy: {self.kpt_fusion_strategy}. "
+                "Valid strategies are: 'gated', 'weighted'."
+            )
 
         self.model = self.init_resnet(self.num_classes, self.ckpt)
 
@@ -71,8 +76,4 @@ class PoseKptFusionRes3DCNN(BaseModel):
             return (1.0 - alpha) * video_logits + alpha * kpt_logits
         elif self.kpt_fusion_strategy == "weighted":
             return (1.0 - self.kpt_fusion_weight) * video_logits + self.kpt_fusion_weight * kpt_logits
-        else:
-            raise ValueError(
-                f"Unknown kpt_fusion_strategy: {self.kpt_fusion_strategy}. "
-                "Valid strategies are: 'gated', 'weighted'."
-            )
+        raise RuntimeError("Unexpected kpt_fusion_strategy validation failure.")
