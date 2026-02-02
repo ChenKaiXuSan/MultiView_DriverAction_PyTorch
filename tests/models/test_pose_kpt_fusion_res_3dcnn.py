@@ -35,8 +35,9 @@ def test_pose_kpt_fusion_gated_forward_shape(sample_hparams):
 
 
 def test_pose_kpt_fusion_weighted_forward_shape(sample_hparams):
-    sample_hparams.model.kpt_fusion_strategy = "weighted"
-    model = PoseKptFusionRes3DCNN(hparams=sample_hparams)
+    weighted_hparams = sample_hparams.copy()
+    weighted_hparams.model.kpt_fusion_strategy = "weighted"
+    model = PoseKptFusionRes3DCNN(hparams=weighted_hparams)
     model.eval()
 
     video = torch.randn(1, 3, 8, 224, 224)
@@ -45,4 +46,4 @@ def test_pose_kpt_fusion_weighted_forward_shape(sample_hparams):
     with torch.no_grad():
         output = model(video, kpt)
 
-    assert output.shape == (1, sample_hparams.model.model_class_num)
+    assert output.shape == (1, weighted_hparams.model.model_class_num)
