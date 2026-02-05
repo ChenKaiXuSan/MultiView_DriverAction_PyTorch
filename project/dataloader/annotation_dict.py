@@ -10,7 +10,7 @@ Comment:
 
 Have a good code time :)
 -----
-Last Modified: Thursday February 5th 2026 10:12:01 pm
+Last Modified: Thursday February 5th 2026 11:48:19 pm
 Modified By: the developer formerly known as Kaixu Chen at <chenkaixusan@gmail.com>
 -----
 Copyright (c) 2026 The University of Tsukuba
@@ -59,7 +59,7 @@ def get_annotation_dict(file_path: str) -> dict:
         if len(parts) < 4:
             continue
 
-        person = f"{parts[0]}_{parts[1]}"
+        person = f"{parts[1]}" # 只需要person编号
         env_key = f"{parts[2]}_{parts[3]}"
         env_name = MAPPING.get(env_key, env_key)
 

@@ -64,3 +64,16 @@ class VideoSample:
     label_path: Path  # .../label/person_01_night_high_h265.json
     videos: Dict[str, Path]  # {"front": ..., "right": ..., "left": ...}
     sam3d_kpts: Dict[str, Path] = None  # {"front": ..., "right": ..., "left": ...} SAM 3D body keypoints directory
+
+
+# 定义需要保留的关键点索引：头部 + 肩部/颈部 + 双手
+KEEP_KEYPOINT_INDICES = (
+    # 头部: 鼻子、眼睛、耳朵
+    list(range(0, 5))  # 0-4: nose, left-eye, right-eye, left-ear, right-ear
+    # 肩部和颈部
+    + [5, 6]  # left-shoulder, right-shoulder
+    # 双手（包括手腕）
+    + list(range(21, 63))  # 21-62: 右手(21-41) + 左手(42-62)
+    # 肩峰和颈部
+    + [67, 68, 69]  # left-acromion, right-acromion, neck
+)

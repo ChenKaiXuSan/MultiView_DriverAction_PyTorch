@@ -21,7 +21,6 @@ Date      	By	Comments
 """
 
 from typing import Any, Callable, Dict, Optional
-from pathlib import Path
 
 import torch
 from pytorch_lightning import LightningDataModule
@@ -62,9 +61,8 @@ class DriverDataModule(LightningDataModule):
         self._experiment = opt.experiment
         self._backbone = opt.model.backbone
 
-        # * new config paths for annotation and SAM 3D body data
+        # * new config paths for annotation
         self._annotation_file = opt.paths.start_mid_end_path
-        self._sam3d_results_path = Path(opt.paths.sam3d_results_path)
         self._annotation_dict = None  # lazy load in setup()
 
         self.mapping_transform = Compose(
@@ -95,20 +93,11 @@ class DriverDataModule(LightningDataModule):
         if self._annotation_dict is None:
             self._annotation_dict = get_annotation_dict(self._annotation_file)
 
-        # * build sam3d_body_dirs from config path
-        # sam3d_body_dirs format: {"front": Path(...), "left": Path(...), "right": Path(...)}
-        sam3d_body_dirs = {
-            "front": self._sam3d_results_path / "front",
-            "left": self._sam3d_results_path / "left",
-            "right": self._sam3d_results_path / "right",
-        }
-
         # train dataset
         self.train_gait_dataset = whole_video_dataset(
             experiment=self._experiment,
             dataset_idx=self._dataset_idx["train"],
             annotation_file=self._annotation_file,
-            sam3d_body_dirs=sam3d_body_dirs,
             transform=self.mapping_transform,
         )
 
@@ -117,7 +106,6 @@ class DriverDataModule(LightningDataModule):
             experiment=self._experiment,
             dataset_idx=self._dataset_idx["val"],
             annotation_file=self._annotation_file,
-            sam3d_body_dirs=sam3d_body_dirs,
             transform=self.mapping_transform,
         )
 
@@ -126,7 +114,6 @@ class DriverDataModule(LightningDataModule):
             experiment=self._experiment,
             dataset_idx=self._dataset_idx["val"],
             annotation_file=self._annotation_file,
-            sam3d_body_dirs=sam3d_body_dirs,
             transform=self.mapping_transform,
         )
 

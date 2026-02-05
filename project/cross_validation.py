@@ -52,10 +52,10 @@ class DefineCrossValidation(object):
 
     def __init__(self, config) -> None:
         self.video_path: Path = Path(
-            config.data.video_path
+            config.paths.video_path
         )  # e.g. /workspace/data/videos
         self.annotation_path: Path = Path(
-            config.data.annotation_path
+            config.paths.annotation_path
         )  # e.g. /workspace/data/label
         self.sam3d_results_path: Path = Path(
             config.paths.sam3d_results_path
@@ -63,7 +63,7 @@ class DefineCrossValidation(object):
 
         self.fold_count: int = int(config.data.fold)
         self.index_mapping: Path = Path(
-            config.data.index_mapping
+            config.paths.index_mapping
         )  # folder to save/load index.json
 
     # --------- helpers ---------

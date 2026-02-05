@@ -12,7 +12,7 @@ from torch.utils.data import Dataset
 from torchvision.io import read_video
 
 from project.dataloader.prepare_label_dict import prepare_label_dict
-from project.map_config import VideoSample, label_mapping_Dict
+from project.map_config import VideoSample, label_mapping_Dict, KEEP_KEYPOINT_INDICES
 from project.dataloader.annotation_dict import get_annotation_dict
 
 logger = logging.getLogger(__name__)
@@ -82,13 +82,14 @@ class LabeledVideoDataset(Dataset):
     ) -> Optional[torch.Tensor]:
         """
         Load SAM 3D body 3D keypoints for a list of frame indices.
+        Filter keypoints based on KEEP_KEYPOINT_INDICES from map_config.
         
         Args:
             sam3d_dir: Directory containing frame npz files (e.g., .../front/)
             frame_indices: List of frame indices to load
         
         Returns:
-            Tensor of shape (num_frames, num_keypoints, 3) or None if not available
+            Tensor of shape (num_frames, num_kept_keypoints, 3) or None if not available
         """
         if not sam3d_dir.exists():
             logger.warning(f"SAM 3D body directory not found: {sam3d_dir}")
@@ -101,7 +102,7 @@ class LabeledVideoDataset(Dataset):
             if not npz_file.exists():
                 logger.debug(f"SAM 3D body file not found: {npz_file}")
                 # 如果某一帧数据缺失，使用零向量占位
-                kpts_list.append(np.zeros((0, 3), dtype=np.float32))
+                kpts_list.append(np.zeros((len(KEEP_KEYPOINT_INDICES), 3), dtype=np.float32))
                 continue
             
             try:
@@ -110,8 +111,8 @@ class LabeledVideoDataset(Dataset):
                 
                 # 尝试从输出中提取3D keypoints
                 # 根据SAM 3D body的输出格式调整这里
-                if 'keypoints_3d' in output:
-                    kpts_3d = output['keypoints_3d']
+                if 'pred_keypoints_3d' in output:
+                    kpts_3d = output['pred_keypoints_3d']
                 elif 'poses' in output:
                     # 如果是SMPL格式的输出
                     kpts_3d = output['poses']
@@ -123,24 +124,31 @@ class LabeledVideoDataset(Dataset):
                 if kpts_3d.ndim == 1:
                     kpts_3d = kpts_3d.reshape(-1, 3)
                 
-                kpts_list.append(kpts_3d)
+                # 根据 KEEP_KEYPOINT_INDICES 过滤关键点
+                try:
+                    filtered_kpts = kpts_3d[list(KEEP_KEYPOINT_INDICES)]
+                except (IndexError, TypeError):
+                    logger.debug(f"Error filtering keypoints with KEEP_KEYPOINT_INDICES for {npz_file}")
+                    # 如果索引越界，使用零向量
+                    filtered_kpts = np.zeros((len(KEEP_KEYPOINT_INDICES), 3), dtype=np.float32)
+                
+                kpts_list.append(filtered_kpts)
             except Exception as e:
                 logger.debug(f"Error loading SAM 3D body from {npz_file}: {e}")
-                kpts_list.append(np.zeros((0, 3), dtype=np.float32))
+                kpts_list.append(np.zeros((len(KEEP_KEYPOINT_INDICES), 3), dtype=np.float32))
         
-        # 统一keypoint数量（使用第一个有效帧的keypoint数）
-        valid_kpts = [k for k in kpts_list if k.shape[0] > 0]
-        if not valid_kpts:
-            return None
+        # 所有帧现在应该有相同的 keypoint 数量
+        num_keypoints = len(KEEP_KEYPOINT_INDICES)
         
-        num_keypoints = valid_kpts[0].shape[0]
-        
-        # Pad all keypoints to the same dimension
+        # Stack all keypoints
         kpts_array = np.zeros((len(frame_indices), num_keypoints, 3), dtype=np.float32)
         for i, kpts in enumerate(kpts_list):
-            if kpts.shape[0] > 0:
-                kpts = kpts[:num_keypoints]  # Truncate if too many
-                kpts_array[i, :kpts.shape[0]] = kpts
+            if kpts.shape[0] == num_keypoints:
+                kpts_array[i] = kpts
+            elif kpts.shape[0] > 0:
+                # 如果形状不匹配，只复制可用部分
+                min_len = min(kpts.shape[0], num_keypoints)
+                kpts_array[i, :min_len] = kpts[:min_len]
         
         return torch.from_numpy(kpts_array)
 
@@ -153,6 +161,65 @@ class LabeledVideoDataset(Dataset):
         if self._transform is None:
             return video_tchw
         return self._transform(video_tchw)
+
+    def _validate_output_shapes(
+        self,
+        batch_front: torch.Tensor,
+        batch_left: torch.Tensor,
+        batch_right: torch.Tensor,
+        mapped_labels: torch.LongTensor,
+        labels: List[str],
+        front_kpts_batch: Optional[torch.Tensor],
+        left_kpts_batch: Optional[torch.Tensor],
+        right_kpts_batch: Optional[torch.Tensor],
+    ) -> None:
+        """
+        Validate output tensor shapes and consistency.
+
+        Args:
+            batch_front, batch_left, batch_right: Video tensors (B, C, T, H, W)
+            mapped_labels: Label tensor (B,)
+            labels: List of label strings
+            front_kpts_batch, left_kpts_batch, right_kpts_batch: Keypoint tensors (B, T, K, 3) or None
+        
+        Raises:
+            AssertionError: If shapes are inconsistent
+        """
+        # Video batch consistency check
+        assert (
+            batch_front.shape[0]
+            == batch_left.shape[0]
+            == batch_right.shape[0]
+            == mapped_labels.shape[0]
+            == len(labels)
+        ), "Batch size mismatch after splitting"
+        
+        B = batch_front.shape[0]
+        
+        # Keypoint tensor dimension and batch size checks
+        if front_kpts_batch is not None:
+            assert front_kpts_batch.ndim == 4, f"front_kpts must be 4D (B, T, K, 3), got {front_kpts_batch.ndim}D"
+            assert front_kpts_batch.shape[0] == B, f"front_kpts batch size {front_kpts_batch.shape[0]} != {B}"
+            assert front_kpts_batch.shape[3] == 3, f"front_kpts must have 3 coordinates, got {front_kpts_batch.shape[3]}"
+            
+        if left_kpts_batch is not None:
+            assert left_kpts_batch.ndim == 4, f"left_kpts must be 4D (B, T, K, 3), got {left_kpts_batch.ndim}D"
+            assert left_kpts_batch.shape[0] == B, f"left_kpts batch size {left_kpts_batch.shape[0]} != {B}"
+            assert left_kpts_batch.shape[3] == 3, f"left_kpts must have 3 coordinates, got {left_kpts_batch.shape[3]}"
+            
+        if right_kpts_batch is not None:
+            assert right_kpts_batch.ndim == 4, f"right_kpts must be 4D (B, T, K, 3), got {right_kpts_batch.ndim}D"
+            assert right_kpts_batch.shape[0] == B, f"right_kpts batch size {right_kpts_batch.shape[0]} != {B}"
+            assert right_kpts_batch.shape[3] == 3, f"right_kpts must have 3 coordinates, got {right_kpts_batch.shape[3]}"
+        
+        # Ensure all keypoint tensors have the same T and K if they exist
+        valid_kpts_tensors = [t for t in [front_kpts_batch, left_kpts_batch, right_kpts_batch] if t is not None]
+        if len(valid_kpts_tensors) > 1:
+            T_kpts = valid_kpts_tensors[0].shape[1]
+            K_kpts = valid_kpts_tensors[0].shape[2]
+            for i, kpts_t in enumerate(valid_kpts_tensors[1:], 1):
+                assert kpts_t.shape[1] == T_kpts, f"Keypoint tensor {i} time dim {kpts_t.shape[1]} != {T_kpts}"
+                assert kpts_t.shape[2] == K_kpts, f"Keypoint tensor {i} keypoint dim {kpts_t.shape[2]} != {K_kpts}"
 
     # ---------------- Timeline utils ----------------
     @staticmethod
@@ -214,18 +281,20 @@ class LabeledVideoDataset(Dataset):
         front_kpts: Optional[torch.Tensor] = None,  # (T, K, 3) 
         left_kpts: Optional[torch.Tensor] = None,   # (T, K, 3)
         right_kpts: Optional[torch.Tensor] = None,  # (T, K, 3)
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, List[str], torch.LongTensor, 
-               Dict[str, Optional[torch.Tensor]]]:
+    ) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor], Optional[torch.Tensor], 
+               torch.Tensor, torch.Tensor, torch.Tensor, List[str], torch.LongTensor]:
         """
         Split video frames and keypoints according to label timeline.
 
         Returns:
+            front_kpts_batch: (B, T, K, 3) or None
+            left_kpts_batch: (B, T, K, 3) or None
+            right_kpts_batch: (B, T, K, 3) or None
             batch_front: (B, C, T, H, W)  
             batch_left: (B, C, T, H, W)
             batch_right: (B, C, T, H, W)
             labels: List[str]
             mapped_labels: (B,)
-            kpts_dict: {"front": (B, T, K, 3) or None, "left": ..., "right": ...}
         """
         assert (
             front_view.shape[0] == left_view.shape[0] == right_view.shape[0]
@@ -288,6 +357,19 @@ class LabeledVideoDataset(Dataset):
         
         # Stack keypoint tensors if available
         kpts_dict = {}
+        max_t_across_views = 0
+        
+        # First pass: determine max T across all views to ensure consistency
+        for view, kpts_list in [("front", batch_front_kpts), 
+                                 ("left", batch_left_kpts), 
+                                 ("right", batch_right_kpts)]:
+            if any(k is not None for k in kpts_list):
+                valid_kpts = [k for k in kpts_list if k is not None]
+                if valid_kpts:
+                    max_t_view = max(k.shape[0] for k in valid_kpts)
+                    max_t_across_views = max(max_t_across_views, max_t_view)
+        
+        # Second pass: stack and pad keypoint tensors
         for view, kpts_list in [("front", batch_front_kpts), 
                                  ("left", batch_left_kpts), 
                                  ("right", batch_right_kpts)]:
@@ -296,14 +378,13 @@ class LabeledVideoDataset(Dataset):
                 valid_kpts = [k for k in kpts_list if k is not None]
                 if valid_kpts:
                     kpt_shape = valid_kpts[0].shape[1:]  # (K, 3)
-                    max_t = max(k.shape[0] for k in valid_kpts)
                     padded_list = []
                     for k in kpts_list:
                         if k is None:
-                            padded_list.append(torch.zeros(max_t, *kpt_shape, dtype=torch.float32))
+                            padded_list.append(torch.zeros(max_t_across_views, *kpt_shape, dtype=torch.float32))
                         else:
-                            if k.shape[0] < max_t:
-                                pad = torch.zeros(max_t - k.shape[0], *kpt_shape, dtype=torch.float32)
+                            if k.shape[0] < max_t_across_views:
+                                pad = torch.zeros(max_t_across_views - k.shape[0], *kpt_shape, dtype=torch.float32)
                                 padded_list.append(torch.cat([k, pad], dim=0))
                             else:
                                 padded_list.append(k)
@@ -313,7 +394,16 @@ class LabeledVideoDataset(Dataset):
             else:
                 kpts_dict[view] = None
 
-        return batch_front_t, batch_left_t, batch_right_t, labels, mapped_t, kpts_dict
+        return (
+            kpts_dict.get("front"),
+            kpts_dict.get("left"),
+            kpts_dict.get("right"),
+            batch_front_t,
+            batch_left_t,
+            batch_right_t,
+            labels,
+            mapped_t,
+        )
 
     def __getitem__(self, index: int) -> Dict[str, Any]:
         item = self._index_mapping[index]
@@ -353,29 +443,31 @@ class LabeledVideoDataset(Dataset):
         right_frames = right_frames[start_frame:end_frame]
 
         # Load SAM 3D body keypoints for all three views
+        # Keypoint paths come from item.sam3d_kpts (VideoSample)
         frame_indices = list(range(start_frame, end_frame))
         
         front_kpts = None
         left_kpts = None
         right_kpts = None
         
-        if "front" in self._sam3d_body_dirs:
-            front_kpts = self._load_sam3d_body_kpts(
-                self._sam3d_body_dirs["front"], 
-                frame_indices
-            )
-        
-        if "left" in self._sam3d_body_dirs:
-            left_kpts = self._load_sam3d_body_kpts(
-                self._sam3d_body_dirs["left"], 
-                frame_indices
-            )
-        
-        if "right" in self._sam3d_body_dirs:
-            right_kpts = self._load_sam3d_body_kpts(
-                self._sam3d_body_dirs["right"], 
-                frame_indices
-            )
+        if item.sam3d_kpts:
+            if "front" in item.sam3d_kpts:
+                front_kpts = self._load_sam3d_body_kpts(
+                    item.sam3d_kpts["front"], 
+                    frame_indices
+                )
+            
+            if "left" in item.sam3d_kpts:
+                left_kpts = self._load_sam3d_body_kpts(
+                    item.sam3d_kpts["left"], 
+                    frame_indices
+                )
+            
+            if "right" in item.sam3d_kpts:
+                right_kpts = self._load_sam3d_body_kpts(
+                    item.sam3d_kpts["right"], 
+                    frame_indices
+                )
 
         # labels (ensure total_end = T)
         label_dict = prepare_label_dict(
@@ -384,12 +476,14 @@ class LabeledVideoDataset(Dataset):
         timeline_list = label_dict.get("timeline_list", [])
 
         (
+            front_kpts_batch,
+            left_kpts_batch,
+            right_kpts_batch,
             batch_front,
             batch_left,
             batch_right,
             labels,
             mapped_labels,
-            kpts_dict,
         ) = self.split_frame_with_label(
             front_frames,
             left_frames,
@@ -400,21 +494,28 @@ class LabeledVideoDataset(Dataset):
             right_kpts=right_kpts,
         )
 
-        assert (
-            batch_front.shape[0]
-            == batch_left.shape[0]
-            == batch_right.shape[0]
-            == mapped_labels.shape[0]
-            == len(labels)
-        ), "Batch size mismatch after splitting"
-
+        # Validate output shapes
+        self._validate_output_shapes(
+            batch_front,
+            batch_left,
+            batch_right,
+            mapped_labels,
+            labels,
+            front_kpts_batch,
+            left_kpts_batch,
+            right_kpts_batch,
+        )
         return {
+            "sam3d_kpt": {
+                "front": front_kpts_batch,  
+                "left": left_kpts_batch,  
+                "right": right_kpts_batch,
+            },
             "video": {
                 "front": batch_front,
                 "left": batch_left,
                 "right": batch_right,
             },
-            "sam3d_kpt": kpts_dict,  # {"front": Tensor or None, "left": ..., "right": ...}
             "label": mapped_labels,  # LongTensor (B,)
             "label_info": labels,  # List[str]
             "meta": {
@@ -434,7 +535,6 @@ def whole_video_dataset(
     experiment: str,
     dataset_idx: List[VideoSample],
     annotation_file: str = None,
-    sam3d_body_dirs: Optional[Dict[str, Path]] = None,
     transform: Optional[Callable[[torch.Tensor], torch.Tensor]] = None,
 ) -> LabeledVideoDataset:
     """
@@ -442,10 +542,8 @@ def whole_video_dataset(
     
     Args:
         experiment: Experiment name
-        dataset_idx: List of VideoSample items
+        dataset_idx: List of VideoSample items (contains sam3d_kpts paths)
         annotation_file: Path to annotation JSON file
-        sam3d_body_dirs: Dict mapping view names to SAM 3D body result directories
-                        Example: {"front": Path(...), "left": Path(...), "right": Path(...)}
         transform: Optional transform to apply to video frames
     
     Returns:
@@ -455,6 +553,6 @@ def whole_video_dataset(
         experiment=experiment,
         index_mapping=dataset_idx,
         annotation_file=annotation_file,
-        sam3d_body_dirs=sam3d_body_dirs,
+        sam3d_body_dirs=None,
         transform=transform,
     )
