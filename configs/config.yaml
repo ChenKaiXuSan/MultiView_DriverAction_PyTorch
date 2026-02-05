@@ -48,6 +48,7 @@ model:
   input_type: rgb # rgb | kpt | rgb_kpt
   fusion_mode: logit_mean # logit_mean | prob_mean | feature_mean | feature_concat
   modality_fusion: concat # concat | mean (for rgb+kpt)
+  kpt_input_dim: null # set to (K * 3) where K is number of keypoints; temporal pooling is in-model
   kpt_hidden_dim: 256
   kpt_feature_dim: 256
   fusion_feature_dim: 256
@@ -66,6 +67,7 @@ train:
 
   view: multi # single or multi
   view_name: front # used when train.view=single
+  feature_map_batches: 10 # dump CAM features for first N test batches
 
   gpu: 0 # choices=[0, 1], help='the gpu number whicht to train'
 

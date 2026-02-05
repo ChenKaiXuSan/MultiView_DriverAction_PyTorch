@@ -2,6 +2,10 @@
 # -*- coding:utf-8 -*-
 """
 Simple keypoint backbone for (B, T, K, 3) inputs.
+
+Temporal aggregation uses mean pooling over T as a lightweight baseline.
+If kpt_input_dim is not set, the first batch initializes a LazyLinear layer.
+Set kpt_input_dim for deterministic initialization and checkpointing.
 """
 
 from __future__ import annotations
@@ -21,15 +25,18 @@ class KeypointMLP(nn.Module):
         self.feature_dim = int(getattr(model_cfg, "kpt_feature_dim", hidden_dim))
         dropout_p = float(getattr(model_cfg, "kpt_dropout", 0.1))
 
-        self.fc1 = nn.LazyLinear(hidden_dim)
+        input_dim = getattr(model_cfg, "kpt_input_dim", None)
+        # When kpt_input_dim is None, LazyLinear infers input dim on first forward.
+        if input_dim is not None and int(input_dim) > 0:
+            self.fc1 = nn.Linear(int(input_dim), hidden_dim)
+        else:
+            self.fc1 = nn.LazyLinear(hidden_dim)
         self.fc2 = nn.Linear(hidden_dim, self.feature_dim)
         self.dropout = nn.Dropout(dropout_p)
         self.classifier = nn.Linear(self.feature_dim, self.model_class_num)
 
     @staticmethod
     def _flatten_kpts(kpts: torch.Tensor) -> torch.Tensor:
-        if kpts.dim() == 3:
-            kpts = kpts.unsqueeze(1)
         if kpts.dim() != 4:
             raise ValueError(f"Expected kpts with shape (B,T,K,3), got {kpts.shape}")
         bsz, timesteps, joints, coords = kpts.shape

@@ -43,6 +43,8 @@ class LateFusion3DCNNTrainer(LightningModule):
         self.front_cnn = select_model(hparams)
         self.left_cnn = select_model(hparams)
         self.right_cnn = select_model(hparams)
+        self.view_names = ["front", "left", "right"]
+        self.num_views = len(self.view_names)
 
         # fusion config (optional)
         self.fusion_mode = getattr(hparams.model, "fusion_mode", "logit_mean")
@@ -54,7 +56,7 @@ class LateFusion3DCNNTrainer(LightningModule):
         if self.fusion_mode in {"feature_mean", "feature_concat"}:
             self._feature_dim = self._infer_feature_dim(self.front_cnn)
             fusion_dim = (
-                self._feature_dim * 3
+                self._feature_dim * self.num_views
                 if self.fusion_mode == "feature_concat"
                 else self._feature_dim
             )
@@ -72,45 +74,51 @@ class LateFusion3DCNNTrainer(LightningModule):
     # ---- core ----
     def forward(
         self,
-        videos: Dict[str, torch.Tensor],
+        videos: Optional[Dict[str, torch.Tensor]],
         kpts: Optional[Dict[str, torch.Tensor]] = None,
     ) -> torch.Tensor:
         """
         videos: dict with keys: front/left/right, each (B,C,T,H,W)
         returns: fused logits (B,num_classes)
         """
+        if videos is None and self.input_type != "kpt":
+            raise ValueError("RGB inputs are required for the selected input_type.")
+        video_front = videos["front"] if videos is not None else None
+        video_left = videos["left"] if videos is not None else None
+        video_right = videos["right"] if videos is not None else None
+
         if self.fusion_mode in {"logit_mean", "prob_mean"}:
             front_logits = self._forward_view(
-                self.front_cnn, videos["front"], kpts, "front"
+                self.front_cnn, video_front, kpts, "front"
             )
             left_logits = self._forward_view(
-                self.left_cnn, videos["left"], kpts, "left"
+                self.left_cnn, video_left, kpts, "left"
             )
             right_logits = self._forward_view(
-                self.right_cnn, videos["right"], kpts, "right"
+                self.right_cnn, video_right, kpts, "right"
             )
 
             if self.fusion_mode == "logit_mean":
-                return (front_logits + left_logits + right_logits) / 3.0
+                return (front_logits + left_logits + right_logits) / self.num_views
 
             front_p = torch.softmax(front_logits, dim=1)
             left_p = torch.softmax(left_logits, dim=1)
             right_p = torch.softmax(right_logits, dim=1)
-            fused_p = (front_p + left_p + right_p) / 3.0
+            fused_p = (front_p + left_p + right_p) / self.num_views
             return torch.log(torch.clamp(fused_p, min=1e-8))
 
         front_feat = self._forward_view_features(
-            self.front_cnn, videos["front"], kpts, "front"
+            self.front_cnn, video_front, kpts, "front"
         )
         left_feat = self._forward_view_features(
-            self.left_cnn, videos["left"], kpts, "left"
+            self.left_cnn, video_left, kpts, "left"
         )
         right_feat = self._forward_view_features(
-            self.right_cnn, videos["right"], kpts, "right"
+            self.right_cnn, video_right, kpts, "right"
         )
 
         if self.fusion_mode == "feature_mean":
-            fused_feat = (front_feat + left_feat + right_feat) / 3.0
+            fused_feat = (front_feat + left_feat + right_feat) / self.num_views
         elif self.fusion_mode == "feature_concat":
             fused_feat = torch.cat([front_feat, left_feat, right_feat], dim=1)
         else:
@@ -120,7 +128,7 @@ class LateFusion3DCNNTrainer(LightningModule):
 
     def _maybe_trim_batch(
         self,
-        videos: Dict[str, torch.Tensor],
+        videos: Optional[Dict[str, torch.Tensor]],
         kpts: Optional[Dict[str, torch.Tensor]],
         label: torch.Tensor,
     ):
@@ -133,44 +141,57 @@ class LateFusion3DCNNTrainer(LightningModule):
             return videos, kpts, label
 
         idx = slice(0, self.video_batch_size)
-        videos_trim = {k: v[idx].detach() for k, v in videos.items()}
+        videos_trim = None
+        if videos is not None:
+            videos_trim = {k: v[idx].detach() for k, v in videos.items()}
         kpts_trim = None
         if kpts is not None:
-            kpts_trim = {
-                k: v[idx].detach() if v is not None else None for k, v in kpts.items()
-            }
+            kpts_trim = {k: v[idx] for k, v in kpts.items()}
         label_trim = label[idx]
         return videos_trim, kpts_trim, label_trim
 
     def _infer_feature_dim(self, model) -> int:
         feature_dim = getattr(model, "feature_dim", None)
-        if not feature_dim:
-            raise ValueError("Selected model does not expose feature_dim for feature fusion.")
+        if feature_dim is None:
+            raise ValueError(
+                f"Selected model {type(model).__name__} lacks feature_dim for fusion."
+            )
         return int(feature_dim)
+
+    @staticmethod
+    def _validate_kpts(kpts: Optional[Dict[str, torch.Tensor]], view: str) -> torch.Tensor:
+        if kpts is None or kpts.get(view) is None:
+            raise ValueError(
+                f"Keypoint input requested but sam3d_kpt['{view}'] is missing."
+            )
+        return kpts[view]
+
+    @staticmethod
+    def _filter_kpts(kpts: Optional[Dict[str, torch.Tensor]]) -> Optional[Dict[str, torch.Tensor]]:
+        if kpts is None:
+            return None
+        filtered = {k: v for k, v in kpts.items() if v is not None}
+        return filtered or None
 
     def _forward_view(
         self,
         model,
-        video: torch.Tensor,
+        video: Optional[torch.Tensor],
         kpts: Optional[Dict[str, torch.Tensor]],
         view: str,
     ) -> torch.Tensor:
         if self.input_type == "rgb":
             return model(video)
         if self.input_type == "kpt":
-            if kpts is None or kpts.get(view) is None:
-                raise ValueError("Keypoint input requested but sam3d_kpt is missing.")
-            return model(kpts[view])
+            return model(self._validate_kpts(kpts, view))
         if self.input_type == "rgb_kpt":
-            if kpts is None or kpts.get(view) is None:
-                raise ValueError("RGB+KPT input requested but sam3d_kpt is missing.")
-            return model(video, kpts[view])
+            return model(video, self._validate_kpts(kpts, view))
         raise ValueError(f"Unknown input_type: {self.input_type}")
 
     def _forward_view_features(
         self,
         model,
-        video: torch.Tensor,
+        video: Optional[torch.Tensor],
         kpts: Optional[Dict[str, torch.Tensor]],
         view: str,
     ) -> torch.Tensor:
@@ -179,21 +200,22 @@ class LateFusion3DCNNTrainer(LightningModule):
         if self.input_type == "rgb":
             return model.forward_features(video)
         if self.input_type == "kpt":
-            if kpts is None or kpts.get(view) is None:
-                raise ValueError("Keypoint input requested but sam3d_kpt is missing.")
-            return model.forward_features(kpts[view])
+            return model.forward_features(self._validate_kpts(kpts, view))
         if self.input_type == "rgb_kpt":
-            if kpts is None or kpts.get(view) is None:
-                raise ValueError("RGB+KPT input requested but sam3d_kpt is missing.")
-            return model.forward_features(video, kpts[view])
+            return model.forward_features(video, self._validate_kpts(kpts, view))
         raise ValueError(f"Unknown input_type: {self.input_type}")
 
     def _shared_step(self, batch: Dict[str, Any], stage: str) -> torch.Tensor:
 
-        videos = {k: v.detach() for k, v in batch["video"].items()}
+        videos = None
+        if self.input_type != "kpt":
+            videos = {k: v.detach() for k, v in batch["video"].items()}
         kpts = batch.get("sam3d_kpt")
+        if kpts is not None and not isinstance(kpts, dict):
+            raise TypeError("sam3d_kpt must be a dict of view tensors.")
         if kpts is not None:
-            kpts = {k: (v.detach() if v is not None else None) for k, v in kpts.items()}
+            kpts = {k: v.detach() for k, v in kpts.items()}
+        kpts = self._filter_kpts(kpts)
         label = batch["label"].view(-1)
 
         videos, kpts, label = self._maybe_trim_batch(videos, kpts, label)

@@ -20,7 +20,7 @@ Date      	By	Comments
 ----------	---	---------------------------------------------------------
 """
 
-from typing import Any, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 import logging
 
 import torch
@@ -58,6 +58,9 @@ class Res3DCNNTrainer(LightningModule):
         self.model = select_model(hparams)
         self.input_type = getattr(hparams.model, "input_type", "rgb")
         self.view_name = getattr(hparams.train, "view_name", "front")
+        self.feature_map_dump_batch_limit = int(
+            getattr(hparams.train, "feature_map_batches", 10)
+        )
 
         # save the hyperparameters to the file and ckpt
         self.save_hyperparameters()
@@ -79,7 +82,7 @@ class Res3DCNNTrainer(LightningModule):
             return self.model(x, kpts)
         raise ValueError(f"Unknown input_type: {self.input_type}")
 
-    def _select_view(self, data: Optional[Union[dict[str, torch.Tensor], torch.Tensor]]):
+    def _select_view(self, data: Optional[Union[Dict[str, torch.Tensor], torch.Tensor]]):
         if data is None:
             return None
         if isinstance(data, dict):
@@ -88,7 +91,7 @@ class Res3DCNNTrainer(LightningModule):
             return data[self.view_name]
         return data
 
-    def _prepare_inputs(self, batch: dict[str, torch.Tensor]):
+    def _prepare_inputs(self, batch: Dict[str, torch.Tensor]):
         video = self._select_view(batch.get("video"))
         kpts = self._select_view(batch.get("sam3d_kpt"))
 
@@ -104,18 +107,20 @@ class Res3DCNNTrainer(LightningModule):
 
         return video, kpts
 
-    def training_step(self, batch: dict[str, torch.Tensor], batch_idx: int):
+    @staticmethod
+    def _prepare_label(batch: Dict[str, torch.Tensor]) -> torch.Tensor:
+        return batch["label"].detach().view(-1)
+
+    def training_step(self, batch: Dict[str, torch.Tensor], batch_idx: int):
         # prepare the input and label
         video, kpts = self._prepare_inputs(batch)
-        label = batch["label"].detach().float().view(-1)  # b
+        label = self._prepare_label(batch)
 
         b = label.shape[0]
 
         video_preds = self(video, kpts)
         video_preds_softmax = torch.softmax(video_preds, dim=1)
 
-        if label.dim() == 0:
-            label = label.unsqueeze(0)
         assert label.shape[0] == video_preds.shape[0]
 
         loss = F.cross_entropy(video_preds, label.long())
@@ -144,18 +149,16 @@ class Res3DCNNTrainer(LightningModule):
 
         return loss
 
-    def validation_step(self, batch: dict[str, torch.Tensor], batch_idx: int):
+    def validation_step(self, batch: Dict[str, torch.Tensor], batch_idx: int):
         # input and model define
         video, kpts = self._prepare_inputs(batch)
-        label = batch["label"].detach().float().view(-1)  # b
+        label = self._prepare_label(batch)
 
         b = label.shape[0]
 
         video_preds = self(video, kpts)
         video_preds_softmax = torch.softmax(video_preds, dim=1)
 
-        if label.dim() == 0:
-            label = label.unsqueeze(0)
         loss = F.cross_entropy(video_preds, label.long())
 
         self.log("val/loss", loss, on_epoch=True, on_step=True, batch_size=b)
@@ -199,18 +202,16 @@ class Res3DCNNTrainer(LightningModule):
         """hook function for test end"""
         logger.info("test end")
 
-    def test_step(self, batch: dict[str, torch.Tensor], batch_idx: int):
+    def test_step(self, batch: Dict[str, torch.Tensor], batch_idx: int):
         # input and model define
         video, kpts = self._prepare_inputs(batch)
-        label = batch["label"].detach().float().view(-1)  # b
+        label = self._prepare_label(batch)
 
         b = label.shape[0]
 
         video_preds = self(video, kpts)
         video_preds_softmax = torch.softmax(video_preds, dim=1)
 
-        if label.dim() == 0:
-            label = label.unsqueeze(0)
         loss = F.cross_entropy(video_preds, label.long())
 
         self.log("test/loss", loss, on_epoch=True, on_step=True, batch_size=b)
@@ -238,7 +239,12 @@ class Res3DCNNTrainer(LightningModule):
             if self.logger
             else "fold"
         )
-        if batch_idx < 10 and video is not None and batch.get("info") is not None:
+        if (
+            self.input_type == "rgb"
+            and batch_idx < self.feature_map_dump_batch_limit
+            and video is not None
+            and batch.get("info") is not None
+        ):
             dump_all_feature_maps(
                 model=self.model,
                 video=video,

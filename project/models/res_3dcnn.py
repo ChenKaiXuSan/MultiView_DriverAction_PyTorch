@@ -67,15 +67,20 @@ class Res3DCNN(BaseModel):
 
         Returns:
             torch.Tensor: (B, feature_dim)
+
+        Note:
+            Assumes the final element in model.blocks is the classification head.
         """
         x = video
-        for idx in range(5):
+        for idx in range(len(self.model.blocks) - 1):
             x = self.model.blocks[idx](x)
 
-        head = self.model.blocks[5]
+        head = self.model.blocks[-1]
         if hasattr(head, "pool"):
             x = head.pool(x)
         else:
+            if x.dim() != 5:
+                raise ValueError(f"Expected 5D features, got shape {x.shape}")
             x = x.mean(dim=(2, 3, 4), keepdim=True)
 
         x = x.view(x.size(0), -1)
