@@ -37,7 +37,7 @@ from torchmetrics.classification import (
 )
 
 
-from project.models.res_3dcnn import Res3DCNN
+from project.models.make_model import select_model
 
 from project.utils.helper import save_helper
 from project.utils.save_CAM import dump_all_feature_maps
@@ -55,7 +55,9 @@ class Res3DCNNTrainer(LightningModule):
         self.num_classes = hparams.model.model_class_num
 
         # define model
-        self.model = Res3DCNN(hparams)
+        self.model = select_model(hparams)
+        self.input_type = getattr(hparams.model, "input_type", "rgb")
+        self.view_name = getattr(hparams.train, "view_name", "front")
 
         # save the hyperparameters to the file and ckpt
         self.save_hyperparameters()
@@ -68,20 +70,52 @@ class Res3DCNNTrainer(LightningModule):
 
         self.save_root = getattr(hparams.train, "log_path", "./logs")
 
-    def forward(self, x):
-        return self.model(x)
+    def forward(self, x, kpts: Optional[torch.Tensor] = None):
+        if self.input_type == "rgb":
+            return self.model(x)
+        if self.input_type == "kpt":
+            return self.model(kpts)
+        if self.input_type == "rgb_kpt":
+            return self.model(x, kpts)
+        raise ValueError(f"Unknown input_type: {self.input_type}")
+
+    def _select_view(self, data: Optional[Union[dict[str, torch.Tensor], torch.Tensor]]):
+        if data is None:
+            return None
+        if isinstance(data, dict):
+            if self.view_name not in data:
+                raise KeyError(f"View '{self.view_name}' not found in batch")
+            return data[self.view_name]
+        return data
+
+    def _prepare_inputs(self, batch: dict[str, torch.Tensor]):
+        video = self._select_view(batch.get("video"))
+        kpts = self._select_view(batch.get("sam3d_kpt"))
+
+        if video is not None:
+            video = video.detach()
+        if kpts is not None:
+            kpts = kpts.detach()
+
+        if self.input_type == "kpt" and kpts is None:
+            raise ValueError("Keypoint input requested but sam3d_kpt is missing.")
+        if self.input_type == "rgb_kpt" and (video is None or kpts is None):
+            raise ValueError("RGB+KPT input requested but video or sam3d_kpt is missing.")
+
+        return video, kpts
 
     def training_step(self, batch: dict[str, torch.Tensor], batch_idx: int):
         # prepare the input and label
-        video = batch["video"].detach()  # b, c, t, h, w
-        attn_map = batch["attn_map"].detach()  # b, c, t, h, w
-        label = batch["label"].detach().float()  # b
+        video, kpts = self._prepare_inputs(batch)
+        label = batch["label"].detach().float().view(-1)  # b
 
-        b, c, t, h, w = video.shape
+        b = label.shape[0]
 
-        video_preds = self.model(video, attn_map)
+        video_preds = self(video, kpts)
         video_preds_softmax = torch.softmax(video_preds, dim=1)
 
+        if label.dim() == 0:
+            label = label.unsqueeze(0)
         assert label.shape[0] == video_preds.shape[0]
 
         loss = F.cross_entropy(video_preds, label.long())
@@ -112,15 +146,16 @@ class Res3DCNNTrainer(LightningModule):
 
     def validation_step(self, batch: dict[str, torch.Tensor], batch_idx: int):
         # input and model define
-        video = batch["video"].detach()  # b, c, t, h, w
-        attn_map = batch["attn_map"].detach()  # b, c, t, h, w
-        label = batch["label"].detach().float()  # b
+        video, kpts = self._prepare_inputs(batch)
+        label = batch["label"].detach().float().view(-1)  # b
 
-        b, c, t, h, w = video.shape
+        b = label.shape[0]
 
-        video_preds = self.model(video, attn_map)
+        video_preds = self(video, kpts)
         video_preds_softmax = torch.softmax(video_preds, dim=1)
 
+        if label.dim() == 0:
+            label = label.unsqueeze(0)
         loss = F.cross_entropy(video_preds, label.long())
 
         self.log("val/loss", loss, on_epoch=True, on_step=True, batch_size=b)
@@ -166,15 +201,16 @@ class Res3DCNNTrainer(LightningModule):
 
     def test_step(self, batch: dict[str, torch.Tensor], batch_idx: int):
         # input and model define
-        video = batch["video"].detach()  # b, c, t, h, w
-        attn_map = batch["attn_map"].detach()  # b, c, t, h, w
-        label = batch["label"].detach().float()  # b
+        video, kpts = self._prepare_inputs(batch)
+        label = batch["label"].detach().float().view(-1)  # b
 
-        b, c, t, h, w = video.shape
+        b = label.shape[0]
 
-        video_preds = self.model(video, attn_map)
+        video_preds = self(video, kpts)
         video_preds_softmax = torch.softmax(video_preds, dim=1)
 
+        if label.dim() == 0:
+            label = label.unsqueeze(0)
         loss = F.cross_entropy(video_preds, label.long())
 
         self.log("test/loss", loss, on_epoch=True, on_step=True, batch_size=b)
@@ -202,12 +238,12 @@ class Res3DCNNTrainer(LightningModule):
             if self.logger
             else "fold"
         )
-        if batch_idx < 10:
+        if batch_idx < 10 and video is not None and batch.get("info") is not None:
             dump_all_feature_maps(
                 model=self.model,
                 video=video,
                 video_info=batch.get("info", None),
-                attn_map=attn_map,
+                attn_map=None,
                 save_root=f"{self.save_root}/test_all_feature_maps/{fold}/batch_{batch_idx}",
                 include_types=(torch.nn.Conv3d, torch.nn.Linear),
                 include_name_contains=["conv_c"],

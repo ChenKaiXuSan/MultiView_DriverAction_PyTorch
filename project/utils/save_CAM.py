@@ -233,7 +233,10 @@ def dump_all_feature_maps(
     model = model.to(video.device)
 
     try:
-        _ = model(video, attn_map)
+        if attn_map is None:
+            _ = model(video)
+        else:
+            _ = model(video, attn_map)
     finally:
         if model_was_training:
             model.train()

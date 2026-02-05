@@ -29,6 +29,8 @@ from project.models.cross_attn_res_3dcnn import CrossAttentionRes3DCNN
 from project.models.se_attn_res_3dcnn import SEFusionRes3DCNN
 from project.models.res_3dcnn import Res3DCNN
 from project.models.pose_fusion_res_3dcnn import PoseFusionRes3DCNN
+from project.models.keypoint_mlp import KeypointMLP
+from project.models.rgb_kpt_fusion import RGBKeypointFusion
 
 def select_model(hparams) -> nn.Module:
     """
@@ -43,6 +45,17 @@ def select_model(hparams) -> nn.Module:
 
     model_backbone = hparams.model.backbone
     fuse_method = hparams.model.fuse_method
+    input_type = getattr(hparams.model, "input_type", "rgb")
+
+    if input_type == "kpt":
+        return KeypointMLP(hparams)
+    if input_type == "rgb_kpt":
+        return RGBKeypointFusion(hparams)
+
+    if model_backbone == "kpt_mlp":
+        return KeypointMLP(hparams)
+    if model_backbone == "rgb_kpt":
+        return RGBKeypointFusion(hparams)
 
     if model_backbone == "3dcnn":
         if fuse_method == "cross_atn":

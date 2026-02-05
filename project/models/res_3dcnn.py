@@ -42,6 +42,7 @@ class Res3DCNN(BaseModel):
         self.model = self.init_resnet(
             self.model_class_num,
         )
+        self.feature_dim = self.model.blocks[-1].proj.in_features
 
     def forward(self, video: torch.Tensor) -> torch.Tensor:
         """
@@ -56,3 +57,31 @@ class Res3DCNN(BaseModel):
         output = self.model(video)
 
         return output
+
+    def forward_features(self, video: torch.Tensor) -> torch.Tensor:
+        """
+        Extract pooled features before the classification head.
+
+        Args:
+            video: (B, C, T, H, W)
+
+        Returns:
+            torch.Tensor: (B, feature_dim)
+        """
+        x = video
+        for idx in range(5):
+            x = self.model.blocks[idx](x)
+
+        head = self.model.blocks[5]
+        if hasattr(head, "pool"):
+            x = head.pool(x)
+        else:
+            x = x.mean(dim=(2, 3, 4), keepdim=True)
+
+        x = x.view(x.size(0), -1)
+
+        dropout = getattr(head, "dropout", None)
+        if dropout is not None:
+            x = dropout(x)
+
+        return x

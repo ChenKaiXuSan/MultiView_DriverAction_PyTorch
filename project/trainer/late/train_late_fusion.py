@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import torch
 import torch.nn.functional as F
@@ -26,6 +26,7 @@ class LateFusion3DCNNTrainer(LightningModule):
         batch["video"]["front"] : (B, C, T, H, W)
         batch["video"]["left"]  : (B, C, T, H, W)
         batch["video"]["right"] : (B, C, T, H, W)
+        batch["sam3d_kpt"][view] : (B, T, K, 3) when input_type uses keypoints
         batch["label"]          : (B,)
     """
 
@@ -36,6 +37,7 @@ class LateFusion3DCNNTrainer(LightningModule):
         self.img_size = hparams.data.img_size
         self.lr = hparams.loss.lr
         self.num_classes = hparams.model.model_class_num
+        self.input_type = getattr(hparams.model, "input_type", "rgb")
 
         # three independent backbones
         self.front_cnn = select_model(hparams)
@@ -48,6 +50,18 @@ class LateFusion3DCNNTrainer(LightningModule):
         self.batch_size = int(getattr(hparams.data, "batch_size", 1))
         self.video_batch_size = int(getattr(hparams.data, "video_batch_size", 8))
 
+        self._feature_dim = None
+        if self.fusion_mode in {"feature_mean", "feature_concat"}:
+            self._feature_dim = self._infer_feature_dim(self.front_cnn)
+            fusion_dim = (
+                self._feature_dim * 3
+                if self.fusion_mode == "feature_concat"
+                else self._feature_dim
+            )
+            self.view_fusion_head = torch.nn.Linear(fusion_dim, self.num_classes)
+        else:
+            self.view_fusion_head = None
+
         # metrics
         self._accuracy = MulticlassAccuracy(num_classes=self.num_classes)
         self._precision = MulticlassPrecision(num_classes=self.num_classes)
@@ -56,55 +70,135 @@ class LateFusion3DCNNTrainer(LightningModule):
         self._confusion_matrix = MulticlassConfusionMatrix(num_classes=self.num_classes)
 
     # ---- core ----
-    def forward(self, videos: Dict[str, torch.Tensor]) -> torch.Tensor:
+    def forward(
+        self,
+        videos: Dict[str, torch.Tensor],
+        kpts: Optional[Dict[str, torch.Tensor]] = None,
+    ) -> torch.Tensor:
         """
         videos: dict with keys: front/left/right, each (B,C,T,H,W)
         returns: fused logits (B,num_classes)
         """
-        front_logits = self.front_cnn(videos["front"])
-        left_logits = self.left_cnn(videos["left"])
-        right_logits = self.right_cnn(videos["right"])
+        if self.fusion_mode in {"logit_mean", "prob_mean"}:
+            front_logits = self._forward_view(
+                self.front_cnn, videos["front"], kpts, "front"
+            )
+            left_logits = self._forward_view(
+                self.left_cnn, videos["left"], kpts, "left"
+            )
+            right_logits = self._forward_view(
+                self.right_cnn, videos["right"], kpts, "right"
+            )
 
-        if self.fusion_mode == "logit_mean":
-            fused_logits = (front_logits + left_logits + right_logits) / 3.0
-            return fused_logits
+            if self.fusion_mode == "logit_mean":
+                return (front_logits + left_logits + right_logits) / 3.0
 
-        if self.fusion_mode == "prob_mean":
             front_p = torch.softmax(front_logits, dim=1)
             left_p = torch.softmax(left_logits, dim=1)
             right_p = torch.softmax(right_logits, dim=1)
             fused_p = (front_p + left_p + right_p) / 3.0
-            # convert back to logits for CE stability
-            fused_logits = torch.log(torch.clamp(fused_p, min=1e-8))
-            return fused_logits
+            return torch.log(torch.clamp(fused_p, min=1e-8))
 
-        raise ValueError(f"Unknown fusion_mode: {self.fusion_mode}")
+        front_feat = self._forward_view_features(
+            self.front_cnn, videos["front"], kpts, "front"
+        )
+        left_feat = self._forward_view_features(
+            self.left_cnn, videos["left"], kpts, "left"
+        )
+        right_feat = self._forward_view_features(
+            self.right_cnn, videos["right"], kpts, "right"
+        )
 
-    def _maybe_trim_batch(self, videos: Dict[str, torch.Tensor], label: torch.Tensor):
+        if self.fusion_mode == "feature_mean":
+            fused_feat = (front_feat + left_feat + right_feat) / 3.0
+        elif self.fusion_mode == "feature_concat":
+            fused_feat = torch.cat([front_feat, left_feat, right_feat], dim=1)
+        else:
+            raise ValueError(f"Unknown fusion_mode: {self.fusion_mode}")
+
+        return self.view_fusion_head(fused_feat)
+
+    def _maybe_trim_batch(
+        self,
+        videos: Dict[str, torch.Tensor],
+        kpts: Optional[Dict[str, torch.Tensor]],
+        label: torch.Tensor,
+    ):
         """
         Simple OOM guard: trim batch if B is too large.
         """
         # TODO: 这里需要修改一个视频内部的多个片段的情况，目前只能按整体 batch size 来裁剪。
         bsz = label.size(0)
         if bsz <= self.video_batch_size:
-            return videos, label
+            return videos, kpts, label
 
         idx = slice(0, self.video_batch_size)
         videos_trim = {k: v[idx].detach() for k, v in videos.items()}
+        kpts_trim = None
+        if kpts is not None:
+            kpts_trim = {
+                k: v[idx].detach() if v is not None else None for k, v in kpts.items()
+            }
         label_trim = label[idx]
-        return videos_trim, label_trim
+        return videos_trim, kpts_trim, label_trim
+
+    def _infer_feature_dim(self, model) -> int:
+        feature_dim = getattr(model, "feature_dim", None)
+        if not feature_dim:
+            raise ValueError("Selected model does not expose feature_dim for feature fusion.")
+        return int(feature_dim)
+
+    def _forward_view(
+        self,
+        model,
+        video: torch.Tensor,
+        kpts: Optional[Dict[str, torch.Tensor]],
+        view: str,
+    ) -> torch.Tensor:
+        if self.input_type == "rgb":
+            return model(video)
+        if self.input_type == "kpt":
+            if kpts is None or kpts.get(view) is None:
+                raise ValueError("Keypoint input requested but sam3d_kpt is missing.")
+            return model(kpts[view])
+        if self.input_type == "rgb_kpt":
+            if kpts is None or kpts.get(view) is None:
+                raise ValueError("RGB+KPT input requested but sam3d_kpt is missing.")
+            return model(video, kpts[view])
+        raise ValueError(f"Unknown input_type: {self.input_type}")
+
+    def _forward_view_features(
+        self,
+        model,
+        video: torch.Tensor,
+        kpts: Optional[Dict[str, torch.Tensor]],
+        view: str,
+    ) -> torch.Tensor:
+        if not hasattr(model, "forward_features"):
+            raise ValueError("Selected model does not support feature fusion.")
+        if self.input_type == "rgb":
+            return model.forward_features(video)
+        if self.input_type == "kpt":
+            if kpts is None or kpts.get(view) is None:
+                raise ValueError("Keypoint input requested but sam3d_kpt is missing.")
+            return model.forward_features(kpts[view])
+        if self.input_type == "rgb_kpt":
+            if kpts is None or kpts.get(view) is None:
+                raise ValueError("RGB+KPT input requested but sam3d_kpt is missing.")
+            return model.forward_features(video, kpts[view])
+        raise ValueError(f"Unknown input_type: {self.input_type}")
 
     def _shared_step(self, batch: Dict[str, Any], stage: str) -> torch.Tensor:
 
-        if self.batch_size == 1:
-            videos = batch["video"]
-            label = batch["label"].squeeze()
+        videos = {k: v.detach() for k, v in batch["video"].items()}
+        kpts = batch.get("sam3d_kpt")
+        if kpts is not None:
+            kpts = {k: (v.detach() if v is not None else None) for k, v in kpts.items()}
+        label = batch["label"].view(-1)
 
-            # detach videos (optional; remove detach if you want grads through input preprocessing)
-            videos = {k: v.detach().squeeze() for k, v in videos.items()}
-        videos, label = self._maybe_trim_batch(videos, label)
+        videos, kpts, label = self._maybe_trim_batch(videos, kpts, label)
 
-        logits = self(videos)  # fused logits
+        logits = self(videos, kpts)  # fused logits
         loss = F.cross_entropy(logits, label.long())
 
         probs = torch.softmax(logits, dim=1)
