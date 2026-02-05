@@ -63,3 +63,4 @@ class VideoSample:
     env_key: str  # "night_high"
     label_path: Path  # .../label/person_01_night_high_h265.json
     videos: Dict[str, Path]  # {"front": ..., "right": ..., "left": ...}
+    sam3d_kpts: Dict[str, Path] = None  # {"front": ..., "right": ..., "left": ...} SAM 3D body keypoints directory

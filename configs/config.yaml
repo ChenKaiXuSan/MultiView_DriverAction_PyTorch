@@ -22,15 +22,17 @@ loss:
   w_bg: 0.2 # the weight of background class for the loss function, used for cross validation with different class number
   w_temp: 0.05 # the weight of temporal smoothness for the loss function, used for cross validation with different class number
 
-data:
-  root_path: /workspace/data
+paths:
+  root_path: /workspace/data/multi_view_driver_action
 
-  video_path: ${data.root_path}/videos
   annotation_path: ${data.root_path}/label
-  image_path: ${data.root_path}/image
-
   index_mapping: ${data.root_path}/index_mapping # training mapping path, this used for cross validation, with different class number.
+  start_mid_end_path: ${data.root_path}/split_mid_end/mini.json # 我们不需要推导左右的frame，按照这里面的start和mid来进行推导
 
+  video_path: /workspace/data/videos_split
+  sam3d_results_path: /workspace/data/sam3d_body_results_right
+
+data:
   num_workers: 12
   img_size: 224
 

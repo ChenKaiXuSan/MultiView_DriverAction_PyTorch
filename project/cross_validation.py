@@ -57,6 +57,9 @@ class DefineCrossValidation(object):
         self.annotation_path: Path = Path(
             config.data.annotation_path
         )  # e.g. /workspace/data/label
+        self.sam3d_results_path: Path = Path(
+            config.paths.sam3d_results_path
+        )  # e.g. /workspace/data/sam3d_body_results_right
 
         self.fold_count: int = int(config.data.fold)
         self.index_mapping: Path = Path(
@@ -108,12 +111,21 @@ class DefineCrossValidation(object):
         if len(videos) == 0:
             return None
 
+        # * Collect SAM 3D body keypoints directory paths (optional)
+        # sam3d_results_path/person_id/env_folder/cam/
+        sam3d_kpts: Dict[str, Path] = {}
+        for cam in CAM_NAMES:
+            kpt_dir = self.sam3d_results_path / person_id / env_folder / cam
+            if kpt_dir.exists():
+                sam3d_kpts[cam] = kpt_dir
+
         return VideoSample(
             person_id=person_id,
             env_folder=env_folder,
             env_key=env_key,
             label_path=label_path,
             videos=videos,
+            sam3d_kpts=sam3d_kpts if len(sam3d_kpts) > 0 else None,
         )
 
     def build_samples(self) -> List[VideoSample]:
@@ -191,6 +203,7 @@ class DefineCrossValidation(object):
                             "env_key": s.env_key,
                             "label_path": str(s.label_path),
                             "videos": {k: str(v) for k, v in s.videos.items()},
+                            "sam3d_kpts": {k: str(v) for k, v in s.sam3d_kpts.items()} if s.sam3d_kpts else None,
                         }
                         for s in d["train"]
                     ],
@@ -201,6 +214,7 @@ class DefineCrossValidation(object):
                             "env_key": s.env_key,
                             "label_path": str(s.label_path),
                             "videos": {k: str(v) for k, v in s.videos.items()},
+                            "sam3d_kpts": {k: str(v) for k, v in s.sam3d_kpts.items()} if s.sam3d_kpts else None,
                         }
                         for s in d["val"]
                     ],
@@ -221,6 +235,11 @@ class DefineCrossValidation(object):
             fold_samples[fold] = {"train": [], "val": []}
             for split in ["train", "val"]:
                 for item in d[split]:
+                    sam3d_kpts = (
+                        {kk: Path(vv) for kk, vv in item["sam3d_kpts"].items()}
+                        if item.get("sam3d_kpts")
+                        else None
+                    )
                     fold_samples[fold][split].append(
                         VideoSample(
                             person_id=item["person_id"],
@@ -228,6 +247,7 @@ class DefineCrossValidation(object):
                             env_key=item["env_key"],
                             label_path=Path(item["label_path"]),
                             videos={kk: Path(vv) for kk, vv in item["videos"].items()},
+                            sam3d_kpts=sam3d_kpts,
                         )
                     )
 
