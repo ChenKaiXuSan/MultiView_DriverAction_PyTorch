@@ -18,4 +18,5 @@ def test_video_mamba_forward_shape():
     video = torch.randn(2, 3, 4, 32, 32)
     output = model(video)
     output.sum().backward()
+    assert model.classifier.weight.grad is not None
     assert output.shape == (2, 6)
