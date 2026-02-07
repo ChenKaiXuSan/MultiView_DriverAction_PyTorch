@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 """
-Mamba-style temporal backbone using GRU as a lightweight placeholder.
+Mamba-style temporal backbone using GRU as a lightweight baseline implementation.
 """
 
 from __future__ import annotations
