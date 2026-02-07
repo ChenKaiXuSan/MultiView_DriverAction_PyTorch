@@ -39,6 +39,7 @@ MID_FUSION_TRAINERS = {"se_atn": SEAttnTrainer}
 
 
 def select_multi_trainer_cls(hparams):
+    """Select the trainer class for RGB multi-view fusion experiments."""
     if getattr(hparams.train, "view", None) != "multi":
         raise ValueError("Multi-view trainer only supports train.view=multi.")
     if getattr(hparams.model, "input_type", "rgb") != "rgb":
