@@ -9,9 +9,9 @@ def test_stgn_keypoint_forward_shape():
         {
             "model": {
                 "model_class_num": 4,
-                "stgn_hidden_dim": 16,
-                "stgn_layers": 2,
-                "stgn_num_kpts": 6,
+                "stgcn_hidden_dim": 16,
+                "stgcn_layers": 2,
+                "stgcn_num_kpts": 6,
             }
         }
     )

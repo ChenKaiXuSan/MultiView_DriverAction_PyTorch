@@ -49,13 +49,31 @@ class STGCNKeypoint(nn.Module):
 
         model_cfg = hparams.model
         self.model_class_num = int(model_cfg.model_class_num)
-        hidden_dim = int(getattr(model_cfg, "stgn_hidden_dim", 64))
-        num_layers = int(getattr(model_cfg, "stgn_layers", 3))
-        temporal_kernel = int(getattr(model_cfg, "stgn_temporal_kernel", 3))
-        dropout = float(getattr(model_cfg, "stgn_dropout", 0.1))
+        hidden_dim = int(
+            getattr(
+                model_cfg, "stgcn_hidden_dim", getattr(model_cfg, "stgn_hidden_dim", 64)
+            )
+        )
+        num_layers = int(
+            getattr(model_cfg, "stgcn_layers", getattr(model_cfg, "stgn_layers", 3))
+        )
+        temporal_kernel = int(
+            getattr(
+                model_cfg,
+                "stgcn_temporal_kernel",
+                getattr(model_cfg, "stgn_temporal_kernel", 3),
+            )
+        )
+        dropout = float(
+            getattr(
+                model_cfg, "stgcn_dropout", getattr(model_cfg, "stgn_dropout", 0.1)
+            )
+        )
         self.feature_dim = hidden_dim
 
-        num_kpts = getattr(model_cfg, "stgn_num_kpts", None)
+        num_kpts = getattr(
+            model_cfg, "stgcn_num_kpts", getattr(model_cfg, "stgn_num_kpts", None)
+        )
         self.register_buffer("adj", self._build_adj(num_kpts))
 
         layers = []

@@ -6,6 +6,7 @@ Simple keypoint backbone for (B, T, K, 3) inputs.
 Temporal aggregation uses mean pooling over T as a lightweight baseline.
 If kpt_input_dim is not set, the first batch initializes a LazyLinear layer.
 Set kpt_input_dim for deterministic initialization and checkpointing.
+Legacy option; stgcn is the default kpt backbone in configs.
 """
 
 from __future__ import annotations
