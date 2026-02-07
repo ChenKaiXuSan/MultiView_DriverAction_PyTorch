@@ -35,7 +35,7 @@ from project.models.stgn_kpt import STGNKeypoint
 
 def select_kpt_backbone(hparams) -> nn.Module:
     kpt_backbone = getattr(hparams.model, "kpt_backbone", "stgcn")
-    if kpt_backbone in ["stgn", "stgcn"]:
+    if kpt_backbone == "stgcn":
         return STGNKeypoint(hparams)
     raise ValueError(f"Unknown kpt_backbone: {kpt_backbone}")
 
@@ -59,7 +59,7 @@ def select_model(hparams) -> nn.Module:
     if input_type == "rgb_kpt":
         return RGBKeypointFusion(hparams)
 
-    if model_backbone in ["stgn"]:
+    if model_backbone == "stgcn":
         return select_kpt_backbone(hparams)
     if model_backbone == "rgb_kpt":
         return RGBKeypointFusion(hparams)

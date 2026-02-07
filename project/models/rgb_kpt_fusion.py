@@ -23,7 +23,7 @@ class RGBKeypointFusion(nn.Module):
 
         self.rgb_backbone = Res3DCNN(hparams)
         kpt_backbone = getattr(hparams.model, "kpt_backbone", "stgcn")
-        if kpt_backbone in ["stgn", "stgcn"]:
+        if kpt_backbone == "stgcn":
             self.kpt_backbone = STGNKeypoint(hparams)
         else:
             raise ValueError(f"Unknown kpt_backbone: {kpt_backbone}")
