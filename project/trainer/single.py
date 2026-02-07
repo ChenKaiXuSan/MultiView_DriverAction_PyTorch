@@ -23,7 +23,7 @@ RGB_SINGLE_VIEW_TRAINERS = {
 
 
 def select_single_trainer_cls(hparams):
-    if getattr(hparams.train, "view", "single") != "single":
+    if getattr(hparams.train, "view", None) != "single":
         raise ValueError("Single-view trainer only supports train.view=single.")
     if getattr(hparams.model, "input_type", "rgb") != "rgb":
         raise ValueError("Single-view trainer only supports model.input_type=rgb.")

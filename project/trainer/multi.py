@@ -39,7 +39,7 @@ MID_FUSION_TRAINERS = {"se_atn": SEAttnTrainer}
 
 
 def select_multi_trainer_cls(hparams):
-    if getattr(hparams.train, "view", "multi") != "multi":
+    if getattr(hparams.train, "view", None) != "multi":
         raise ValueError("Multi-view trainer only supports train.view=multi.")
     if getattr(hparams.model, "input_type", "rgb") != "rgb":
         raise ValueError("Multi-view trainer only supports model.input_type=rgb.")
@@ -57,7 +57,7 @@ def select_multi_trainer_cls(hparams):
     if fuse_method in MID_FUSION_METHODS:
         if backbone != "3dcnn":
             raise ValueError(
-                f"backbone {backbone} is not supported for mid fusion."
+                f"backbone {backbone} is not supported for mid fusion (requires 3dcnn)."
             )
         return MID_FUSION_TRAINERS[fuse_method]
     if fuse_method in LATE_FUSION_METHODS:
