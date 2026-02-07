@@ -15,6 +15,7 @@ class VideoTransformer(nn.Module):
         super().__init__()
         model_cfg = hparams.model
         self.model_class_num = int(model_cfg.model_class_num)
+        # Defaults align with config.yaml and act as fallback values.
         embed_dim = int(getattr(model_cfg, "transformer_dim", 256))
         num_layers = int(getattr(model_cfg, "transformer_layers", 4))
         num_heads = int(getattr(model_cfg, "transformer_heads", 4))

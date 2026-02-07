@@ -15,6 +15,7 @@ class VideoMamba(nn.Module):
         super().__init__()
         model_cfg = hparams.model
         self.model_class_num = int(model_cfg.model_class_num)
+        # Defaults align with config.yaml and act as fallback values.
         embed_dim = int(getattr(model_cfg, "mamba_dim", 256))
         num_layers = int(getattr(model_cfg, "mamba_layers", 2))
         dropout = float(getattr(model_cfg, "mamba_dropout", 0.1))

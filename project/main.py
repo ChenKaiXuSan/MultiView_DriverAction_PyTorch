@@ -112,13 +112,15 @@ def train(hparams: DictConfig, dataset_idx, fold: int):
     if hparams.train.view == "multi":
         if hparams.model.fuse_method in ["add", "mul", "concat", "avg"]:
             trainer_cls = EARLY_FUSION_TRAINERS.get(hparams.model.backbone)
+            if trainer_cls is None:
+                raise ValueError("the experiment backbone is not supported for early fusion.")
         elif hparams.model.fuse_method == "late":
             trainer_cls = LATE_FUSION_TRAINERS.get(hparams.model.backbone)
+            if trainer_cls is None:
+                raise ValueError("the experiment backbone is not supported for late fusion.")
         else:
             raise ValueError("the experiment fuse method is not supported.")
 
-        if trainer_cls is None:
-            raise ValueError("the experiment backbone is not supported.")
         classification_module = trainer_cls(hparams)
     elif hparams.train.view == "single":
         trainer_cls = SINGLE_VIEW_TRAINERS.get(hparams.model.backbone)
