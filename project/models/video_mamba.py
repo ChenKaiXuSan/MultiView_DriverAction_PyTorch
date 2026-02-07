@@ -33,6 +33,7 @@ class VideoMamba(nn.Module):
 
     def forward_features(self, video: torch.Tensor) -> torch.Tensor:
         x = self.stem(video)
+        # Pool spatial dimensions before temporal GRU processing.
         x = x.mean(dim=(3, 4))
         x = x.permute(0, 2, 1)
         out, _ = self.gru(x)

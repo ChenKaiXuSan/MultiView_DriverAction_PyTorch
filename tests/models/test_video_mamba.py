@@ -17,4 +17,5 @@ def test_video_mamba_forward_shape():
     model = VideoMamba(hparams)
     video = torch.randn(2, 3, 4, 32, 32)
     output = model(video)
+    output.sum().backward()
     assert output.shape == (2, 6)

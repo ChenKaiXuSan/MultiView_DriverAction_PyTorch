@@ -19,4 +19,5 @@ def test_video_transformer_forward_shape():
     model = VideoTransformer(hparams)
     video = torch.randn(2, 3, 4, 32, 32)
     output = model(video)
+    output.sum().backward()
     assert output.shape == (2, 5)

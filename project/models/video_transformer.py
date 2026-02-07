@@ -36,6 +36,7 @@ class VideoTransformer(nn.Module):
 
     def forward_features(self, video: torch.Tensor) -> torch.Tensor:
         x = self.stem(video)
+        # Pool spatial dimensions before temporal transformer encoding.
         x = x.mean(dim=(3, 4))
         x = x.permute(0, 2, 1)
         x = self.encoder(x)
