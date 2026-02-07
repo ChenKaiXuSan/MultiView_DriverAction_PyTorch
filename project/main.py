@@ -70,7 +70,27 @@ from project.cross_validation import DefineCrossValidation
 
 logger = logging.getLogger(__name__)
 
-SUPPORTED_MODEL_CHOICES = {"3dcnn", "transformer", "mamba", "stgcn", "rgb_kpt"}
+SINGLE_VIEW_TRAINERS = {
+    "3dcnn": Res3DCNNTrainer,
+    "rgb_kpt": Res3DCNNTrainer,
+    "transformer": TransformerTrainer,
+    "mamba": MambaTrainer,
+    "stgcn": STGCNTrainer,
+}
+EARLY_FUSION_TRAINERS = {
+    "3dcnn": EarlyFusion3DCNNTrainer,
+    "rgb_kpt": EarlyFusion3DCNNTrainer,
+    "transformer": EarlyFusionTransformerTrainer,
+    "mamba": EarlyFusionMambaTrainer,
+    "stgcn": EarlyFusionSTGCNTrainer,
+}
+LATE_FUSION_TRAINERS = {
+    "3dcnn": LateFusion3DCNNTrainer,
+    "rgb_kpt": LateFusion3DCNNTrainer,
+    "transformer": LateFusionTransformerTrainer,
+    "mamba": LateFusionMambaTrainer,
+    "stgcn": LateFusionSTGCNTrainer,
+}
 
 
 def train(hparams: DictConfig, dataset_idx, fold: int):
@@ -90,45 +110,21 @@ def train(hparams: DictConfig, dataset_idx, fold: int):
     # * select experiment
     # TODO: add more experiment trainer here.
     if hparams.train.view == "multi":
-        if hparams.model.backbone in SUPPORTED_MODEL_CHOICES:
+        if hparams.model.fuse_method in ["add", "mul", "concat", "avg"]:
+            trainer_cls = EARLY_FUSION_TRAINERS.get(hparams.model.backbone)
+        elif hparams.model.fuse_method == "late":
+            trainer_cls = LATE_FUSION_TRAINERS.get(hparams.model.backbone)
+        else:
+            raise ValueError("the experiment fuse method is not supported.")
 
-            if hparams.model.fuse_method in ["add", "mul", "concat", "avg"]:
-                if hparams.model.backbone == "transformer":
-                    classification_module = EarlyFusionTransformerTrainer(hparams)
-                elif hparams.model.backbone == "mamba":
-                    classification_module = EarlyFusionMambaTrainer(hparams)
-                elif hparams.model.backbone == "stgcn":
-                    classification_module = EarlyFusionSTGCNTrainer(hparams)
-                elif hparams.model.backbone == "rgb_kpt":
-                    classification_module = EarlyFusion3DCNNTrainer(hparams)
-                else:
-                    classification_module = EarlyFusion3DCNNTrainer(hparams)
-            elif hparams.model.fuse_method == "late":
-                if hparams.model.backbone == "transformer":
-                    classification_module = LateFusionTransformerTrainer(hparams)
-                elif hparams.model.backbone == "mamba":
-                    classification_module = LateFusionMambaTrainer(hparams)
-                elif hparams.model.backbone == "stgcn":
-                    classification_module = LateFusionSTGCNTrainer(hparams)
-                elif hparams.model.backbone == "rgb_kpt":
-                    classification_module = LateFusion3DCNNTrainer(hparams)
-                else:
-                    classification_module = LateFusion3DCNNTrainer(hparams)
-            else:
-                raise ValueError("the experiment fuse method is not supported.")
-        else:
+        if trainer_cls is None:
             raise ValueError("the experiment backbone is not supported.")
+        classification_module = trainer_cls(hparams)
     elif hparams.train.view == "single":
-        if hparams.model.backbone == "transformer":
-            classification_module = TransformerTrainer(hparams)
-        elif hparams.model.backbone == "mamba":
-            classification_module = MambaTrainer(hparams)
-        elif hparams.model.backbone == "stgcn":
-            classification_module = STGCNTrainer(hparams)
-        elif hparams.model.backbone in {"3dcnn", "rgb_kpt"}:
-            classification_module = Res3DCNNTrainer(hparams)
-        else:
+        trainer_cls = SINGLE_VIEW_TRAINERS.get(hparams.model.backbone)
+        if trainer_cls is None:
             raise ValueError("the experiment backbone is not supported.")
+        classification_module = trainer_cls(hparams)
     else:
         raise ValueError("the experiment view is not supported.")
 
