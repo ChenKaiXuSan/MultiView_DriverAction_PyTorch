@@ -32,13 +32,6 @@ from project.models.pose_fusion_res_3dcnn import PoseFusionRes3DCNN
 from project.models.rgb_kpt_fusion import RGBKeypointFusion
 from project.models.stgn_kpt import STGCNKeypoint
 
-
-def _build_stgcn(hparams) -> nn.Module:
-    kpt_backbone = getattr(hparams.model, "kpt_backbone", "stgcn")
-    if kpt_backbone != "stgcn":
-        raise ValueError(f"Unknown kpt_backbone: {kpt_backbone}")
-    return STGCNKeypoint(hparams)
-
 def select_model(hparams) -> nn.Module:
     """
     Select the model based on the hparams.
@@ -55,7 +48,7 @@ def select_model(hparams) -> nn.Module:
     input_type = getattr(hparams.model, "input_type", "rgb")
 
     if input_type == "kpt":
-        return _build_stgcn(hparams)
+        return STGCNKeypoint(hparams)
     if input_type == "rgb_kpt":
         return RGBKeypointFusion(hparams)
 
@@ -72,7 +65,7 @@ def select_model(hparams) -> nn.Module:
         else:
             model = Res3DCNN(hparams)
     elif model_backbone == "stgcn":
-        model = _build_stgcn(hparams)
+        model = STGCNKeypoint(hparams)
     else:
         raise ValueError(f"Unknown model backbone: {model_backbone}")
 

@@ -12,7 +12,9 @@ import torch
 import torch.nn as nn
 
 
-def _get_cfg_with_fallback(model_cfg, primary: str, legacy: str, default) -> Any:
+def _get_config_value_with_legacy_fallback(
+    model_cfg, primary: str, legacy: str, default
+) -> Any:
     """Return config value with primary -> legacy -> default fallback."""
     return getattr(model_cfg, primary, getattr(model_cfg, legacy, default))
 
@@ -55,22 +57,28 @@ class STGCNKeypoint(nn.Module):
         model_cfg = hparams.model
         self.model_class_num = int(model_cfg.model_class_num)
         hidden_dim = int(
-            _get_cfg_with_fallback(model_cfg, "stgcn_hidden_dim", "stgn_hidden_dim", 64)
+            _get_config_value_with_legacy_fallback(
+                model_cfg, "stgcn_hidden_dim", "stgn_hidden_dim", 64
+            )
         )
         num_layers = int(
-            _get_cfg_with_fallback(model_cfg, "stgcn_layers", "stgn_layers", 3)
+            _get_config_value_with_legacy_fallback(
+                model_cfg, "stgcn_layers", "stgn_layers", 3
+            )
         )
         temporal_kernel = int(
-            _get_cfg_with_fallback(
+            _get_config_value_with_legacy_fallback(
                 model_cfg, "stgcn_temporal_kernel", "stgn_temporal_kernel", 3
             )
         )
         dropout = float(
-            _get_cfg_with_fallback(model_cfg, "stgcn_dropout", "stgn_dropout", 0.1)
+            _get_config_value_with_legacy_fallback(
+                model_cfg, "stgcn_dropout", "stgn_dropout", 0.1
+            )
         )
         self.feature_dim = hidden_dim
 
-        num_kpts = _get_cfg_with_fallback(
+        num_kpts = _get_config_value_with_legacy_fallback(
             model_cfg, "stgcn_num_kpts", "stgn_num_kpts", None
         )
         self.register_buffer("adj", self._build_adj(num_kpts))
