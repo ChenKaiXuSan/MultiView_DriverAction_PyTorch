@@ -31,6 +31,16 @@ from project.models.res_3dcnn import Res3DCNN
 from project.models.pose_fusion_res_3dcnn import PoseFusionRes3DCNN
 from project.models.keypoint_mlp import KeypointMLP
 from project.models.rgb_kpt_fusion import RGBKeypointFusion
+from project.models.stgn_kpt import STGNKeypoint
+
+
+def select_kpt_backbone(hparams) -> nn.Module:
+    kpt_backbone = getattr(hparams.model, "kpt_backbone", "mlp")
+    if kpt_backbone == "stgn":
+        return STGNKeypoint(hparams)
+    if kpt_backbone == "mlp":
+        return KeypointMLP(hparams)
+    raise ValueError(f"Unknown kpt_backbone: {kpt_backbone}")
 
 def select_model(hparams) -> nn.Module:
     """
@@ -48,12 +58,12 @@ def select_model(hparams) -> nn.Module:
     input_type = getattr(hparams.model, "input_type", "rgb")
 
     if input_type == "kpt":
-        return KeypointMLP(hparams)
+        return select_kpt_backbone(hparams)
     if input_type == "rgb_kpt":
         return RGBKeypointFusion(hparams)
 
-    if model_backbone == "kpt_mlp":
-        return KeypointMLP(hparams)
+    if model_backbone in ["kpt_mlp", "stgn"]:
+        return select_kpt_backbone(hparams)
     if model_backbone == "rgb_kpt":
         return RGBKeypointFusion(hparams)
 

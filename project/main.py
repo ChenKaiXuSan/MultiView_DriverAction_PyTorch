@@ -73,7 +73,7 @@ def train(hparams: DictConfig, dataset_idx, fold: int):
     # * select experiment
     # TODO: add more experiment trainer here.
     if hparams.train.view == "multi":
-        if hparams.model.backbone in ["3dcnn", "kpt_mlp", "rgb_kpt"]:
+        if hparams.model.backbone in ["3dcnn", "kpt_mlp", "stgn", "rgb_kpt"]:
 
             if hparams.model.fuse_method in ["add", "mul", "concat", "avg"]:
                 classification_module = EarlyFusion3DCNNTrainer(hparams)
