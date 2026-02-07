@@ -35,9 +35,9 @@ from project.models.stgn_kpt import STGCNKeypoint
 
 def select_kpt_backbone(hparams) -> nn.Module:
     kpt_backbone = getattr(hparams.model, "kpt_backbone", "stgcn")
-    if kpt_backbone == "stgcn":
-        return STGCNKeypoint(hparams)
-    raise ValueError(f"Unknown kpt_backbone: {kpt_backbone}")
+    if kpt_backbone != "stgcn":
+        raise ValueError(f"Unknown kpt_backbone: {kpt_backbone}")
+    return STGCNKeypoint(hparams)
 
 def select_model(hparams) -> nn.Module:
     """
