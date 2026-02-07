@@ -13,7 +13,7 @@ import torch.nn as nn
 
 
 def _get_config_value_with_legacy_fallback(
-    model_cfg, primary: str, legacy: str, default
+    model_cfg, primary: str, legacy: str, default: Any
 ) -> Any:
     """Return config value with primary -> legacy -> default fallback."""
     return getattr(model_cfg, primary, getattr(model_cfg, legacy, default))
