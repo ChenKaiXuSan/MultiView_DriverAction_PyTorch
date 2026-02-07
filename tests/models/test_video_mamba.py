@@ -20,3 +20,11 @@ def test_video_mamba_forward_shape():
     output.sum().backward()
     assert model.classifier.weight.grad is not None
     assert output.shape == (2, 6)
+
+
+def test_video_mamba_single_frame():
+    hparams = OmegaConf.create({"model": {"model_class_num": 4, "mamba_dim": 16}})
+    model = VideoMamba(hparams)
+    video = torch.randn(1, 3, 1, 16, 16)
+    output = model(video)
+    assert output.shape == (1, 4)

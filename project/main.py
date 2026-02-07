@@ -77,6 +77,7 @@ SINGLE_VIEW_TRAINERS = {
     "mamba": MambaTrainer,
     "stgcn": STGCNTrainer,
 }
+EARLY_FUSION_METHODS = {"add", "mul", "concat", "avg"}
 EARLY_FUSION_TRAINERS = {
     "3dcnn": EarlyFusion3DCNNTrainer,
     "rgb_kpt": EarlyFusion3DCNNTrainer,
@@ -110,7 +111,7 @@ def train(hparams: DictConfig, dataset_idx, fold: int):
     # * select experiment
     # TODO: add more experiment trainer here.
     if hparams.train.view == "multi":
-        if hparams.model.fuse_method in ["add", "mul", "concat", "avg"]:
+        if hparams.model.fuse_method in EARLY_FUSION_METHODS:
             trainer_cls = EARLY_FUSION_TRAINERS.get(hparams.model.backbone)
             if trainer_cls is None:
                 raise ValueError(
