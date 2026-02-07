@@ -43,7 +43,7 @@ class STGNBlock(nn.Module):
         return self.drop(x)
 
 
-class STGNKeypoint(nn.Module):
+class STGCNKeypoint(nn.Module):
     def __init__(self, hparams) -> None:
         super().__init__()
 
@@ -101,3 +101,6 @@ class STGNKeypoint(nn.Module):
     def forward(self, kpts: torch.Tensor) -> torch.Tensor:
         features = self.forward_features(kpts)
         return self.classifier(features)
+
+
+STGNKeypoint = STGCNKeypoint

@@ -30,13 +30,13 @@ from project.models.se_attn_res_3dcnn import SEFusionRes3DCNN
 from project.models.res_3dcnn import Res3DCNN
 from project.models.pose_fusion_res_3dcnn import PoseFusionRes3DCNN
 from project.models.rgb_kpt_fusion import RGBKeypointFusion
-from project.models.stgn_kpt import STGNKeypoint
+from project.models.stgn_kpt import STGCNKeypoint
 
 
 def select_kpt_backbone(hparams) -> nn.Module:
     kpt_backbone = getattr(hparams.model, "kpt_backbone", "stgcn")
     if kpt_backbone == "stgcn":
-        return STGNKeypoint(hparams)
+        return STGCNKeypoint(hparams)
     raise ValueError(f"Unknown kpt_backbone: {kpt_backbone}")
 
 def select_model(hparams) -> nn.Module:

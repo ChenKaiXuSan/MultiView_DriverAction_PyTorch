@@ -1,7 +1,7 @@
 import torch
 from omegaconf import OmegaConf
 
-from project.models.stgn_kpt import STGNKeypoint
+from project.models.stgn_kpt import STGCNKeypoint
 
 
 def test_stgn_keypoint_forward_shape():
@@ -15,7 +15,7 @@ def test_stgn_keypoint_forward_shape():
             }
         }
     )
-    model = STGNKeypoint(hparams)
+    model = STGCNKeypoint(hparams)
     kpts = torch.randn(2, 5, 6, 3)
     out = model(kpts)
     assert out.shape == (2, 4)
