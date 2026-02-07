@@ -17,9 +17,6 @@ from project.dataloader.annotation_dict import get_annotation_dict
 
 logger = logging.getLogger(__name__)
 
-ViewName = Literal["front", "left", "right"]
-
-
 class LabeledVideoDataset(Dataset):
     """
     Multi-view labeled video dataset with SAM 3D body keypoints.
