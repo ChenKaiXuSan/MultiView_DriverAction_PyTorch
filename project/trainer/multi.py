@@ -37,6 +37,7 @@ LATE_FUSION_TRAINERS = {
     "transformer": LateFusionTransformerTrainer,
     "mamba": LateFusionMambaTrainer,
 }
+# Mid fusion only supports a single backbone (3dcnn), so it is keyed by fuse method.
 MID_FUSION_TRAINERS = {"se_attn": SEAttnTrainer}
 
 
@@ -50,6 +51,13 @@ def select_multi_trainer_cls(hparams):
     fuse_method = getattr(hparams.model, "fuse_method", None)
     backbone = getattr(hparams.model, "backbone", None)
 
+    if fuse_method in LEGACY_FUSE_METHOD_ALIASES:
+        logger.warning(
+            "fuse_method 'se_atn' is deprecated and will be removed in a future "
+            "version; use 'se_attn'."
+        )
+        fuse_method = LEGACY_FUSE_METHOD_ALIASES[fuse_method]
+
     if fuse_method in EARLY_FUSION_METHODS:
         trainer_cls = EARLY_FUSION_TRAINERS.get(backbone)
         if trainer_cls is None:
@@ -57,12 +65,6 @@ def select_multi_trainer_cls(hparams):
                 f"backbone {backbone} is not supported for early fusion."
             )
         return trainer_cls
-    if fuse_method in LEGACY_FUSE_METHOD_ALIASES:
-        logger.warning(
-            "fuse_method 'se_atn' is deprecated and will be removed in a future "
-            "version; use 'se_attn'."
-        )
-        fuse_method = LEGACY_FUSE_METHOD_ALIASES[fuse_method]
 
     if fuse_method in MID_FUSION_METHODS:
         if backbone != "3dcnn":
