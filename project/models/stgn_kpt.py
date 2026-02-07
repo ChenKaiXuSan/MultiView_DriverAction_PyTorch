@@ -121,4 +121,5 @@ class STGCNKeypoint(nn.Module):
         return self.classifier(features)
 
 
+# Backward compatibility: legacy name retained for older configs.
 STGNKeypoint = STGCNKeypoint
