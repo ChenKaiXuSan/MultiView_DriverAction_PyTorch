@@ -59,7 +59,10 @@ def select_multi_trainer_cls(hparams):
         return trainer_cls
     if fuse_method in MID_FUSION_METHODS:
         if fuse_method == "se_atn":
-            logger.warning("fuse_method 'se_atn' is deprecated; use 'se_attn'.")
+            logger.warning(
+                "fuse_method 'se_atn' is deprecated and will be removed in a future "
+                "version; use 'se_attn'."
+            )
         if backbone != "3dcnn":
             raise ValueError(
                 f"backbone {backbone} is not supported for mid fusion (requires 3dcnn)."
