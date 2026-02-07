@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 EARLY_FUSION_METHODS = {"add", "mul", "concat", "avg"}
-# Accept legacy "se_atn" spelling used in older configs.
+# Prefer "se_attn"; accept legacy "se_atn" spelling used in older configs.
 MID_FUSION_METHODS = {"se_atn", "se_attn"}
 LATE_FUSION_METHODS = {"late"}
 
@@ -58,6 +58,8 @@ def select_multi_trainer_cls(hparams):
             )
         return trainer_cls
     if fuse_method in MID_FUSION_METHODS:
+        if fuse_method == "se_atn":
+            logger.warning("fuse_method 'se_atn' is deprecated; use 'se_attn'.")
         if backbone != "3dcnn":
             raise ValueError(
                 f"backbone {backbone} is not supported for mid fusion (requires 3dcnn)."
