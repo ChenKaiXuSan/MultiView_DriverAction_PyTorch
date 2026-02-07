@@ -30,7 +30,7 @@ from project.models.se_attn_res_3dcnn import SEFusionRes3DCNN
 from project.models.res_3dcnn import Res3DCNN
 from project.models.pose_fusion_res_3dcnn import PoseFusionRes3DCNN
 from project.models.rgb_kpt_fusion import RGBKeypointFusion
-from project.models.stgn_kpt import STGCNKeypoint
+from project.models.stgcn_kpt import STGCNKeypoint
 
 def select_model(hparams) -> nn.Module:
     """

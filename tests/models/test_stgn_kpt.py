@@ -1,7 +1,7 @@
 import torch
 from omegaconf import OmegaConf
 
-from project.models.stgn_kpt import STGCNKeypoint
+from project.models.stgcn_kpt import STGCNKeypoint
 
 
 def test_stgn_keypoint_forward_shape():

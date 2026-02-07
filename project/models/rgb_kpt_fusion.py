@@ -10,7 +10,7 @@ import torch
 import torch.nn as nn
 
 from project.models.res_3dcnn import Res3DCNN
-from project.models.stgn_kpt import STGCNKeypoint
+from project.models.stgcn_kpt import STGCNKeypoint
 
 
 class RGBKeypointFusion(nn.Module):
