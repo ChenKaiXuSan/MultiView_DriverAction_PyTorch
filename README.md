@@ -91,6 +91,9 @@ Fusion is performed at the **feature level**:
 - **logit/prob 融合**：`model.fusion_mode=logit_mean|prob_mean`
 - **特征级融合**：`model.fusion_mode=feature_mean|feature_concat`
 
+### 4) 多视角融合方式（early fusion）
+- **加权/拼接融合**：`model.fuse_method=add|mul|concat|avg`
+
 ---
 
 ## Dataset Structure
