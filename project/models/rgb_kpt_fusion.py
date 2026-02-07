@@ -10,7 +10,6 @@ import torch
 import torch.nn as nn
 
 from project.models.res_3dcnn import Res3DCNN
-from project.models.keypoint_mlp import KeypointMLP
 from project.models.stgn_kpt import STGNKeypoint
 
 
@@ -23,11 +22,9 @@ class RGBKeypointFusion(nn.Module):
         self.fusion_feature_dim = getattr(hparams.model, "fusion_feature_dim", None)
 
         self.rgb_backbone = Res3DCNN(hparams)
-        kpt_backbone = getattr(hparams.model, "kpt_backbone", "mlp")
-        if kpt_backbone == "stgn":
+        kpt_backbone = getattr(hparams.model, "kpt_backbone", "stgcn")
+        if kpt_backbone in ["stgn", "stgcn"]:
             self.kpt_backbone = STGNKeypoint(hparams)
-        elif kpt_backbone == "mlp":
-            self.kpt_backbone = KeypointMLP(hparams)
         else:
             raise ValueError(f"Unknown kpt_backbone: {kpt_backbone}")
 

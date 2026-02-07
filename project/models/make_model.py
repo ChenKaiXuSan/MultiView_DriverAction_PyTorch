@@ -29,17 +29,14 @@ from project.models.cross_attn_res_3dcnn import CrossAttentionRes3DCNN
 from project.models.se_attn_res_3dcnn import SEFusionRes3DCNN
 from project.models.res_3dcnn import Res3DCNN
 from project.models.pose_fusion_res_3dcnn import PoseFusionRes3DCNN
-from project.models.keypoint_mlp import KeypointMLP
 from project.models.rgb_kpt_fusion import RGBKeypointFusion
 from project.models.stgn_kpt import STGNKeypoint
 
 
 def select_kpt_backbone(hparams) -> nn.Module:
-    kpt_backbone = getattr(hparams.model, "kpt_backbone", "mlp")
-    if kpt_backbone == "stgn":
+    kpt_backbone = getattr(hparams.model, "kpt_backbone", "stgcn")
+    if kpt_backbone in ["stgn", "stgcn"]:
         return STGNKeypoint(hparams)
-    if kpt_backbone == "mlp":
-        return KeypointMLP(hparams)
     raise ValueError(f"Unknown kpt_backbone: {kpt_backbone}")
 
 def select_model(hparams) -> nn.Module:
@@ -62,7 +59,7 @@ def select_model(hparams) -> nn.Module:
     if input_type == "rgb_kpt":
         return RGBKeypointFusion(hparams)
 
-    if model_backbone in ["kpt_mlp", "stgn"]:
+    if model_backbone in ["stgn"]:
         return select_kpt_backbone(hparams)
     if model_backbone == "rgb_kpt":
         return RGBKeypointFusion(hparams)

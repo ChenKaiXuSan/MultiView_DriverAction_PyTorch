@@ -79,12 +79,12 @@ Fusion is performed at the **feature level**:
 
 ### 1) 单视角输入（train.view=single）
 - **RGB 单视角**：`model.input_type=rgb`
-- **KPT 单视角**：`model.input_type=kpt` + `model.kpt_backbone=stgn|mlp`
+- **KPT 单视角**：`model.input_type=kpt` + `model.kpt_backbone=stgcn`
 - **RGB+KPT 单视角**：`model.input_type=rgb_kpt` + `model.modality_fusion=concat|mean`
 
 ### 2) 三视角输入（train.view=multi）
 - **RGB 三视角**：`model.input_type=rgb` + `model.fuse_method=late`
-- **KPT 三视角**：`model.input_type=kpt` + `model.kpt_backbone=stgn|mlp` + `model.fuse_method=late`
+- **KPT 三视角**：`model.input_type=kpt` + `model.kpt_backbone=stgcn` + `model.fuse_method=late`
 - **RGB+KPT 三视角**：`model.input_type=rgb_kpt` + `model.modality_fusion=concat|mean` + `model.fuse_method=late`
 
 ### 3) 多视角融合方式（late fusion）

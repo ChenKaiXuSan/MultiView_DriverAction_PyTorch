@@ -42,16 +42,13 @@ data:
   fold: 5 # the fold number of the cross validation
 
 model:
-  backbone: 3dcnn # choices=[3dcnn, kpt_mlp, stgn, rgb_kpt, 2dcnn, cnn_lstm, two_stream], help='the backbone of the model'
+  backbone: 3dcnn # choices=[3dcnn, stgn, rgb_kpt, 2dcnn, cnn_lstm, two_stream], help='the backbone of the model'
   model_class_num: 9 # the class num, left, right, up, down, left_up, left_down, right_up, right_down, front
   use_side_heads: True # whether to use side heads for intermediate supervision
   input_type: rgb # rgb | kpt | rgb_kpt
   fusion_mode: logit_mean # logit_mean | prob_mean | feature_mean | feature_concat
   modality_fusion: concat # concat | mean (for rgb+kpt)
-  kpt_backbone: stgn # stgn | mlp
-  kpt_input_dim: null # set to (K * 3) where K is number of keypoints; temporal pooling is in-model
-  kpt_hidden_dim: 256
-  kpt_feature_dim: 256
+  kpt_backbone: stgcn # stgcn only
   fusion_feature_dim: 256
   stgn_hidden_dim: 64
   stgn_layers: 3
