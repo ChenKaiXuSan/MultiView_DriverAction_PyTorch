@@ -38,7 +38,7 @@ def test_select_multi_trainer_mid_fusion():
             "model": {
                 "input_type": "rgb",
                 "backbone": "3dcnn",
-                "fuse_method": "se_atn",
+                "fuse_method": "se_attn",
             },
         }
     )

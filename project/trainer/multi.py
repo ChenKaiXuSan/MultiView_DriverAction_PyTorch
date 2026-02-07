@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 EARLY_FUSION_METHODS = {"add", "mul", "concat", "avg"}
-MID_FUSION_METHODS = {"se_atn"}
+MID_FUSION_METHODS = {"se_atn", "se_attn"}
 LATE_FUSION_METHODS = {"late"}
 
 EARLY_FUSION_TRAINERS = {
@@ -35,7 +35,7 @@ LATE_FUSION_TRAINERS = {
     "transformer": LateFusionTransformerTrainer,
     "mamba": LateFusionMambaTrainer,
 }
-MID_FUSION_TRAINERS = {"se_atn": SEAttnTrainer}
+MID_FUSION_TRAINERS = {"se_atn": SEAttnTrainer, "se_attn": SEAttnTrainer}
 
 
 def select_multi_trainer_cls(hparams):
