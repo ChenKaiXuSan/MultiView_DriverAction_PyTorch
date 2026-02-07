@@ -36,6 +36,7 @@ LATE_FUSION_TRAINERS = {
     "transformer": LateFusionTransformerTrainer,
     "mamba": LateFusionMambaTrainer,
 }
+# Keep the legacy "se_atn" key to avoid breaking existing configs.
 MID_FUSION_TRAINERS = {"se_atn": SEAttnTrainer, "se_attn": SEAttnTrainer}
 
 
