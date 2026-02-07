@@ -25,10 +25,13 @@ Date      	By	Comments
 # ! prepare not used
 import torch.nn as nn
 
-from project.models.cross_attn_res_3dcnn import CrossAttentionRes3DCNN
 from project.models.se_attn_res_3dcnn import SEFusionRes3DCNN
 from project.models.res_3dcnn import Res3DCNN
-from project.models.pose_fusion_res_3dcnn import PoseFusionRes3DCNN
+from project.models.rgb_kpt_fusion import RGBKeypointFusion
+from project.models.stgcn_kpt import STGCNKeypoint
+from project.models.video_transformer import VideoTransformer
+from project.models.video_mamba import VideoMamba
+
 
 def select_model(hparams) -> nn.Module:
     """
@@ -43,16 +46,24 @@ def select_model(hparams) -> nn.Module:
 
     model_backbone = hparams.model.backbone
     fuse_method = hparams.model.fuse_method
+    input_type = getattr(hparams.model, "input_type", "rgb")
+
+    if input_type == "kpt":
+        return STGCNKeypoint(hparams)
+    if input_type == "rgb_kpt":
+        return RGBKeypointFusion(hparams)
+
+    if model_backbone == "rgb_kpt":
+        return RGBKeypointFusion(hparams)
 
     if model_backbone == "3dcnn":
-        if fuse_method == "cross_atn":
-            model = CrossAttentionRes3DCNN(hparams)
-        elif fuse_method == "se_atn":
-            model = SEFusionRes3DCNN(hparams)
-        elif fuse_method == "pose_atn":
-            model = PoseFusionRes3DCNN(hparams)
-        else:
-            model = Res3DCNN(hparams)
+        model = Res3DCNN(hparams)
+    elif model_backbone == "stgcn":
+        model = STGCNKeypoint(hparams)
+    elif model_backbone == "transformer":
+        model = VideoTransformer(hparams)
+    elif model_backbone == "mamba":
+        model = VideoMamba(hparams)
     else:
         raise ValueError(f"Unknown model backbone: {model_backbone}")
 

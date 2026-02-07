@@ -242,3 +242,19 @@ class EarlyFusion3DCNNTrainer(LightningModule):
                 "monitor": "train/loss",
             },
         }
+
+
+class EarlyFusionTransformerTrainer(EarlyFusion3DCNNTrainer):
+    """Early fusion trainer alias for transformer backbone routing."""
+
+
+class EarlyFusionMambaTrainer(EarlyFusion3DCNNTrainer):
+    """Early fusion trainer alias for mamba backbone routing."""
+
+
+class EarlyFusionSTGCNTrainer(EarlyFusion3DCNNTrainer):
+    """Early fusion trainer alias for ST-GCN backbone routing."""
+
+
+class EarlyFusionRGBKeypointTrainer(EarlyFusion3DCNNTrainer):
+    """Early fusion trainer alias for RGB+KPT fusion backbone."""

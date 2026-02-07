@@ -42,9 +42,26 @@ data:
   fold: 5 # the fold number of the cross validation
 
 model:
-  backbone: 3dcnn # choices=[3dcnn, 2dcnn, cnn_lstm, two_stream], help='the backbone of the model'
+  backbone: 3dcnn # choices=[3dcnn, transformer, mamba, stgcn, rgb_kpt], help='the backbone of the model'
   model_class_num: 9 # the class num, left, right, up, down, left_up, left_down, right_up, right_down, front
   use_side_heads: True # whether to use side heads for intermediate supervision
+  input_type: rgb # rgb | kpt | rgb_kpt
+  fusion_mode: logit_mean # logit_mean | prob_mean | feature_mean | feature_concat
+  modality_fusion: concat # concat | mean (for rgb+kpt)
+  fusion_feature_dim: 256
+  stgcn_hidden_dim: 64
+  stgcn_layers: 3
+  stgcn_temporal_kernel: 3
+  stgcn_dropout: 0.1
+  stgcn_num_kpts: null
+  transformer_dim: 256
+  transformer_layers: 4
+  transformer_heads: 4
+  transformer_ff_dim: 1024
+  transformer_dropout: 0.1
+  mamba_dim: 256
+  mamba_layers: 2
+  mamba_dropout: 0.1
 
   fuse_method: late # add, mul, concat, none, late, avg, cross_atn, se_atn, pose_atn
   fusion_layers: 5 # the fuse layer number of the model, used for cross attention, se attention, etc.
@@ -59,6 +76,8 @@ train:
   uniform_temporal_subsample_num: 8 # num frame from the clip duration, f or define one gait cycle, we need use whole frames.
 
   view: multi # single or multi
+  view_name: front # used when train.view=single
+  feature_map_batches: 10 # dump CAM features for first N test batches
 
   gpu: 0 # choices=[0, 1], help='the gpu number whicht to train'
 
