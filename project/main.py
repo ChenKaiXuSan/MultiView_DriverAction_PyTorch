@@ -43,59 +43,12 @@ from project.dataloader.data_loader import DriverDataModule
 #####################################
 
 # baseline
-from project.trainer.baseline.train_3dcnn import (
-    Res3DCNNTrainer,
-    TransformerTrainer,
-    MambaTrainer,
-    STGCNTrainer,
-    RGBKeypointTrainer,
-)
-
-# attention based
-from project.trainer.mid.train_pose_attn import PoseAttnTrainer
-from project.trainer.mid.train_se_attn import SEAttnTrainer
-from project.trainer.early.train_early_fusion import (
-    EarlyFusion3DCNNTrainer,
-    EarlyFusionTransformerTrainer,
-    EarlyFusionMambaTrainer,
-    EarlyFusionSTGCNTrainer,
-    EarlyFusionRGBKeypointTrainer,
-)
-from project.trainer.late.train_late_fusion import (
-    LateFusion3DCNNTrainer,
-    LateFusionTransformerTrainer,
-    LateFusionMambaTrainer,
-    LateFusionSTGCNTrainer,
-    LateFusionRGBKeypointTrainer,
-)
+from project.trainer.single import build_single_trainer
+from project.trainer.multi import build_multi_trainer
 
 from project.cross_validation import DefineCrossValidation
 
 logger = logging.getLogger(__name__)
-
-SINGLE_VIEW_TRAINERS = {
-    "3dcnn": Res3DCNNTrainer,
-    "rgb_kpt": RGBKeypointTrainer,
-    "transformer": TransformerTrainer,
-    "mamba": MambaTrainer,
-    "stgcn": STGCNTrainer,
-}
-EARLY_FUSION_METHODS = {"add", "mul", "concat", "avg"}
-EARLY_FUSION_TRAINERS = {
-    "3dcnn": EarlyFusion3DCNNTrainer,
-    "rgb_kpt": EarlyFusionRGBKeypointTrainer,
-    "transformer": EarlyFusionTransformerTrainer,
-    "mamba": EarlyFusionMambaTrainer,
-    "stgcn": EarlyFusionSTGCNTrainer,
-}
-LATE_FUSION_TRAINERS = {
-    "3dcnn": LateFusion3DCNNTrainer,
-    "rgb_kpt": LateFusionRGBKeypointTrainer,
-    "transformer": LateFusionTransformerTrainer,
-    "mamba": LateFusionMambaTrainer,
-    "stgcn": LateFusionSTGCNTrainer,
-}
-
 
 def train(hparams: DictConfig, dataset_idx, fold: int):
     """the train process for the one fold.
@@ -114,31 +67,9 @@ def train(hparams: DictConfig, dataset_idx, fold: int):
     # * select experiment
     # TODO: add more experiment trainer here.
     if hparams.train.view == "multi":
-        if hparams.model.fuse_method in EARLY_FUSION_METHODS:
-            trainer_cls = EARLY_FUSION_TRAINERS.get(hparams.model.backbone)
-            if trainer_cls is None:
-                raise ValueError(
-                    f"backbone {hparams.model.backbone} is not supported for early fusion."
-                )
-        elif hparams.model.fuse_method == "late":
-            trainer_cls = LATE_FUSION_TRAINERS.get(hparams.model.backbone)
-            if trainer_cls is None:
-                raise ValueError(
-                    f"backbone {hparams.model.backbone} is not supported for late fusion."
-                )
-        else:
-            raise ValueError(
-                f"fuse_method {hparams.model.fuse_method} is not supported."
-            )
-
-        classification_module = trainer_cls(hparams)
+        classification_module = build_multi_trainer(hparams)
     elif hparams.train.view == "single":
-        trainer_cls = SINGLE_VIEW_TRAINERS.get(hparams.model.backbone)
-        if trainer_cls is None:
-            raise ValueError(
-                f"backbone {hparams.model.backbone} is not supported."
-            )
-        classification_module = trainer_cls(hparams)
+        classification_module = build_single_trainer(hparams)
     else:
         raise ValueError("the experiment view is not supported.")
 
