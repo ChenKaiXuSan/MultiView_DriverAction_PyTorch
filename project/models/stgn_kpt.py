@@ -49,16 +49,19 @@ class STGCNKeypoint(nn.Module):
 
         model_cfg = hparams.model
         self.model_class_num = int(model_cfg.model_class_num)
-        def _cfg(primary: str, legacy: str, default):
+        def _get_cfg(primary: str, legacy: str, default):
+            """Return config value using primary key with legacy fallback."""
             return getattr(model_cfg, primary, getattr(model_cfg, legacy, default))
 
-        hidden_dim = int(_cfg("stgcn_hidden_dim", "stgn_hidden_dim", 64))
-        num_layers = int(_cfg("stgcn_layers", "stgn_layers", 3))
-        temporal_kernel = int(_cfg("stgcn_temporal_kernel", "stgn_temporal_kernel", 3))
-        dropout = float(_cfg("stgcn_dropout", "stgn_dropout", 0.1))
+        hidden_dim = int(_get_cfg("stgcn_hidden_dim", "stgn_hidden_dim", 64))
+        num_layers = int(_get_cfg("stgcn_layers", "stgn_layers", 3))
+        temporal_kernel = int(
+            _get_cfg("stgcn_temporal_kernel", "stgn_temporal_kernel", 3)
+        )
+        dropout = float(_get_cfg("stgcn_dropout", "stgn_dropout", 0.1))
         self.feature_dim = hidden_dim
 
-        num_kpts = _cfg("stgcn_num_kpts", "stgn_num_kpts", None)
+        num_kpts = _get_cfg("stgcn_num_kpts", "stgn_num_kpts", None)
         self.register_buffer("adj", self._build_adj(num_kpts))
 
         layers = []
