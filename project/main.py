@@ -70,8 +70,7 @@ from project.cross_validation import DefineCrossValidation
 
 logger = logging.getLogger(__name__)
 
-MULTI_VIEW_BACKBONES = {"3dcnn", "transformer", "mamba", "stgcn", "rgb_kpt"}
-SINGLE_VIEW_BACKBONES = {"3dcnn", "transformer", "mamba", "stgcn", "rgb_kpt"}
+SUPPORTED_BACKBONES = {"3dcnn", "transformer", "mamba", "stgcn", "rgb_kpt"}
 
 
 def train(hparams: DictConfig, dataset_idx, fold: int):
@@ -91,7 +90,7 @@ def train(hparams: DictConfig, dataset_idx, fold: int):
     # * select experiment
     # TODO: add more experiment trainer here.
     if hparams.train.view == "multi":
-        if hparams.model.backbone in MULTI_VIEW_BACKBONES:
+        if hparams.model.backbone in SUPPORTED_BACKBONES:
 
             if hparams.model.fuse_method in ["add", "mul", "concat", "avg"]:
                 if hparams.model.backbone == "transformer":
@@ -122,10 +121,10 @@ def train(hparams: DictConfig, dataset_idx, fold: int):
             classification_module = MambaTrainer(hparams)
         elif hparams.model.backbone == "stgcn":
             classification_module = STGCNTrainer(hparams)
-        elif hparams.model.backbone not in SINGLE_VIEW_BACKBONES:
-            raise ValueError("the experiment backbone is not supported.")
-        else:
+        elif hparams.model.backbone in {"3dcnn", "rgb_kpt"}:
             classification_module = Res3DCNNTrainer(hparams)
+        else:
+            raise ValueError("the experiment backbone is not supported.")
     else:
         raise ValueError("the experiment view is not supported.")
 
