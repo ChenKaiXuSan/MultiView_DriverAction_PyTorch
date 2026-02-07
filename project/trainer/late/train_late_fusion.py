@@ -285,3 +285,7 @@ class LateFusionMambaTrainer(LateFusion3DCNNTrainer):
 
 class LateFusionSTGCNTrainer(LateFusion3DCNNTrainer):
     """Late fusion trainer alias for ST-GCN backbone routing."""
+
+
+class LateFusionRGBKeypointTrainer(LateFusion3DCNNTrainer):
+    """Late fusion trainer alias for RGB+KPT fusion backbone."""

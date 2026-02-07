@@ -254,3 +254,7 @@ class EarlyFusionMambaTrainer(EarlyFusion3DCNNTrainer):
 
 class EarlyFusionSTGCNTrainer(EarlyFusion3DCNNTrainer):
     """Early fusion trainer alias for ST-GCN backbone routing."""
+
+
+class EarlyFusionRGBKeypointTrainer(EarlyFusion3DCNNTrainer):
+    """Early fusion trainer alias for RGB+KPT fusion backbone."""

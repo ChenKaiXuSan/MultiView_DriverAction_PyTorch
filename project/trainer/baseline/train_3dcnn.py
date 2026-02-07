@@ -307,3 +307,7 @@ class MambaTrainer(Res3DCNNTrainer):
 
 class STGCNTrainer(Res3DCNNTrainer):
     """Single-view trainer alias for ST-GCN backbone routing."""
+
+
+class RGBKeypointTrainer(Res3DCNNTrainer):
+    """Single-view trainer alias for RGB+KPT fusion backbone."""

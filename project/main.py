@@ -48,6 +48,7 @@ from project.trainer.baseline.train_3dcnn import (
     TransformerTrainer,
     MambaTrainer,
     STGCNTrainer,
+    RGBKeypointTrainer,
 )
 
 # attention based
@@ -58,12 +59,14 @@ from project.trainer.early.train_early_fusion import (
     EarlyFusionTransformerTrainer,
     EarlyFusionMambaTrainer,
     EarlyFusionSTGCNTrainer,
+    EarlyFusionRGBKeypointTrainer,
 )
 from project.trainer.late.train_late_fusion import (
     LateFusion3DCNNTrainer,
     LateFusionTransformerTrainer,
     LateFusionMambaTrainer,
     LateFusionSTGCNTrainer,
+    LateFusionRGBKeypointTrainer,
 )
 
 from project.cross_validation import DefineCrossValidation
@@ -72,7 +75,7 @@ logger = logging.getLogger(__name__)
 
 SINGLE_VIEW_TRAINERS = {
     "3dcnn": Res3DCNNTrainer,
-    "rgb_kpt": Res3DCNNTrainer,
+    "rgb_kpt": RGBKeypointTrainer,
     "transformer": TransformerTrainer,
     "mamba": MambaTrainer,
     "stgcn": STGCNTrainer,
@@ -80,14 +83,14 @@ SINGLE_VIEW_TRAINERS = {
 EARLY_FUSION_METHODS = {"add", "mul", "concat", "avg"}
 EARLY_FUSION_TRAINERS = {
     "3dcnn": EarlyFusion3DCNNTrainer,
-    "rgb_kpt": EarlyFusion3DCNNTrainer,
+    "rgb_kpt": EarlyFusionRGBKeypointTrainer,
     "transformer": EarlyFusionTransformerTrainer,
     "mamba": EarlyFusionMambaTrainer,
     "stgcn": EarlyFusionSTGCNTrainer,
 }
 LATE_FUSION_TRAINERS = {
     "3dcnn": LateFusion3DCNNTrainer,
-    "rgb_kpt": LateFusion3DCNNTrainer,
+    "rgb_kpt": LateFusionRGBKeypointTrainer,
     "transformer": LateFusionTransformerTrainer,
     "mamba": LateFusionMambaTrainer,
     "stgcn": LateFusionSTGCNTrainer,
