@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 EARLY_FUSION_METHODS = {"add", "mul", "concat", "avg"}
-# Prefer "se_attn"; accept legacy "se_atn" spelling used in older configs.
+# Prefer "se_attn"; accept legacy "se_atn" spelling used in older configs (TODO: remove after migration).
 MID_FUSION_METHODS = {"se_atn", "se_attn"}
 LATE_FUSION_METHODS = {"late"}
 
