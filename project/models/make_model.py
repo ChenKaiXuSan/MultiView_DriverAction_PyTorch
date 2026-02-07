@@ -31,6 +31,8 @@ from project.models.res_3dcnn import Res3DCNN
 from project.models.pose_fusion_res_3dcnn import PoseFusionRes3DCNN
 from project.models.rgb_kpt_fusion import RGBKeypointFusion
 from project.models.stgcn_kpt import STGCNKeypoint
+from project.models.video_transformer import VideoTransformer
+from project.models.video_mamba import VideoMamba
 
 def select_model(hparams) -> nn.Module:
     """
@@ -66,6 +68,10 @@ def select_model(hparams) -> nn.Module:
             model = Res3DCNN(hparams)
     elif model_backbone == "stgcn":
         model = STGCNKeypoint(hparams)
+    elif model_backbone == "transformer":
+        model = VideoTransformer(hparams)
+    elif model_backbone == "mamba":
+        model = VideoMamba(hparams)
     else:
         raise ValueError(f"Unknown model backbone: {model_backbone}")
 

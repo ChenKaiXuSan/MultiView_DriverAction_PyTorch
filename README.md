@@ -78,12 +78,12 @@ Fusion is performed at the **feature level**:
 ## 当前可做的对比实验（基于 config 选项）
 
 ### 1) 单视角输入（train.view=single）
-- **RGB 单视角**：`model.input_type=rgb`
+- **RGB 单视角**：`model.input_type=rgb` + `model.backbone=3dcnn|transformer|mamba`
 - **KPT 单视角**：`model.input_type=kpt`（默认 ST-GCN）
 - **RGB+KPT 单视角**：`model.input_type=rgb_kpt` + `model.modality_fusion=concat|mean`
 
 ### 2) 三视角输入（train.view=multi）
-- **RGB 三视角**：`model.input_type=rgb` + `model.fuse_method=late`
+- **RGB 三视角**：`model.input_type=rgb` + `model.backbone=3dcnn|transformer|mamba` + `model.fuse_method=late`
 - **KPT 三视角**：`model.input_type=kpt`（默认 ST-GCN） + `model.fuse_method=late`
 - **RGB+KPT 三视角**：`model.input_type=rgb_kpt` + `model.modality_fusion=concat|mean` + `model.fuse_method=late`
 

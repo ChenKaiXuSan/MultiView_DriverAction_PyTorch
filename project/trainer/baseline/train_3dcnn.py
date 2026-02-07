@@ -295,3 +295,15 @@ class Res3DCNNTrainer(LightningModule):
                 "monitor": "train/loss",
             },
         }
+
+
+class TransformerTrainer(Res3DCNNTrainer):
+    """Single-view trainer for transformer backbone."""
+
+
+class MambaTrainer(Res3DCNNTrainer):
+    """Single-view trainer for mamba backbone."""
+
+
+class STGCNTrainer(Res3DCNNTrainer):
+    """Single-view trainer for ST-GCN backbone."""

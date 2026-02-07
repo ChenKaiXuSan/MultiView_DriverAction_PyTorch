@@ -242,3 +242,15 @@ class EarlyFusion3DCNNTrainer(LightningModule):
                 "monitor": "train/loss",
             },
         }
+
+
+class EarlyFusionTransformerTrainer(EarlyFusion3DCNNTrainer):
+    """Multi-view early fusion trainer for transformer backbone."""
+
+
+class EarlyFusionMambaTrainer(EarlyFusion3DCNNTrainer):
+    """Multi-view early fusion trainer for mamba backbone."""
+
+
+class EarlyFusionSTGCNTrainer(EarlyFusion3DCNNTrainer):
+    """Multi-view early fusion trainer for ST-GCN backbone."""
