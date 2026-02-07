@@ -91,7 +91,7 @@ Fusion is performed at the **feature level**:
 - **加权/拼接融合**：`model.fuse_method=add|mul|concat|avg`
 
 ### 5) 多视角融合方式（mid fusion）
-- **SE 注意力融合**：`model.fuse_method=se_attn`（旧配置可用 `se_atn`）
+- **SE 注意力融合**：`model.fuse_method=se_attn`（旧配置可用 `se_atn`，后续版本将移除）
 
 ---
 
