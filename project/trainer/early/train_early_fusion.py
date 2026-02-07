@@ -245,12 +245,12 @@ class EarlyFusion3DCNNTrainer(LightningModule):
 
 
 class EarlyFusionTransformerTrainer(EarlyFusion3DCNNTrainer):
-    """Multi-view early fusion trainer for transformer backbone."""
+    """Early fusion trainer alias for transformer backbone routing."""
 
 
 class EarlyFusionMambaTrainer(EarlyFusion3DCNNTrainer):
-    """Multi-view early fusion trainer for mamba backbone."""
+    """Early fusion trainer alias for mamba backbone routing."""
 
 
 class EarlyFusionSTGCNTrainer(EarlyFusion3DCNNTrainer):
-    """Multi-view early fusion trainer for ST-GCN backbone."""
+    """Early fusion trainer alias for ST-GCN backbone routing."""

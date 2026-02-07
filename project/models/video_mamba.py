@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 """
-Mamba-style temporal backbone using gated recurrent modeling.
+Mamba-style temporal backbone using GRU as a lightweight placeholder.
 """
 
 from __future__ import annotations

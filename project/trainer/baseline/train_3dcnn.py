@@ -298,12 +298,12 @@ class Res3DCNNTrainer(LightningModule):
 
 
 class TransformerTrainer(Res3DCNNTrainer):
-    """Single-view trainer for transformer backbone."""
+    """Single-view trainer alias for transformer backbone routing."""
 
 
 class MambaTrainer(Res3DCNNTrainer):
-    """Single-view trainer for mamba backbone."""
+    """Single-view trainer alias for mamba backbone routing."""
 
 
 class STGCNTrainer(Res3DCNNTrainer):
-    """Single-view trainer for ST-GCN backbone."""
+    """Single-view trainer alias for ST-GCN backbone routing."""

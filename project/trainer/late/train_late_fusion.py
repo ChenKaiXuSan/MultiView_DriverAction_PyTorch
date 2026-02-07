@@ -276,12 +276,12 @@ class LateFusion3DCNNTrainer(LightningModule):
 
 
 class LateFusionTransformerTrainer(LateFusion3DCNNTrainer):
-    """Multi-view late fusion trainer for transformer backbone."""
+    """Late fusion trainer alias for transformer backbone routing."""
 
 
 class LateFusionMambaTrainer(LateFusion3DCNNTrainer):
-    """Multi-view late fusion trainer for mamba backbone."""
+    """Late fusion trainer alias for mamba backbone routing."""
 
 
 class LateFusionSTGCNTrainer(LateFusion3DCNNTrainer):
-    """Multi-view late fusion trainer for ST-GCN backbone."""
+    """Late fusion trainer alias for ST-GCN backbone routing."""
