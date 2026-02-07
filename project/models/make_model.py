@@ -59,8 +59,6 @@ def select_model(hparams) -> nn.Module:
     if input_type == "rgb_kpt":
         return RGBKeypointFusion(hparams)
 
-    if model_backbone == "stgcn":
-        return select_kpt_backbone(hparams)
     if model_backbone == "rgb_kpt":
         return RGBKeypointFusion(hparams)
 
