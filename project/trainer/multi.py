@@ -23,7 +23,8 @@ logger = logging.getLogger(__name__)
 
 EARLY_FUSION_METHODS = {"add", "mul", "concat", "avg"}
 # Prefer "se_attn"; accept legacy "se_atn" spelling used in older configs (TODO: remove after migration).
-MID_FUSION_METHODS = {"se_atn", "se_attn"}
+LEGACY_FUSE_METHOD_ALIASES = {"se_atn": "se_attn"}
+MID_FUSION_METHODS = {"se_attn"}
 LATE_FUSION_METHODS = {"late"}
 
 EARLY_FUSION_TRAINERS = {
@@ -36,8 +37,7 @@ LATE_FUSION_TRAINERS = {
     "transformer": LateFusionTransformerTrainer,
     "mamba": LateFusionMambaTrainer,
 }
-# Keep the legacy "se_atn" key to avoid breaking existing configs (TODO: remove after migration).
-MID_FUSION_TRAINERS = {"se_atn": SEAttnTrainer, "se_attn": SEAttnTrainer}
+MID_FUSION_TRAINERS = {"se_attn": SEAttnTrainer}
 
 
 def select_multi_trainer_cls(hparams):
@@ -57,12 +57,14 @@ def select_multi_trainer_cls(hparams):
                 f"backbone {backbone} is not supported for early fusion."
             )
         return trainer_cls
+    if fuse_method in LEGACY_FUSE_METHOD_ALIASES:
+        logger.warning(
+            "fuse_method 'se_atn' is deprecated and will be removed in a future "
+            "version; use 'se_attn'."
+        )
+        fuse_method = LEGACY_FUSE_METHOD_ALIASES[fuse_method]
+
     if fuse_method in MID_FUSION_METHODS:
-        if fuse_method == "se_atn":
-            logger.warning(
-                "fuse_method 'se_atn' is deprecated and will be removed in a future "
-                "version; use 'se_attn'."
-            )
         if backbone != "3dcnn":
             raise ValueError(
                 f"backbone {backbone} is not supported for mid fusion (requires 3dcnn)."
