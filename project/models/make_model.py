@@ -71,6 +71,8 @@ def select_model(hparams) -> nn.Module:
             model = PoseFusionRes3DCNN(hparams)
         else:
             model = Res3DCNN(hparams)
+    elif model_backbone == "stgcn":
+        model = select_kpt_backbone(hparams)
     else:
         raise ValueError(f"Unknown model backbone: {model_backbone}")
 

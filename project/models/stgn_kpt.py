@@ -6,7 +6,7 @@ Spatio-temporal graph network backbone for 3D keypoints.
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Any, Optional
 
 import torch
 import torch.nn as nn
@@ -49,7 +49,7 @@ class STGCNKeypoint(nn.Module):
 
         model_cfg = hparams.model
         self.model_class_num = int(model_cfg.model_class_num)
-        def _get_cfg_with_fallback(primary: str, legacy: str, default):
+        def _get_cfg_with_fallback(primary: str, legacy: str, default) -> Any:
             """Return config value using primary key with legacy fallback."""
             return getattr(model_cfg, primary, getattr(model_cfg, legacy, default))
 
