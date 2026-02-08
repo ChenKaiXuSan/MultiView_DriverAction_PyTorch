@@ -25,7 +25,6 @@ Date      	By	Comments
 # ! prepare not used
 import torch.nn as nn
 
-from project.models.se_attn_res_3dcnn import SEFusionRes3DCNN
 from project.models.res_3dcnn import Res3DCNN
 from project.models.rgb_kpt_fusion import RGBKeypointFusion
 from project.models.stgcn_kpt import STGCNKeypoint
