@@ -1,11 +1,11 @@
 #!/bin/bash
 #PBS -A SSR                        # ✅ 项目名（必须修改）
-#PBS -q gpu                        # ✅ 队列名（gpu / debug / gen_S）
+#PBS -q gen_S                        # ✅ 队列名（gpu / debug / gen_S）
 #PBS -l elapstim_req=24:00:00         # ⏱ 运行时间限制（最多 24 小时）
-#PBS -N run_single_train_3dcnn                     # 🏷 作业名
+#PBS -N run_multi_train_3dcnn                     # 🏷 作业名
 #PBS -t 0-2                       # 多任务作业 ID 范围（根据需要修改）
-#PBS -o logs/pegasus/run_single_train_3dcnn.log
-#PBS -e logs/pegasus/run_single_train_3dcnn_err.log
+#PBS -o logs/pegasus/run_multi_train_3dcnn.log
+#PBS -e logs/pegasus/run_multi_train_3dcnn_err.log
 
 # === 切换到作业提交目录 ===
 cd /work/SSR/share/code/MultiView_DriverAction_PyTorch

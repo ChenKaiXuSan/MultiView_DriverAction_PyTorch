@@ -3,9 +3,6 @@ pytorchvideo
 torch
 torchvision
 
-# yolo api
-ultralytics
-
 # config hydra 
 hydra-core
 

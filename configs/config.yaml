@@ -85,7 +85,7 @@ train:
   # Training config
   max_epochs: 50 # numer of epochs of training
 
-  view: multi # single or multi
+  view: single # single or multi
   view_name: front # used when train.view=single
   feature_map_batches: 10 # dump CAM features for first N test batches
 
