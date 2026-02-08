@@ -26,9 +26,8 @@ import hydra
 from omegaconf import DictConfig
 
 from pytorch_lightning import Trainer, seed_everything
-from pytorch_lightning.loggers import TensorBoardLogger, CSVLogger
+from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import (
-    TQDMProgressBar,
     RichModelSummary,
     ModelCheckpoint,
     EarlyStopping,
@@ -43,12 +42,13 @@ from project.dataloader.data_loader import DriverDataModule
 #####################################
 
 # baseline
-from project.trainer.single import build_single_trainer
-from project.trainer.multi import build_multi_trainer
+from project.trainer.single_selector import build_single_trainer
+from project.trainer.multi_selector import build_multi_trainer
 
 from project.cross_validation import DefineCrossValidation
 
 logger = logging.getLogger(__name__)
+
 
 def train(hparams: DictConfig, dataset_idx, fold: int):
     """the train process for the one fold.
@@ -82,20 +82,12 @@ def train(hparams: DictConfig, dataset_idx, fold: int):
         name="fold_" + str(fold),  # here should be str type.
     )
 
-    cvs_logger = CSVLogger(
-        save_dir=os.path.join(hparams.log_path, "csv_logs"),
-        name="fold_" + str(fold) + "_csv",  # here should be str type.
-    )
-
     # some callbacks
-    progress_bar = TQDMProgressBar(refresh_rate=10)
     rich_model_summary = RichModelSummary(max_depth=2)
 
     # define the checkpoint becavier.
     model_check_point = ModelCheckpoint(
-        dirpath=os.path.join(
-            hparams.log_path, "checkpoints", "fold_" + str(fold)
-        ),
+        dirpath=os.path.join(hparams.log_path, "checkpoints", "fold_" + str(fold)),
         filename="{epoch}-{val/loss:.2f}-{val/video_acc:.4f}",
         auto_insert_metric_name=False,
         monitor="val/video_acc",

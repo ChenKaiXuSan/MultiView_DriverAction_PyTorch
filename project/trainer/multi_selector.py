@@ -6,17 +6,17 @@ Multi-view training selection helpers (early/mid/late fusion).
 
 import logging
 
-from project.trainer.early.train_early_fusion import (
+from project.trainer.multi.early.train_early_fusion import (
     EarlyFusion3DCNNTrainer,
     EarlyFusionTransformerTrainer,
     EarlyFusionMambaTrainer,
 )
-from project.trainer.late.train_late_fusion import (
+from project.trainer.multi.late.train_late_fusion import (
     LateFusion3DCNNTrainer,
     LateFusionTransformerTrainer,
     LateFusionMambaTrainer,
 )
-from project.trainer.mid.train_se_attn import SEAttnTrainer
+from project.trainer.multi.mid.train_se_attn import SEAttnTrainer
 
 logger = logging.getLogger(__name__)
 
@@ -61,9 +61,7 @@ def select_multi_trainer_cls(hparams):
     if fuse_method in EARLY_FUSION_METHODS:
         trainer_cls = EARLY_FUSION_TRAINERS.get(backbone)
         if trainer_cls is None:
-            raise ValueError(
-                f"backbone {backbone} is not supported for early fusion."
-            )
+            raise ValueError(f"backbone {backbone} is not supported for early fusion.")
         return trainer_cls
 
     if fuse_method in MID_FUSION_METHODS:
@@ -75,9 +73,7 @@ def select_multi_trainer_cls(hparams):
     if fuse_method in LATE_FUSION_METHODS:
         trainer_cls = LATE_FUSION_TRAINERS.get(backbone)
         if trainer_cls is None:
-            raise ValueError(
-                f"backbone {backbone} is not supported for late fusion."
-            )
+            raise ValueError(f"backbone {backbone} is not supported for late fusion.")
         return trainer_cls
 
     raise ValueError(f"fuse_method {fuse_method} is not supported.")

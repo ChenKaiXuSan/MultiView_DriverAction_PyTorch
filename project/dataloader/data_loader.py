@@ -22,10 +22,7 @@ Date      	By	Comments
 
 from typing import Any, Callable, Dict, Optional
 
-import torch
 from pytorch_lightning import LightningDataModule
-from pytorchvideo.data import make_clip_sampler
-from pytorchvideo.data.labeled_video_dataset import labeled_video_dataset
 from torch.utils.data import DataLoader
 from torchvision.transforms import (
     Compose,
@@ -59,11 +56,12 @@ class DriverDataModule(LightningDataModule):
         self._class_num = opt.model.model_class_num
 
         self._experiment = opt.experiment
-        self._backbone = opt.model.backbone
 
         # * new config paths for annotation
         self._annotation_file = opt.paths.start_mid_end_path
-        self._annotation_dict = None  # lazy load in setup()
+
+        self.load_kpt = opt.data.load_kpt
+        self.load_rgb = opt.data.load_rgb
 
         self.mapping_transform = Compose(
             [
@@ -90,31 +88,36 @@ class DriverDataModule(LightningDataModule):
         """
 
         # * lazy load annotation dict from config
-        if self._annotation_dict is None:
-            self._annotation_dict = get_annotation_dict(self._annotation_file)
+        _annotation_dict = get_annotation_dict(self._annotation_file)
 
         # train dataset
         self.train_gait_dataset = whole_video_dataset(
             experiment=self._experiment,
             dataset_idx=self._dataset_idx["train"],
-            annotation_file=self._annotation_file,
+            annotation_dict=_annotation_dict,
             transform=self.mapping_transform,
+            load_rgb=self.load_rgb,
+            load_kpt=self.load_kpt,
         )
 
         # val dataset
         self.val_gait_dataset = whole_video_dataset(
             experiment=self._experiment,
             dataset_idx=self._dataset_idx["val"],
-            annotation_file=self._annotation_file,
+            annotation_dict=_annotation_dict,
             transform=self.mapping_transform,
+            load_rgb=self.load_rgb,
+            load_kpt=self.load_kpt,
         )
 
         # test dataset
         self.test_gait_dataset = whole_video_dataset(
             experiment=self._experiment,
             dataset_idx=self._dataset_idx["val"],
-            annotation_file=self._annotation_file,
+            annotation_dict=_annotation_dict,
             transform=self.mapping_transform,
+            load_rgb=self.load_rgb,
+            load_kpt=self.load_kpt,
         )
 
     def train_dataloader(self) -> DataLoader:

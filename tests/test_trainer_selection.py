@@ -1,7 +1,7 @@
 from omegaconf import OmegaConf
 
 from project.trainer.single import select_single_trainer_cls
-from project.trainer.multi import select_multi_trainer_cls
+from project.trainer.multi_selector import select_multi_trainer_cls
 from project.trainer.baseline.train_3dcnn import Res3DCNNTrainer
 from project.trainer.early.train_early_fusion import EarlyFusion3DCNNTrainer
 from project.trainer.late.train_late_fusion import LateFusion3DCNNTrainer

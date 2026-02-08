@@ -35,7 +35,7 @@ from torchmetrics.classification import (
     MulticlassConfusionMatrix,
 )
 
-from project.models.se_attn_res_3dcnn import SEFusionRes3DCNN
+# from project.models.se_attn_res_3dcnn import SEFusionRes3DCNN
 
 from project.utils.helper import save_helper
 from project.utils.save_CAM import dump_all_feature_maps

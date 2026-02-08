@@ -16,7 +16,9 @@
       "console": "integratedTerminal",
       "justMyCode": true,
       "args": [
-        "data.num_workers=0"
+        "data.num_workers=0",
+        "train.view=single",
+        "data.load_kpt=false"
       ]
     },
   ]

@@ -36,8 +36,11 @@ data:
   num_workers: 12
   img_size: 224
 
+  load_rgb: True
+  load_kpt: True
+
   batch_size: 1 # load video number
-  video_batch_size: 32
+  video_batch_size: 16
 
   fold: 5 # the fold number of the cross validation
 

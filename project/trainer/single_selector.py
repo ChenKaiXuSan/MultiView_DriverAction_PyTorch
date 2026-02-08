@@ -6,19 +6,17 @@ Single-view training selection helpers.
 
 import logging
 
-from project.trainer.baseline.train_3dcnn import (
-    Res3DCNNTrainer,
-    TransformerTrainer,
-    MambaTrainer,
-)
+from project.trainer.single.train_single_3dcnn import SingleRes3DCNNTrainer
+from project.trainer.single.train_single_mamaba import SingleMamabaTrainer
+from project.trainer.single.train_single_transformer import SingleTransformerTrainer
 
 logger = logging.getLogger(__name__)
 
 
 RGB_SINGLE_VIEW_TRAINERS = {
-    "3dcnn": Res3DCNNTrainer,
-    "transformer": TransformerTrainer,
-    "mamba": MambaTrainer,
+    "3dcnn": SingleRes3DCNNTrainer,
+    "transformer": SingleTransformerTrainer,
+    "mamba": SingleMamabaTrainer,
 }
 
 
