@@ -110,6 +110,11 @@ class VideoTransformer(nn.Module):
             nn.Dropout(dropout),
             nn.Linear(self.feature_dim, self.model_class_num)
         )
+        
+        # Gradient checkpointing flag
+        self.use_gradient_checkpointing = bool(
+            getattr(model_cfg, "use_gradient_checkpointing", False)
+        )
 
     def forward_features(self, video: torch.Tensor) -> torch.Tensor:
         """
@@ -149,7 +154,11 @@ class VideoTransformer(nn.Module):
             x = self.pos_encoder(x)
         
         # Transformer encoding for temporal modeling
-        x = self.encoder(x)
+        # Use gradient checkpointing if enabled (saves memory at cost of compute)
+        if self.use_gradient_checkpointing and self.training:
+            x = torch.utils.checkpoint.checkpoint(self.encoder, x, use_reentrant=False)
+        else:
+            x = self.encoder(x)
         x = self.norm(x)
         
         # Temporal pooling to get final feature vector

@@ -135,12 +135,18 @@ class DriverDataModule(LightningDataModule):
         in directory and subdirectory. Add transform that subsamples and
         normalizes the video before applying the scale, crop and flip augmentations.
         """
+        # Memory optimization: pin_memory=True can speed up data transfer to GPU
+        # but uses more RAM. Set to False if RAM is limited.
+        # persistent_workers=True keeps workers alive between epochs (faster but uses more RAM)
+        pin_memory = True if self._num_workers > 0 else False
+        persistent_workers = True if self._num_workers > 0 else False
 
         train_data_loader = DataLoader(
             self.train_gait_dataset,
             batch_size=self._batch_size,
             num_workers=self._num_workers,
-            pin_memory=False,
+            pin_memory=pin_memory,  # 🚀 Optimized: True for GPU transfer speed
+            persistent_workers=persistent_workers,  # ⚡ Keep workers alive between epochs
             shuffle=True,
             drop_last=True,
         )
@@ -153,12 +159,15 @@ class DriverDataModule(LightningDataModule):
         in directory and subdirectory. Add transform that subsamples and
         normalizes the video before applying the scale, crop and flip augmentations.
         """
+        pin_memory = True if self._num_workers > 0 else False
+        persistent_workers = True if self._num_workers > 0 else False
 
         val_data_loader = DataLoader(
             self.val_gait_dataset,
             batch_size=self._batch_size,
             num_workers=self._num_workers,
-            pin_memory=False,
+            pin_memory=pin_memory,
+            persistent_workers=persistent_workers,
             shuffle=False,
             drop_last=True,
         )
@@ -171,12 +180,15 @@ class DriverDataModule(LightningDataModule):
         in directory and subdirectory. Add transform that subsamples and
         normalizes the video before applying the scale, crop and flip augmentations.
         """
+        pin_memory = True if self._num_workers > 0 else False
+        persistent_workers = True if self._num_workers > 0 else False
 
         test_data_loader = DataLoader(
             self.test_gait_dataset,
             batch_size=self._batch_size,
             num_workers=self._num_workers,
-            pin_memory=False,
+            pin_memory=pin_memory,
+            persistent_workers=persistent_workers,
             shuffle=False,
             drop_last=True,
         )

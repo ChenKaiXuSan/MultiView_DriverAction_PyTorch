@@ -105,6 +105,10 @@ def train(hparams: DictConfig, dataset_idx, fold: int):
 
     lr_monitor = LearningRateMonitor(logging_interval="step")
 
+    # Extract memory optimization settings
+    precision = getattr(hparams.trainer, 'precision', 32) if hasattr(hparams, 'trainer') else 32
+    accumulate_grad_batches = getattr(hparams.train, 'accumulate_grad_batches', 1)
+
     trainer = Trainer(
         devices=[
             int(hparams.train.gpu),
@@ -121,6 +125,9 @@ def train(hparams: DictConfig, dataset_idx, fold: int):
             lr_monitor,
             DeviceStatsMonitor(),  # monitor the device stats.
         ],
+        # Memory optimization settings
+        precision=precision,  # 🔥 Mixed precision training (16 for FP16, 32 for FP32)
+        accumulate_grad_batches=accumulate_grad_batches,  # 🚀 Gradient accumulation
         # limit_train_batches=1,
         # limit_val_batches=1,
         # limit_test_batches=1,

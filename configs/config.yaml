@@ -91,6 +91,11 @@ model:
   mamba_dropout: 0.1
 
   fuse_method: late # add, mul, concat, none, late, avg, cross_atn, se_atn, pose_atn
+  
+  # 🧠 内存优化：梯度检查点 (Gradient Checkpointing)
+  # 对于大模型，可以用计算时间换内存空间
+  # 建议：Transformer/Mamba模型开启，3DCNN可选
+  use_gradient_checkpointing: false
 
 train:
   # Training config
@@ -101,6 +106,27 @@ train:
   feature_map_batches: 10 # dump CAM features for first N test batches
 
   gpu: 0 # choices=[0, 1], help='the gpu number whicht to train'
+  
+  # 🚀 内存优化：梯度累积 (Gradient Accumulation)
+  # 用多个小batch模拟大batch训练，显著降低内存使用
+  # 实际batch_size × accumulate_grad_batches = 有效batch_size
+  # 建议值：2-8（根据GPU内存调整）
+  accumulate_grad_batches: 1  # 1表示不累积（默认）
+  
+  # 🧹 内存清理：启用自动垃圾回收
+  # 在每个训练步骤后清理未使用的内存
+  enable_memory_cleanup: false  # 可选：显式内存清理（可能略微降低速度）
+
+# ⚡ Trainer 配置（用于PyTorch Lightning Trainer）
+trainer:
+  # 🔥 混合精度训练 (Mixed Precision Training)
+  # 使用FP16半精度训练，内存减半，速度提升30-50%
+  # 需要支持的GPU: V100, A100, RTX系列, T4等
+  # 选项：32 (FP32默认), 16 (FP16), 'bf16' (BFloat16，A100/H100推荐)
+  precision: 32  # 默认FP32，改为16启用混合精度
+  
+  # 梯度累积配置（也可以在这里设置，会覆盖train.accumulate_grad_batches）
+  # accumulate_grad_batches: 1
 
 log_path: logs/train/${experiment}/${now:%Y-%m-%d}/${now:%H-%M-%S}
 experiment: view_${train.view}_${train.view_name}_${model.backbone}_fuse_method_${model.fuse_method} # the experiment name, used for log path
