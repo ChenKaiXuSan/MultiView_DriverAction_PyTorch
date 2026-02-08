@@ -41,14 +41,12 @@ class DriverDataModule(LightningDataModule):
     def __init__(self, opt, dataset_idx: Dict = None):
         super().__init__()
 
-        self._batch_size = opt.data.batch_size
 
         self._num_workers = opt.data.num_workers
         self._img_size = opt.data.img_size
 
         # frame rate
-        self._clip_duration = opt.train.clip_duration
-        self.uniform_temporal_subsample_num = opt.train.uniform_temporal_subsample_num
+        self.uniform_temporal_subsample_num = opt.data.uniform_temporal_subsample_num
 
         # * this is the dataset idx, which include the train/val dataset idx.
         self._dataset_idx = dataset_idx
@@ -60,6 +58,7 @@ class DriverDataModule(LightningDataModule):
         # * new config paths for annotation
         self._annotation_file = opt.paths.start_mid_end_path
 
+        self._batch_size = opt.data.batch_size
         self.load_kpt = opt.data.load_kpt
         self.load_rgb = opt.data.load_rgb
         self.max_video_frames = opt.data.max_video_frames

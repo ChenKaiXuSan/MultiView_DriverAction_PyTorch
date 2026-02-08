@@ -1,5 +1,5 @@
 #!/bin/bash
-#PBS -A SKIING                        # ✅ 项目名（必须修改）
+#PBS -A SSR                        # ✅ 项目名（必须修改）
 #PBS -q gen_S                        # ✅ 队列名（gpu / debug / gen_S）
 #PBS -l elapstim_req=24:00:00         # ⏱ 运行时间限制（最多 24 小时）
 #PBS -N run_multi_3dcnn_late_fusion                     # 🏷 作业名称
@@ -7,19 +7,17 @@
 #PBS -e logs/pegasus/run_multi_3dcnn_late_fusion_err.log
 
 # === 切换到作业提交目录 ===
-cd /work/SKIING/chenkaixu/code/ClinicalGait-CrossAttention_ASD_PyTorch
+cd /work/SSR/share/code/MultiView_DriverAction_PyTorch
 
 mkdir -p logs/pegasus/
 mkdir -p checkpoints/
 
 # === 下载预训练模型（如果需要） ===
-# wget -O /home/SKIING/chenkaixu/code/ClinicalGait-CrossAttention_ASD_PyTorch/checkpoints/SLOW_8x8_R50.pyth https://dl.fbaipublicfiles.com/pytorchvideo/model_zoo/kinetics/SLOW_8x8_R50.pyth
+# wget -O /home/SSR/luoxi/code/MultiView_DriverAction_PyTorch/checkpoints/SLOW_8x8_R50.pyth https://dl.fbaipublicfiles.com/pytorchvideo/model_zoo/kinetics/SLOW_8x8_R50.pyth
 
 # === 加载 Python + 激活 Conda 环境 ===
-module load intelpython/2022.3.1
-source ${CONDA_PREFIX}/etc/profile.d/conda.sh
 conda deactivate # 确保先退出任何现有的 Conda 环境
-source /work/SKIING/chenkaixu/code/med_atn/bin/activate
+source  /home/SSR/luoxi/miniconda3/envs/multiview-video-cls/bin/activate
 
 # === 可选：打印 GPU 状态 ===
 nvidia-smi
@@ -32,8 +30,25 @@ echo "Current Python version: $(python --version)"
 echo "Current virtual environment: $(which python)"
 echo "Current Model load path: $(ls checkpoints/SLOW_8x8_R50.pyth)"
 
-# params 
-root_path=/work/SKIING/chenkaixu/data/asd_dataset
+# === 从 config.yaml 读取配置参数 ===
+root_path=/work/SSR/share/data/drive/multi_view_driver_action
+num_workers=$((NUM_WORKERS / 3))
+batch_size=1
+backbone=3dcnn
+max_epochs=50
+model_class_num=9
+input_type=rgb
 
-# === 运行你的训练脚本（Hydra 参数可以加在后面）===
-python -m project.main data.root_path=${root_path} model.fuse_method=none train.fold=5 data.num_workers=$((NUM_WORKERS / 3))
+
+# === 运行训练脚本（使用配置中的参数）===
+python -m project.main \
+  data.root_path=${root_path} \
+  data.num_workers=${num_workers} \
+  data.batch_size=${batch_size} \
+  data.fold=${fold} \
+  train.fold=${fold} \
+  model.backbone=${backbone} \
+  model.fuse_method=${fuse_method} \
+  train.max_epochs=${max_epochs} \
+  model.model_class_num=${model_class_num} \
+  model.input_type=${input_type}

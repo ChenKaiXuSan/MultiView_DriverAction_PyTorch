@@ -18,7 +18,8 @@
       "args": [
         "data.num_workers=0",
         "train.view=single",
-        "data.load_kpt=false"
+        "data.load_kpt=false",
+        "train.gpu=1"
       ]
     },
   ]

@@ -121,9 +121,9 @@ def train(hparams: DictConfig, dataset_idx, fold: int):
             lr_monitor,
             DeviceStatsMonitor(),  # monitor the device stats.
         ],
-        # limit_train_batches=2,
-        # limit_val_batches=2,
-        # limit_test_batches=2,
+        # limit_train_batches=1,
+        # limit_val_batches=1,
+        # limit_test_batches=1,
     )
 
     trainer.fit(classification_module, data_module)
@@ -133,6 +133,7 @@ def train(hparams: DictConfig, dataset_idx, fold: int):
         classification_module,
         data_module,
         ckpt_path="best",
+        weights_only=False,
     )
 
 

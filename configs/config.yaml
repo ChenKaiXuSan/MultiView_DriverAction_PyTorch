@@ -36,14 +36,12 @@ data:
   num_workers: 12
   img_size: 224
 
+  uniform_temporal_subsample_num: 8 # num frame from the clip duration, f or define one gait cycle, we need use whole frames.
+
   batch_size: 1 # load video number
-  video_batch_size: 16
 
   fold: 5 # the fold number of the cross validation
 
-  persistent_workers: true
-  pin_memory: true
-  
   # 控制数据加载
   load_rgb: true   # 加载视频帧
   load_kpt: false  # 不加载关键点（节省内存和时间）
@@ -86,10 +84,6 @@ model:
 train:
   # Training config
   max_epochs: 50 # numer of epochs of training
-
-  # used for val
-  clip_duration: 1 # clip duration for the video
-  uniform_temporal_subsample_num: 8 # num frame from the clip duration, f or define one gait cycle, we need use whole frames.
 
   view: multi # single or multi
   view_name: front # used when train.view=single

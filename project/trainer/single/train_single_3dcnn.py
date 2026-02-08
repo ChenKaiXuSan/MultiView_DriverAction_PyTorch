@@ -250,21 +250,21 @@ class SingleRes3DCNNTrainer(LightningModule):
             else "fold"
         )
         # Dump feature maps for visualization
-        if (
-            batch_idx < self.feature_map_dump_batch_limit
-            and video is not None
-        ):
-            dump_all_feature_maps(
-                model=self.model,
-                video=video,
-                video_info=batch.get("info", None),
-                attn_map=None,
-                save_root=f"{self.save_root}/test_all_feature_maps/{fold}/batch_{batch_idx}",
-                include_types=(torch.nn.Conv3d, torch.nn.Linear),
-                include_name_contains=["conv_c"],
-                resize_to=(256, 256),  # 指定输出大小
-                resize_mode="bilinear",  # 放大更平滑
-            )
+        # if (
+        #     batch_idx < self.feature_map_dump_batch_limit
+        #     and video is not None
+        # ):
+        #     dump_all_feature_maps(
+        #         model=self.model,
+        #         video=video,
+        #         video_info=batch.get("info", None),
+        #         attn_map=None,
+        #         save_root=f"{self.save_root}/test_all_feature_maps/{fold}/batch_{batch_idx}",
+        #         include_types=(torch.nn.Conv3d, torch.nn.Linear),
+        #         include_name_contains=["conv_c"],
+        #         resize_to=(256, 256),  # 指定输出大小
+        #         resize_mode="bilinear",  # 放大更平滑
+        #     )
 
         return video_preds_softmax, video_preds
 
