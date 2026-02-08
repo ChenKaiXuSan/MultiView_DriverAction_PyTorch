@@ -62,6 +62,7 @@ class DriverDataModule(LightningDataModule):
 
         self.load_kpt = opt.data.load_kpt
         self.load_rgb = opt.data.load_rgb
+        self.max_video_frames = opt.data.max_video_frames
 
         self.mapping_transform = Compose(
             [
@@ -98,6 +99,7 @@ class DriverDataModule(LightningDataModule):
             transform=self.mapping_transform,
             load_rgb=self.load_rgb,
             load_kpt=self.load_kpt,
+            max_video_frames=self.max_video_frames,
         )
 
         # val dataset
@@ -108,6 +110,7 @@ class DriverDataModule(LightningDataModule):
             transform=self.mapping_transform,
             load_rgb=self.load_rgb,
             load_kpt=self.load_kpt,
+            max_video_frames=self.max_video_frames,
         )
 
         # test dataset
@@ -118,6 +121,7 @@ class DriverDataModule(LightningDataModule):
             transform=self.mapping_transform,
             load_rgb=self.load_rgb,
             load_kpt=self.load_kpt,
+            max_video_frames=self.max_video_frames,
         )
 
     def train_dataloader(self) -> DataLoader:

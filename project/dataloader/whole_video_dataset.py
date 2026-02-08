@@ -13,7 +13,6 @@ from torchvision.io import read_video
 
 from project.dataloader.prepare_label_dict import prepare_label_dict
 from project.map_config import VideoSample, label_mapping_Dict, KEEP_KEYPOINT_INDICES
-from project.dataloader.annotation_dict import get_annotation_dict
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +38,7 @@ class LabeledVideoDataset(Dataset):
         decode_audio: bool = False,
         load_rgb: bool = True,
         load_kpt: bool = True,
+        max_video_frames: Optional[int] = None,  # 如果设置，将长video分块加载
     ) -> None:
         super().__init__()
         self._experiment = experiment
@@ -50,28 +50,119 @@ class LabeledVideoDataset(Dataset):
         # Control what data to load
         self.load_rgb = bool(load_rgb)
         self.load_kpt = bool(load_kpt)
+        
+        # Video chunking to avoid OOM during loading
+        self.max_video_frames = max_video_frames
+        self._chunked_index: List[Dict[str, Any]] = []
 
         # label mapping: {class_id: "label_name"} -> {"label_name": class_id}
         self._label_to_id: Dict[str, int] = {
             v: int(k) for k, v in label_mapping_Dict.items()
         }
+        
+        # Build chunked index if max_video_frames is set
+        if self.max_video_frames is not None:
+            self._build_chunked_index()
+            logger.info(
+                f"Video chunking enabled: {len(self._index_mapping)} videos -> "
+                f"{len(self._chunked_index)} chunks (max {self.max_video_frames} frames/chunk)"
+            )
+
+    def _build_chunked_index(self) -> None:
+        """
+        将长video分成多个chunks，每个chunk最多包含max_video_frames帧。
+        这样可以避免加载超长video时OOM。
+        
+        Creates a new index where each item represents a chunk:
+        {
+            'original_item': VideoSample,
+            'chunk_start_frame': int,
+            'chunk_end_frame': int,
+            'chunk_idx': int,
+            'total_chunks': int,
+        }
+        """
+        for item in self._index_mapping:
+            # Get video total frames from annotation
+            person_key = item.person_id
+            env_folder = item.env_folder
+            
+            total_frames = 0
+            start_frame_offset = 0
+            
+            if (
+                person_key in self._annotation_dict
+                and env_folder in self._annotation_dict[person_key]
+            ):
+                frame_info = self._annotation_dict[person_key][env_folder]
+                start_frame_offset = int(frame_info.get("start", 0))
+                end_frame = int(frame_info.get("end", 0))
+                total_frames = end_frame - start_frame_offset
+            
+            # 如果无法获取帧数或帧数为0，跳过分块，创建单个item
+            if total_frames <= 0:
+                self._chunked_index.append({
+                    'original_item': item,
+                    'chunk_start_frame': 0,
+                    'chunk_end_frame': None,  # Load all
+                    'chunk_idx': 0,
+                    'total_chunks': 1,
+                    'start_frame_offset': 0,
+                })
+                continue
+            
+            # Calculate number of chunks needed
+            num_chunks = (total_frames + self.max_video_frames - 1) // self.max_video_frames
+            
+            for chunk_idx in range(num_chunks):
+                chunk_start = chunk_idx * self.max_video_frames
+                chunk_end = min(chunk_start + self.max_video_frames, total_frames)
+                
+                self._chunked_index.append({
+                    'original_item': item,
+                    'chunk_start_frame': chunk_start,
+                    'chunk_end_frame': chunk_end,
+                    'chunk_idx': chunk_idx,
+                    'total_chunks': num_chunks,
+                    'start_frame_offset': start_frame_offset,
+                })
 
     def __len__(self) -> int:
+        if self.max_video_frames is not None:
+            return len(self._chunked_index)
         return len(self._index_mapping)
 
     # ---------------- IO ----------------
-    def _load_one_view(self, path: Path) -> Tuple[torch.Tensor, int]:
+    def _load_one_view(
+        self, 
+        path: Path, 
+        start_sec: Optional[float] = None,
+        end_sec: Optional[float] = None,
+    ) -> Tuple[torch.Tensor, int]:
         """
         Load one view video and return (video_tchw, fps).
+        
+        Args:
+            path: Video file path
+            start_sec: Start time in seconds (None = from beginning)
+            end_sec: End time in seconds (None = to end)
 
-        read_video(output_format="TCHW") returns:
+        Returns:
             vframes: (T, C, H, W)
+            fps: frames per second
         """
-        vframes, aframes, info = read_video(
-            str(path),
-            pts_unit="sec",
-            output_format="TCHW",
-        )
+        kwargs = {
+            "pts_unit": "sec",
+            "output_format": "TCHW",
+        }
+        
+        # Add time range if specified (for chunked loading)
+        if start_sec is not None:
+            kwargs["start_pts"] = start_sec
+        if end_sec is not None:
+            kwargs["end_pts"] = end_sec
+        
+        vframes, aframes, info = read_video(str(path), **kwargs)
         fps = int(info.get("video_fps", 0))
         if fps <= 0:
             raise ValueError(f"Invalid fps={fps} for video: {path}")
@@ -481,13 +572,45 @@ class LabeledVideoDataset(Dataset):
         )
 
     def __getitem__(self, index: int) -> Dict[str, Any]:
-        item = self._index_mapping[index]
+        # Handle chunked vs non-chunked index
+        if self.max_video_frames is not None:
+            chunk_info = self._chunked_index[index]
+            item = chunk_info['original_item']
+            chunk_start_frame = chunk_info['chunk_start_frame']
+            chunk_end_frame = chunk_info['chunk_end_frame']
+            start_frame_offset = chunk_info['start_frame_offset']
+            
+            # Calculate time range for video loading
+            # Note: We need to get fps first (make a quick probe)
+            if self.load_rgb:
+                # Quick probe to get fps
+                _, fps = self._load_one_view(item.videos["front"])
+                
+                # Calculate actual start/end in seconds
+                # chunk frames are relative to the annotation start
+                actual_start_frame = start_frame_offset + chunk_start_frame
+                actual_end_frame = start_frame_offset + (chunk_end_frame if chunk_end_frame else chunk_start_frame + self.max_video_frames)
+                
+                start_sec = actual_start_frame / fps
+                end_sec = actual_end_frame / fps
+            else:
+                start_sec = None
+                end_sec = None
+                fps = 0
+        else:
+            item = self._index_mapping[index]
+            chunk_start_frame = 0
+            chunk_end_frame = None
+            start_frame_offset = 0
+            start_sec = None
+            end_sec = None
 
         # Load 3 views only if load_rgb is True
         if self.load_rgb:
-            front_frames, fps = self._load_one_view(item.videos["front"])
-            left_frames, _ = self._load_one_view(item.videos["left"])
-            right_frames, _ = self._load_one_view(item.videos["right"])
+            # Load with time range if chunking enabled
+            front_frames, fps = self._load_one_view(item.videos["front"], start_sec, end_sec)
+            left_frames, _ = self._load_one_view(item.videos["left"], start_sec, end_sec)
+            right_frames, _ = self._load_one_view(item.videos["right"], start_sec, end_sec)
 
             assert (
                 front_frames.shape[0] == left_frames.shape[0] == right_frames.shape[0]
@@ -499,25 +622,30 @@ class LabeledVideoDataset(Dataset):
             front_frames = None
             left_frames = None
             right_frames = None
-            fps = 0
+            if self.max_video_frames is None:
+                fps = 0
 
-            # Still need to determine total_frames from annotation if available
-            total_frames = 0
-            person_key = item.person_id
-            env_folder = item.env_folder
-            if (
-                person_key in self._annotation_dict
-                and env_folder in self._annotation_dict[person_key]
-            ):
-                frame_info = self._annotation_dict[person_key][env_folder]
-                start_frame = int(frame_info.get("start", 0))
-                end_frame = int(frame_info.get("end", 1))
-                total_frames = end_frame - start_frame
+            # Still need to determine total_frames from chunk info or annotation
+            if self.max_video_frames is not None and chunk_end_frame is not None:
+                total_frames = chunk_end_frame - chunk_start_frame
             else:
-                total_frames = 1
+                total_frames = 0
+                person_key = item.person_id
+                env_folder = item.env_folder
+                if (
+                    person_key in self._annotation_dict
+                    and env_folder in self._annotation_dict[person_key]
+                ):
+                    frame_info = self._annotation_dict[person_key][env_folder]
+                    start_frame_ann = int(frame_info.get("start", 0))
+                    end_frame_ann = int(frame_info.get("end", 1))
+                    total_frames = end_frame_ann - start_frame_ann
+                else:
+                    total_frames = 1
 
-        # Get start and end frame indices from annotation dict if available
+        # Get start and end frame indices
         if self.load_rgb:
+            # When chunking, frames are already sliced, so start from 0
             start_frame = 0
             end_frame = total_frames
 
@@ -551,11 +679,18 @@ class LabeledVideoDataset(Dataset):
             frame_count = total_frames
 
         # Load SAM 3D body keypoints only if load_kpt is True
-        frame_indices = (
-            list(range(start_frame, end_frame))
-            if self.load_rgb
-            else list(range(total_frames))
-        )
+        # For chunked loading, adjust frame indices
+        if self.max_video_frames is not None:
+            # Frame indices relative to chunk start
+            actual_start = start_frame_offset + chunk_start_frame
+            actual_end = actual_start + frame_count
+            frame_indices = list(range(actual_start, actual_end))
+        else:
+            frame_indices = (
+                list(range(start_frame, end_frame))
+                if self.load_rgb
+                else list(range(total_frames))
+            )
 
         if self.load_kpt and item.sam3d_kpts:
             front_kpts = (
@@ -782,6 +917,13 @@ class LabeledVideoDataset(Dataset):
                 "start_frame": start_frame,
                 "end_frame": end_frame,
                 "fps": fps,
+                "is_chunked": self.max_video_frames is not None,
+                "chunk_info": {
+                    "chunk_idx": chunk_info['chunk_idx'],
+                    "total_chunks": chunk_info['total_chunks'],
+                    "chunk_start_frame": chunk_start_frame,
+                    "chunk_end_frame": chunk_end_frame,
+                } if self.max_video_frames is not None else None,
             },
         }
 
@@ -793,6 +935,7 @@ def whole_video_dataset(
     transform: Optional[Callable[[torch.Tensor], torch.Tensor]] = None,
     load_rgb: bool = True,
     load_kpt: bool = True,
+    max_video_frames: Optional[int] = None,
 ) -> LabeledVideoDataset:
     """
     Create a LabeledVideoDataset for whole video processing.
@@ -800,10 +943,15 @@ def whole_video_dataset(
     Args:
         experiment: Experiment name
         dataset_idx: List of VideoSample items (contains sam3d_kpts paths)
-        annotation_file: Path to annotation JSON file
+        annotation_dict: Annotation dictionary
         transform: Optional transform to apply to video frames
         load_rgb: Whether to load video frames (default: True)
         load_kpt: Whether to load keypoint data (default: True)
+        max_video_frames: Maximum frames per chunk. If set, long videos will be
+            split into multiple chunks to avoid OOM during loading. For example,
+            max_video_frames=1000 means videos longer than 1000 frames will be
+            split into multiple samples. Recommended: 500-2000 depending on resolution.
+            (default: None - load entire video)
 
     Returns:
         LabeledVideoDataset instance
@@ -815,4 +963,5 @@ def whole_video_dataset(
         transform=transform,
         load_rgb=load_rgb,
         load_kpt=load_kpt,
+        max_video_frames=max_video_frames,
     )

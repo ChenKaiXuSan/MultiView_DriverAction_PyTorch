@@ -36,13 +36,28 @@ data:
   num_workers: 12
   img_size: 224
 
-  load_rgb: True
-  load_kpt: True
-
   batch_size: 1 # load video number
   video_batch_size: 16
 
   fold: 5 # the fold number of the cross validation
+
+  persistent_workers: true
+  pin_memory: true
+  
+  # 控制数据加载
+  load_rgb: true   # 加载视频帧
+  load_kpt: false  # 不加载关键点（节省内存和时间）
+  
+  # 🔑 关键参数：分块加载
+  # 如果video超过这个帧数，会被自动分成多个chunks
+  # 每次只加载一个chunk，避免加载OOM
+  max_video_frames: 500 # 推荐值：500-2000
+  
+  # max_video_frames 选择指南：
+  # - 224×224 分辨率：500-1000
+  # - 112×112 分辨率：1000-2000  
+  # - 更大分辨率：300-500
+  # 原则：尽量大（减少chunks数量），但不要OOM
 
 model:
   backbone: 3dcnn # choices=[3dcnn, transformer, mamba, stgcn], help='the backbone of the model'
