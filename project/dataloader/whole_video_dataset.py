@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Literal, List, Tuple
+from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 
 import torch
@@ -39,6 +40,7 @@ class LabeledVideoDataset(Dataset):
         load_rgb: bool = True,
         load_kpt: bool = True,
         max_video_frames: Optional[int] = None,  # 如果设置，将长video分块加载
+        num_io_threads: int = 3,  # 并行加载线程数 (用于多视角和关键点加载)
     ) -> None:
         super().__init__()
         self._experiment = experiment
@@ -59,6 +61,13 @@ class LabeledVideoDataset(Dataset):
         self._label_to_id: Dict[str, int] = {
             v: int(k) for k, v in label_mapping_Dict.items()
         }
+        
+        # Parallel I/O optimization
+        self.num_io_threads = max(1, num_io_threads)
+        self._executor = ThreadPoolExecutor(max_workers=self.num_io_threads)
+        
+        # FPS cache to avoid redundant video probing
+        self._fps_cache: Dict[str, int] = {}
         
         # Build chunked index if max_video_frames is set
         if self.max_video_frames is not None:
@@ -127,12 +136,50 @@ class LabeledVideoDataset(Dataset):
                     'start_frame_offset': start_frame_offset,
                 })
 
+    def __del__(self):
+        """Clean up ThreadPoolExecutor on deletion."""
+        if hasattr(self, '_executor'):
+            self._executor.shutdown(wait=False)
+
     def __len__(self) -> int:
         if self.max_video_frames is not None:
             return len(self._chunked_index)
         return len(self._index_mapping)
 
     # ---------------- IO ----------------
+    def _get_fps(self, path: Path) -> int:
+        """
+        Get video FPS with caching to avoid redundant reads.
+        
+        Args:
+            path: Video file path
+            
+        Returns:
+            fps: Frames per second
+        """
+        path_str = str(path)
+        
+        # Check cache first
+        if path_str in self._fps_cache:
+            return self._fps_cache[path_str]
+        
+        # Read video metadata only (no frame decoding)
+        try:
+            from torchvision.io import read_video_timestamps
+            pts, fps = read_video_timestamps(path_str, pts_unit='sec')
+            fps_int = int(fps)
+        except Exception:
+            # Fallback to full video read if metadata read fails
+            _, _, info = read_video(path_str, pts_unit="sec", output_format="TCHW", end_pts=0.1)
+            fps_int = int(info.get("video_fps", 25))
+        
+        if fps_int <= 0:
+            fps_int = 25  # Default fallback
+        
+        # Cache the result
+        self._fps_cache[path_str] = fps_int
+        return fps_int
+    
     def _load_one_view(
         self, 
         path: Path, 
@@ -167,6 +214,41 @@ class LabeledVideoDataset(Dataset):
         if fps <= 0:
             raise ValueError(f"Invalid fps={fps} for video: {path}")
         return vframes, fps
+    
+    def _load_multi_view_parallel(
+        self,
+        video_paths: Dict[str, Path],
+        start_sec: Optional[float] = None,
+        end_sec: Optional[float] = None,
+    ) -> Dict[str, Tuple[torch.Tensor, int]]:
+        """
+        Load multiple views in parallel using ThreadPoolExecutor.
+        
+        Args:
+            video_paths: Dictionary mapping view names to video file paths
+                        e.g., {"front": Path(...), "left": Path(...), "right": Path(...)}
+            start_sec: Start time in seconds (None = from beginning)
+            end_sec: End time in seconds (None = to end)
+        
+        Returns:
+            Dictionary mapping view names to (vframes, fps) tuples
+        """
+        def load_view(view_name: str, path: Path):
+            return view_name, self._load_one_view(path, start_sec, end_sec)
+        
+        # Submit all loading tasks
+        futures = {
+            self._executor.submit(load_view, view_name, path): view_name
+            for view_name, path in video_paths.items()
+        }
+        
+        # Collect results
+        results = {}
+        for future in futures:
+            view_name, (vframes, fps) = future.result()
+            results[view_name] = (vframes, fps)
+        
+        return results
 
     def _load_sam3d_body_kpts(
         self,
@@ -174,7 +256,7 @@ class LabeledVideoDataset(Dataset):
         frame_indices: List[int],
     ) -> Optional[torch.Tensor]:
         """
-        Load SAM 3D body 3D keypoints for a list of frame indices.
+        Load SAM 3D body 3D keypoints for a list of frame indices with parallel I/O.
         Filter keypoints based on KEEP_KEYPOINT_INDICES from map_config.
 
         Args:
@@ -188,31 +270,24 @@ class LabeledVideoDataset(Dataset):
             logger.warning(f"SAM 3D body directory not found: {sam3d_dir}")
             return None
 
-        kpts_list = []
-        for frame_idx in frame_indices:
+        def load_single_kpt(frame_idx: int) -> np.ndarray:
+            """Load keypoint for a single frame."""
             npz_file = sam3d_dir / f"{frame_idx:06d}_sam3d_body.npz"
-
+            
             if not npz_file.exists():
                 logger.debug(f"SAM 3D body file not found: {npz_file}")
-                # 如果某一帧数据缺失，使用零向量占位
-                kpts_list.append(
-                    np.zeros((len(KEEP_KEYPOINT_INDICES), 3), dtype=np.float32)
-                )
-                continue
-
+                return np.zeros((len(KEEP_KEYPOINT_INDICES), 3), dtype=np.float32)
+            
             try:
                 data = np.load(str(npz_file), allow_pickle=True)
                 output = data["output"].item()
 
                 # 尝试从输出中提取3D keypoints
-                # 根据SAM 3D body的输出格式调整这里
                 if "pred_keypoints_3d" in output:
                     kpts_3d = output["pred_keypoints_3d"]
                 elif "poses" in output:
-                    # 如果是SMPL格式的输出
                     kpts_3d = output["poses"]
                 else:
-                    # 尝试其他可能的键名
                     kpts_3d = np.zeros((0, 3), dtype=np.float32)
 
                 kpts_3d = np.asarray(kpts_3d, dtype=np.float32)
@@ -226,17 +301,22 @@ class LabeledVideoDataset(Dataset):
                     logger.debug(
                         f"Error filtering keypoints with KEEP_KEYPOINT_INDICES for {npz_file}"
                     )
-                    # 如果索引越界，使用零向量
                     filtered_kpts = np.zeros(
                         (len(KEEP_KEYPOINT_INDICES), 3), dtype=np.float32
                     )
 
-                kpts_list.append(filtered_kpts)
+                return filtered_kpts
             except Exception as e:
                 logger.debug(f"Error loading SAM 3D body from {npz_file}: {e}")
-                kpts_list.append(
-                    np.zeros((len(KEEP_KEYPOINT_INDICES), 3), dtype=np.float32)
-                )
+                return np.zeros((len(KEEP_KEYPOINT_INDICES), 3), dtype=np.float32)
+
+        # Load keypoints in parallel using ThreadPoolExecutor
+        if len(frame_indices) > 10:  # Use parallel loading for more than 10 frames
+            futures = [self._executor.submit(load_single_kpt, idx) for idx in frame_indices]
+            kpts_list = [future.result() for future in futures]
+        else:
+            # For small batches, sequential loading is faster (less overhead)
+            kpts_list = [load_single_kpt(idx) for idx in frame_indices]
 
         # 所有帧现在应该有相同的 keypoint 数量
         num_keypoints = len(KEEP_KEYPOINT_INDICES)
@@ -252,6 +332,38 @@ class LabeledVideoDataset(Dataset):
                 kpts_array[i, :min_len] = kpts[:min_len]
 
         return torch.from_numpy(kpts_array)
+    
+    def _load_multi_view_kpts_parallel(
+        self,
+        sam3d_kpts: Dict[str, Path],
+        frame_indices: List[int],
+    ) -> Dict[str, Optional[torch.Tensor]]:
+        """
+        Load keypoints for multiple views in parallel.
+        
+        Args:
+            sam3d_kpts: Dictionary mapping view names to keypoint directories
+            frame_indices: List of frame indices to load
+        
+        Returns:
+            Dictionary mapping view names to keypoint tensors (or None if not available)
+        """
+        def load_view_kpts(view_name: str, kpt_dir: Path):
+            return view_name, self._load_sam3d_body_kpts(kpt_dir, frame_indices)
+        
+        # Submit all loading tasks
+        futures = {
+            self._executor.submit(load_view_kpts, view_name, kpt_dir): view_name
+            for view_name, kpt_dir in sam3d_kpts.items()
+        }
+        
+        # Collect results
+        results = {}
+        for future in futures:
+            view_name, kpts = future.result()
+            results[view_name] = kpts
+        
+        return results
 
     def _apply_transform(self, video_tchw: torch.Tensor) -> torch.Tensor:
         """
@@ -581,10 +693,9 @@ class LabeledVideoDataset(Dataset):
             start_frame_offset = chunk_info['start_frame_offset']
             
             # Calculate time range for video loading
-            # Note: We need to get fps first (make a quick probe)
             if self.load_rgb:
-                # Quick probe to get fps
-                _, fps = self._load_one_view(item.videos["front"])
+                # Use cached fps to avoid redundant probe
+                fps = self._get_fps(item.videos["front"])
                 
                 # Calculate actual start/end in seconds
                 # chunk frames are relative to the annotation start
@@ -605,12 +716,22 @@ class LabeledVideoDataset(Dataset):
             start_sec = None
             end_sec = None
 
-        # Load 3 views only if load_rgb is True
+        # Load 3 views in parallel if load_rgb is True
         if self.load_rgb:
-            # Load with time range if chunking enabled
-            front_frames, fps = self._load_one_view(item.videos["front"], start_sec, end_sec)
-            left_frames, _ = self._load_one_view(item.videos["left"], start_sec, end_sec)
-            right_frames, _ = self._load_one_view(item.videos["right"], start_sec, end_sec)
+            # Parallel loading of all three views
+            video_results = self._load_multi_view_parallel(
+                video_paths={
+                    "front": item.videos["front"],
+                    "left": item.videos["left"],
+                    "right": item.videos["right"],
+                },
+                start_sec=start_sec,
+                end_sec=end_sec
+            )
+            
+            front_frames, fps = video_results["front"]
+            left_frames, _ = video_results["left"]
+            right_frames, _ = video_results["right"]
 
             assert (
                 front_frames.shape[0] == left_frames.shape[0] == right_frames.shape[0]
@@ -678,7 +799,7 @@ class LabeledVideoDataset(Dataset):
             end_frame = total_frames
             frame_count = total_frames
 
-        # Load SAM 3D body keypoints only if load_kpt is True
+        # Load SAM 3D body keypoints in parallel only if load_kpt is True
         # For chunked loading, adjust frame indices
         if self.max_video_frames is not None:
             # Frame indices relative to chunk start
@@ -693,23 +814,25 @@ class LabeledVideoDataset(Dataset):
             )
 
         if self.load_kpt and item.sam3d_kpts:
-            front_kpts = (
-                self._load_sam3d_body_kpts(item.sam3d_kpts["front"], frame_indices)
-                if "front" in item.sam3d_kpts
-                else None
-            )
-
-            left_kpts = (
-                self._load_sam3d_body_kpts(item.sam3d_kpts["left"], frame_indices)
-                if "left" in item.sam3d_kpts
-                else None
-            )
-
-            right_kpts = (
-                self._load_sam3d_body_kpts(item.sam3d_kpts["right"], frame_indices)
-                if "right" in item.sam3d_kpts
-                else None
-            )
+            # Build dictionary of keypoint paths to load
+            kpt_paths = {}
+            if "front" in item.sam3d_kpts:
+                kpt_paths["front"] = item.sam3d_kpts["front"]
+            if "left" in item.sam3d_kpts:
+                kpt_paths["left"] = item.sam3d_kpts["left"]
+            if "right" in item.sam3d_kpts:
+                kpt_paths["right"] = item.sam3d_kpts["right"]
+            
+            # Load all keypoints in parallel
+            if kpt_paths:
+                kpts_results = self._load_multi_view_kpts_parallel(kpt_paths, frame_indices)
+                front_kpts = kpts_results.get("front")
+                left_kpts = kpts_results.get("left")
+                right_kpts = kpts_results.get("right")
+            else:
+                front_kpts = None
+                left_kpts = None
+                right_kpts = None
         else:
             # If not loading keypoints, set to None
             front_kpts = None
@@ -936,6 +1059,7 @@ def whole_video_dataset(
     load_rgb: bool = True,
     load_kpt: bool = True,
     max_video_frames: Optional[int] = None,
+    num_io_threads: int = 3,
 ) -> LabeledVideoDataset:
     """
     Create a LabeledVideoDataset for whole video processing.
@@ -952,6 +1076,10 @@ def whole_video_dataset(
             max_video_frames=1000 means videos longer than 1000 frames will be
             split into multiple samples. Recommended: 500-2000 depending on resolution.
             (default: None - load entire video)
+        num_io_threads: Number of I/O threads for parallel loading of multi-view
+            videos and keypoints. Higher values can improve loading speed on fast
+            storage but may increase CPU usage. Recommended: 3-8.
+            (default: 3)
 
     Returns:
         LabeledVideoDataset instance
@@ -964,4 +1092,5 @@ def whole_video_dataset(
         load_rgb=load_rgb,
         load_kpt=load_kpt,
         max_video_frames=max_video_frames,
+        num_io_threads=num_io_threads,
     )
