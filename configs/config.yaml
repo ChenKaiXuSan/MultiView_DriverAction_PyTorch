@@ -56,6 +56,17 @@ data:
   # - 112×112 分辨率：1000-2000  
   # - 更大分辨率：300-500
   # 原则：尽量大（减少chunks数量），但不要OOM
+  
+  # 🚀 优化参数：并行加载
+  # 控制多视角和关键点并行加载的线程数
+  # 增加此值可提升I/O性能（需要快速存储支持）
+  num_io_threads: 3 # 推荐值：3-8
+  
+  # num_io_threads 选择指南：
+  # - NVMe SSD：6-8（高速存储）
+  # - SATA SSD：4-6（中速存储）
+  # - HDD：2-3（慢速存储）
+  # 原则：快速存储可使用更多线程，慢速存储减少线程避免磁盘抖动
 
 model:
   backbone: 3dcnn # choices=[3dcnn, transformer, mamba, stgcn], help='the backbone of the model'
