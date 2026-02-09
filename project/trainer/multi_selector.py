@@ -17,6 +17,7 @@ from project.trainer.multi.late.train_late_fusion import (
     LateFusionMambaTrainer,
 )
 from project.trainer.multi.mid.train_se_attn import SEAttnTrainer
+from project.trainer.multi.mid.train_ts_cva import TSCVATrainer
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +25,7 @@ logger = logging.getLogger(__name__)
 EARLY_FUSION_METHODS = {"add", "mul", "concat", "avg"}
 # Prefer "se_attn"; accept legacy "se_atn" spelling used in older configs (TODO: remove after migration).
 LEGACY_FUSE_METHOD_ALIASES = {"se_atn": "se_attn"}
-MID_FUSION_METHODS = {"se_attn"}
+MID_FUSION_METHODS = {"se_attn", "ts_cva"}
 LATE_FUSION_METHODS = {"late"}
 
 EARLY_FUSION_TRAINERS = {
@@ -38,7 +39,7 @@ LATE_FUSION_TRAINERS = {
     "mamba": LateFusionMambaTrainer,
 }
 # Mid fusion only supports a single backbone (3dcnn), so it is keyed by fuse method.
-MID_FUSION_TRAINERS = {"se_attn": SEAttnTrainer}
+MID_FUSION_TRAINERS = {"se_attn": SEAttnTrainer, "ts_cva": TSCVATrainer}
 
 
 def select_multi_trainer_cls(hparams):
