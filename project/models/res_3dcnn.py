@@ -22,6 +22,7 @@ Date      	By	Comments
 
 import logging
 import torch
+import torch.nn as nn
 from project.models.base_model import BaseModel
 
 
@@ -31,32 +32,50 @@ logger = logging.getLogger(__name__)
 class Res3DCNN(BaseModel):
     """
     make 3D CNN model from the PytorchVideo lib.
-
+    
+    Supports two modes:
+    1. Standard mode: unified model with blocks
+    2. Separable mode: stem, body, head as separate modules
     """
 
-    def __init__(self, hparams) -> None:
+    def __init__(self, hparams, use_separable: bool = False) -> None:
         super().__init__(hparams=hparams)
 
         self.model_class_num = hparams.model.model_class_num
+        self.use_separable = use_separable
 
-        self.model = self.init_resnet(
-            self.model_class_num,
-        )
-        self.feature_dim = self.model.blocks[-1].proj.in_features
+        if self.use_separable:
+            # 使用可分离的结构
+            self.stem, self.body, self.head, self.feature_dim = self.init_resnet_separable(
+                self.model_class_num,
+                return_feature_dim=True
+            )
+            self.model = None  # 在可分离模式下不使用统一的 model
+        else:
+            # 使用传统的统一结构
+            self.model = self.init_resnet(
+                self.model_class_num,
+            )
+            self.feature_dim = self.model.blocks[-1].proj.in_features
+            self.stem = None
+            self.body = None
+            self.head = None
 
     def forward(self, video: torch.Tensor) -> torch.Tensor:
         """
         Args:
             video: (B, C, T, H, W)
-            attn_map: (B, 1, T, H, W)
 
         Returns:
-            torch.Tensor: (B, C, T, H, W)
+            torch.Tensor: (B, num_classes)
         """
-
-        output = self.model(video)
-
-        return output
+        if self.use_separable:
+            x = self.stem(video)
+            x = self.body(x)
+            x = self.head(x)
+            return x
+        else:
+            return self.model(video)
 
     def forward_features(self, video: torch.Tensor) -> torch.Tensor:
         """
@@ -69,24 +88,56 @@ class Res3DCNN(BaseModel):
             torch.Tensor: (B, feature_dim)
 
         Note:
-            Assumes the final element in model.blocks is the classification head.
+            In standard mode, assumes the final element in model.blocks is the classification head.
+            In separable mode, returns features after stem and body.
         """
-        x = video
-        for idx in range(len(self.model.blocks) - 1):
-            x = self.model.blocks[idx](x)
-
-        head = self.model.blocks[-1]
-        if hasattr(head, "pool"):
-            x = head.pool(x)
+        if self.use_separable:
+            x = self.stem(video)
+            x = self.body(x)
+            # Apply pooling similar to head but without projection
+            if x.dim() == 5:
+                x = x.mean(dim=(2, 3, 4))  # (B, C)
+            else:
+                x = x.view(x.size(0), -1)
+            return x
         else:
-            if x.dim() != 5:
-                raise ValueError(f"Expected 5D features, got shape {x.shape}")
-            x = x.mean(dim=(2, 3, 4), keepdim=True)
+            x = video
+            for idx in range(len(self.model.blocks) - 1):
+                x = self.model.blocks[idx](x)
 
-        x = x.view(x.size(0), -1)
+            head = self.model.blocks[-1]
+            if hasattr(head, "pool"):
+                x = head.pool(x)
+            else:
+                if x.dim() != 5:
+                    raise ValueError(f"Expected 5D features, got shape {x.shape}")
+                x = x.mean(dim=(2, 3, 4), keepdim=True)
 
-        dropout = getattr(head, "dropout", None)
-        if dropout is not None:
-            x = dropout(x)
+            x = x.view(x.size(0), -1)
 
-        return x
+            dropout = getattr(head, "dropout", None)
+            if dropout is not None:
+                x = dropout(x)
+
+            return x
+    
+    def get_stem(self):
+        """Get the stem module (initial layers)."""
+        if self.use_separable:
+            return self.stem
+        else:
+            return self.model.blocks[0]
+    
+    def get_body(self):
+        """Get the body module (middle ResNet stages)."""
+        if self.use_separable:
+            return self.body
+        else:
+            return nn.Sequential(*self.model.blocks[1:-1])
+    
+    def get_head(self):
+        """Get the head module (classification layer)."""
+        if self.use_separable:
+            return self.head
+        else:
+            return self.model.blocks[-1]
