@@ -69,9 +69,16 @@ Fusion is performed at the **feature level**:
 ### Fusion & Analysis
 
 - 🔀 Single-view baselines
-- 🔀 Multi-view fusion strategies (avg / concat / weighting)
+- 🔀 Multi-view fusion strategies:
+  - **Early fusion**: avg / concat / weighted
+  - **Late fusion**: logit/prob averaging, feature fusion
+  - **⭐ TS-CVA**: Temporal-Synchronous Cross-View Attention (NEW!)
+    - Frame-level cross-view attention
+    - Dynamic view weighting with learnable gates
+    - Interpretable attention and gating visualizations
 - 📊 View contribution analysis: **Single-view**, **LOVO**, **pairwise complementarity**
 - 🧪 Robustness tests: **view drop at inference**
+- 📈 Visualization tools: attention heatmaps, gate weight curves
 
 ---
 
@@ -92,6 +99,7 @@ Fusion is performed at the **feature level**:
 
 ### 5) 多视角融合方式（mid fusion）
 - **SE 注意力融合**：`model.fuse_method=se_attn`（旧配置可用 `se_atn`，后续版本将移除）
+- **⭐ TS-CVA 时序同步跨视角注意力**：`model.fuse_method=ts_cva`（推荐！详见 [TS-CVA文档](doc/TS-CVA_README.md)）
 
 ---
 
