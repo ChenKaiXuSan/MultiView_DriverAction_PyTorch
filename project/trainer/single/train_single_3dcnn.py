@@ -104,8 +104,15 @@ class SingleRes3DCNNTrainer(LightningModule):
         if video is None:
             raise ValueError("RGB video data is required but not found in batch.")
 
-        video = video.detach().squeeze(0)  # [B, C, T, H, W]
-        return video
+        video = video.detach()
+
+        if video.dim() == 6: # [B, chunk, C, T, H, W]
+
+            video = video.view(
+                -1, video.shape[2], video.shape[3], video.shape[4], video.shape[5]
+            )  # [B*chunk, C, T, H, W]
+
+        return video  # [B, C, T, H, W]
 
     @staticmethod
     def _prepare_label(batch: Dict[str, torch.Tensor]) -> torch.Tensor:
