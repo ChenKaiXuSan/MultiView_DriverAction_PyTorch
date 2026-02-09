@@ -60,9 +60,12 @@ class DriverDataModule(LightningDataModule):
         self._annotation_file = opt.paths.start_mid_end_path
 
         self._batch_size = opt.data.batch_size
-        self.load_kpt = opt.data.load_kpt
-        self.load_rgb = opt.data.load_rgb
         self.max_video_frames = opt.data.max_video_frames
+        self.view_name = opt.train.view_name
+        if isinstance(self.view_name, str):
+            self.view_name = [self.view_name]
+        elif not isinstance(self.view_name, list):
+            raise ValueError("view_name must be str or list of str")
 
         self.mapping_transform = Compose(
             [
@@ -97,9 +100,8 @@ class DriverDataModule(LightningDataModule):
             dataset_idx=self._dataset_idx["train"],
             annotation_dict=_annotation_dict,
             transform=self.mapping_transform,
-            load_rgb=self.load_rgb,
-            load_kpt=self.load_kpt,
             max_video_frames=self.max_video_frames,
+            view_name=self.view_name,
         )
 
         # val dataset
@@ -108,9 +110,8 @@ class DriverDataModule(LightningDataModule):
             dataset_idx=self._dataset_idx["val"],
             annotation_dict=_annotation_dict,
             transform=self.mapping_transform,
-            load_rgb=self.load_rgb,
-            load_kpt=self.load_kpt,
             max_video_frames=self.max_video_frames,
+            view_name=self.view_name,
         )
 
         # test dataset
@@ -119,9 +120,8 @@ class DriverDataModule(LightningDataModule):
             dataset_idx=self._dataset_idx["val"],
             annotation_dict=_annotation_dict,
             transform=self.mapping_transform,
-            load_rgb=self.load_rgb,
-            load_kpt=self.load_kpt,
             max_video_frames=self.max_video_frames,
+            view_name=self.view_name,
         )
 
     def _collate_fn(self, batch: Any) -> Any:
@@ -130,15 +130,13 @@ class DriverDataModule(LightningDataModule):
         if not batch:
             return {}
 
-        views = ["front", "left", "right"]
+        views = self.view_name
         video_lists = {view: [] for view in views}
-        kpt_lists = {view: [] for view in views}
         labels = []
         label_info = []
         meta = []
         chunk_info = []
         has_video = False
-        has_kpt = False
 
         for sample in batch:
             sample_labels = sample.get("label")
@@ -173,13 +171,6 @@ class DriverDataModule(LightningDataModule):
                         video_lists[view].append(sample_videos[view])
                         has_video = True
 
-            sample_kpts = sample.get("sam3d_kpt")
-            if isinstance(sample_kpts, dict):
-                for view in views:
-                    if sample_kpts.get(view) is not None:
-                        kpt_lists[view].append(sample_kpts[view])
-                        has_kpt = True
-
         label_tensor = (
             torch.cat(labels, dim=0) if labels else torch.empty(0, dtype=torch.long)
         )
@@ -195,20 +186,8 @@ class DriverDataModule(LightningDataModule):
                 for view in views
             }
 
-        kpt_out = None
-        if has_kpt:
-            kpt_out = {
-                view: (
-                    torch.cat(kpt_lists[view], dim=0)
-                    if kpt_lists[view]
-                    else None
-                )
-                for view in views
-            }
-
         return {
             "video": video_out,
-            "sam3d_kpt": kpt_out,
             "label": label_tensor,
             "label_info": label_info,
             "meta": meta,

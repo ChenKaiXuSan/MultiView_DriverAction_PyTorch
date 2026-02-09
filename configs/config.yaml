@@ -86,7 +86,7 @@ train:
   max_epochs: 50 # numer of epochs of training
 
   view: single # single or multi
-  view_name: front # used when train.view=single
+  view_name: ['front'] # used for train view, choices=['front', 'left', 'right']
   feature_map_batches: 10 # dump CAM features for first N test batches
 
   gpu: 0 # choices=[0, 1], help='the gpu number whicht to train'

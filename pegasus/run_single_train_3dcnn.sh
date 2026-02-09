@@ -59,5 +59,5 @@ python -m project.main \
   model.model_class_num=${model_class_num} \
   model.input_type=${input_type} \
   train.view=single \
-  train.view_name=${VIEW_NAME_MAP[$PBS_SUBREQNO]} \
+  train.view_name=[${VIEW_NAME_MAP[$PBS_SUBREQNO]}] \
   data.max_video_frames=${max_video_frames} \
