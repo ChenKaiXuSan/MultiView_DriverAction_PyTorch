@@ -44,7 +44,6 @@ def select_model(hparams) -> nn.Module:
     """
 
     model_backbone = hparams.model.backbone
-    fuse_method = hparams.model.fuse_method
     input_type = getattr(hparams.model, "input_type", "rgb")
 
     if input_type == "kpt":
