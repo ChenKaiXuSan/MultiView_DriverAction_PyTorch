@@ -22,6 +22,7 @@ Date      	By	Comments
 
 from typing import Any, Callable, Dict, Optional
 
+import torch
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader
 from torchvision.transforms import (
@@ -123,6 +124,98 @@ class DriverDataModule(LightningDataModule):
             max_video_frames=self.max_video_frames,
         )
 
+    def _collate_fn(self, batch: Any) -> Any:
+        # 这里需要在返回batch的时候，把batch和chunk结合起来
+        # Merge per-sample segments into one batch dimension.
+        if not batch:
+            return {}
+
+        views = ["front", "left", "right"]
+        video_lists = {view: [] for view in views}
+        kpt_lists = {view: [] for view in views}
+        labels = []
+        label_info = []
+        meta = []
+        chunk_info = []
+        has_video = False
+        has_kpt = False
+
+        for sample in batch:
+            sample_labels = sample.get("label")
+            if sample_labels is None:
+                continue
+            if sample_labels.ndim == 0:
+                sample_labels = sample_labels.view(1)
+            labels.append(sample_labels)
+
+            sample_label_info = sample.get("label_info", [])
+            if sample_label_info:
+                label_info.extend(sample_label_info)
+
+            seg_count = int(sample_labels.shape[0])
+            sample_meta = sample.get("meta")
+            if sample_meta is not None:
+                for seg_idx in range(seg_count):
+                    meta_entry = dict(sample_meta)
+                    meta_entry["segment_idx"] = seg_idx
+                    meta_entry["segment_count"] = seg_count
+                    meta.append(meta_entry)
+                    if sample_meta.get("chunk_info") is not None:
+                        chunk_entry = dict(sample_meta["chunk_info"])
+                        chunk_entry["segment_idx"] = seg_idx
+                        chunk_entry["segment_count"] = seg_count
+                        chunk_info.append(chunk_entry)
+
+            sample_videos = sample.get("video")
+            if isinstance(sample_videos, dict):
+                for view in views:
+                    if sample_videos.get(view) is not None:
+                        video_lists[view].append(sample_videos[view])
+                        has_video = True
+
+            sample_kpts = sample.get("sam3d_kpt")
+            if isinstance(sample_kpts, dict):
+                for view in views:
+                    if sample_kpts.get(view) is not None:
+                        kpt_lists[view].append(sample_kpts[view])
+                        has_kpt = True
+
+        label_tensor = (
+            torch.cat(labels, dim=0) if labels else torch.empty(0, dtype=torch.long)
+        )
+
+        video_out = None
+        if has_video:
+            video_out = {
+                view: (
+                    torch.cat(video_lists[view], dim=0)
+                    if video_lists[view]
+                    else None
+                )
+                for view in views
+            }
+
+        kpt_out = None
+        if has_kpt:
+            kpt_out = {
+                view: (
+                    torch.cat(kpt_lists[view], dim=0)
+                    if kpt_lists[view]
+                    else None
+                )
+                for view in views
+            }
+
+        return {
+            "video": video_out,
+            "sam3d_kpt": kpt_out,
+            "label": label_tensor,
+            "label_info": label_info,
+            "meta": meta,
+            "chunk_info": chunk_info,
+        }
+        
+
     def train_dataloader(self) -> DataLoader:
         """
         create the Walk train partition from the list of video labels
@@ -137,6 +230,7 @@ class DriverDataModule(LightningDataModule):
             pin_memory=False,
             shuffle=True,
             drop_last=True,
+            collate_fn=self._collate_fn,
         )
 
         return train_data_loader
@@ -155,6 +249,7 @@ class DriverDataModule(LightningDataModule):
             pin_memory=False,
             shuffle=False,
             drop_last=True,
+            collate_fn=self._collate_fn,
         )
 
         return val_data_loader
@@ -173,6 +268,7 @@ class DriverDataModule(LightningDataModule):
             pin_memory=False,
             shuffle=False,
             drop_last=True,
+            collate_fn=self._collate_fn,
         )
 
         return test_data_loader

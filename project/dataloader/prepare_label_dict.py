@@ -231,7 +231,7 @@ def prepare_label_dict(
     if fill_front:
         labels = fill_unlabeled_as_front(labels, total_end=total_end)
 
-    print_label_stats(labels)
+    # print_label_stats(labels)
 
     timeline_list = label_dict_to_timeline(labels)
 

@@ -19,7 +19,8 @@
         "data.num_workers=0",
         "train.view=single",
         "data.load_kpt=false",
-        "train.gpu=1"
+        "train.gpu=1",
+        "data.batch_size=2",
       ]
     },
   ]

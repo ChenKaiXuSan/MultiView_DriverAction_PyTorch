@@ -106,11 +106,9 @@ class SingleRes3DCNNTrainer(LightningModule):
 
         video = video.detach()
 
-        if video.dim() == 6: # [B, chunk, C, T, H, W]
-
-            video = video.view(
-                -1, video.shape[2], video.shape[3], video.shape[4], video.shape[5]
-            )  # [B*chunk, C, T, H, W]
+        if video.dim() == 6:  # [B, chunk, C, T, H, W]
+            B, chunk, C, T, H, W = video.shape
+            video = video.view(B * chunk, C, T, H, W)  # [B*chunk, C, T, H, W]
 
         return video  # [B, C, T, H, W]
 
