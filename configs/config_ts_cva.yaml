@@ -1,0 +1,85 @@
+# Example configuration for TS-CVA (Temporal-Synchronous Cross-View Attention)
+# This configuration demonstrates the full TS-CVA method with all features enabled
+
+hydra:
+  run:
+    dir: ${log_path}
+  sweep:
+    dir: logs/
+    subdir: ${experiment}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+
+loss:
+  lr: 0.0001
+  beta1: 0.5
+  beta2: 0.999
+  selection: ["cls"]
+  lambda_list: [0.25, 0.5, 0.75, 1.0]
+  w_bg: 0.2
+  w_temp: 0.05
+
+paths:
+  root_path: /workspace/data/multi_view_driver_action
+  annotation_path: ${paths.root_path}/label
+  index_mapping: ${paths.root_path}/index_mapping
+  start_mid_end_path: ${paths.root_path}/split_mid_end/mini.json
+  video_path: /workspace/data/videos_split
+  sam3d_results_path: /workspace/data/sam3d_body_results_right
+
+data:
+  num_workers: 12
+  img_size: 224
+  uniform_temporal_subsample_num: 16  # Number of frames to sample from video
+  batch_size: 2  # Batch size for training
+  fold: 5
+  load_rgb: true
+  load_kpt: false
+  max_video_frames: 500
+
+model:
+  backbone: 3dcnn
+  model_class_num: 9  # Number of action classes
+  use_side_heads: True
+  input_type: rgb
+  
+  # TS-CVA specific configuration
+  fuse_method: ts_cva  # Use TS-CVA fusion method
+  
+  # TS-CVA hyperparameters (all optional, defaults are shown)
+  ts_cva_shared_backbone: true          # Share backbone across views (recommended)
+  ts_cva_use_view_embedding: true       # Add view embeddings for view distinction
+  ts_cva_use_gated_aggregation: true    # Use learnable gating (vs. mean pooling)
+  ts_cva_num_heads: 4                   # Number of attention heads
+  ts_cva_temporal_dim: 512              # Hidden dimension for temporal modeling
+  ts_cva_temporal_layers: 2             # Number of TCN layers
+  
+train:
+  max_epochs: 50
+  view: multi  # MUST be 'multi' for TS-CVA
+  view_name: ['front', 'left', 'right']  # All three views required
+  feature_map_batches: 10
+  gpu: 0
+
+log_path: logs/train/${experiment}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+experiment: ts_cva_full  # Experiment name for logging
+
+
+# ========================================
+# Ablation Study Configurations
+# ========================================
+
+# Ablation 1: TS-CVA without gated aggregation (use mean pooling)
+# ts_cva_use_gated_aggregation: false
+
+# Ablation 2: TS-CVA without view embeddings
+# ts_cva_use_view_embedding: false
+
+# Ablation 3: TS-CVA with non-shared backbone
+# ts_cva_shared_backbone: false
+
+# Ablation 4: Different number of attention heads
+# ts_cva_num_heads: 8
+
+# Ablation 5: Baseline - Single view
+# train:
+#   view: single
+#   view_name: ['front']  # or ['left'] or ['right']

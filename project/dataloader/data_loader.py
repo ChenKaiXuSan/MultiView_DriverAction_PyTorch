@@ -42,7 +42,6 @@ class DriverDataModule(LightningDataModule):
     def __init__(self, opt, dataset_idx: Dict = None):
         super().__init__()
 
-
         self._num_workers = opt.data.num_workers
         self._img_size = opt.data.img_size
 
@@ -64,8 +63,6 @@ class DriverDataModule(LightningDataModule):
         self.view_name = opt.train.view_name
         if isinstance(self.view_name, str):
             self.view_name = [self.view_name]
-        elif not isinstance(self.view_name, list):
-            raise ValueError("view_name must be str or list of str")
 
         self.mapping_transform = Compose(
             [
@@ -179,9 +176,7 @@ class DriverDataModule(LightningDataModule):
         if has_video:
             video_out = {
                 view: (
-                    torch.cat(video_lists[view], dim=0)
-                    if video_lists[view]
-                    else None
+                    torch.cat(video_lists[view], dim=0) if video_lists[view] else None
                 )
                 for view in views
             }
@@ -193,7 +188,6 @@ class DriverDataModule(LightningDataModule):
             "meta": meta,
             "chunk_info": chunk_info,
         }
-        
 
     def train_dataloader(self) -> DataLoader:
         """

@@ -21,7 +21,7 @@ Date      	By	Comments
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Union
+from typing import Dict, Optional, Union
 
 import torch
 import torch.nn.functional as F
@@ -36,7 +36,6 @@ from torchmetrics.classification import (
 
 from project.models.res_3dcnn import Res3DCNN
 from project.utils.helper import save_helper
-from project.utils.save_CAM import dump_all_feature_maps
 
 logger = logging.getLogger(__name__)
 
@@ -52,10 +51,7 @@ class SingleRes3DCNNTrainer(LightningModule):
 
         # define model
         self.model = Res3DCNN(hparams)
-        self.view_name = getattr(hparams.train, "view_name", "front")
-        self.feature_map_dump_batch_limit = int(
-            getattr(hparams.train, "feature_map_batches", 10)
-        )
+        self.view_name = getattr(hparams.train, "view_name", "front")[0]
 
         # save the hyperparameters to the file and ckpt
         self.save_hyperparameters()
@@ -66,7 +62,7 @@ class SingleRes3DCNNTrainer(LightningModule):
         self._f1_score = MulticlassF1Score(num_classes=self.num_classes)
         self._confusion_matrix = MulticlassConfusionMatrix(num_classes=self.num_classes)
 
-        self.save_root = getattr(hparams.train, "log_path", "./logs")
+        self.save_root = getattr(hparams, "log_path", "./logs")
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass with RGB video input.
@@ -103,12 +99,6 @@ class SingleRes3DCNNTrainer(LightningModule):
 
         if video is None:
             raise ValueError("RGB video data is required but not found in batch.")
-
-        video = video.detach()
-
-        if video.dim() == 6:  # [B, chunk, C, T, H, W]
-            B, chunk, C, T, H, W = video.shape
-            video = video.view(B * chunk, C, T, H, W)  # [B*chunk, C, T, H, W]
 
         return video  # [B, C, T, H, W]
 
@@ -248,28 +238,6 @@ class SingleRes3DCNNTrainer(LightningModule):
 
         self.test_pred_list.append(video_preds_softmax.detach().cpu())
         self.test_label_list.append(label.detach().cpu())
-
-        fold = (
-            getattr(self.logger, "root_dir", "fold").split("/")[-1]
-            if self.logger
-            else "fold"
-        )
-        # Dump feature maps for visualization
-        # if (
-        #     batch_idx < self.feature_map_dump_batch_limit
-        #     and video is not None
-        # ):
-        #     dump_all_feature_maps(
-        #         model=self.model,
-        #         video=video,
-        #         video_info=batch.get("info", None),
-        #         attn_map=None,
-        #         save_root=f"{self.save_root}/test_all_feature_maps/{fold}/batch_{batch_idx}",
-        #         include_types=(torch.nn.Conv3d, torch.nn.Linear),
-        #         include_name_contains=["conv_c"],
-        #         resize_to=(256, 256),  # 指定输出大小
-        #         resize_mode="bilinear",  # 放大更平滑
-        #     )
 
         return video_preds_softmax, video_preds
 
