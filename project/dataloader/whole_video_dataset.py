@@ -89,7 +89,8 @@ class LabeledVideoDataset(Dataset):
             
             total_frames = 0
             start_frame_offset = 0
-            
+            end_frame = 0
+
             if (
                 person_key in self._annotation_dict
                 and env_folder in self._annotation_dict[person_key]
@@ -97,7 +98,10 @@ class LabeledVideoDataset(Dataset):
                 frame_info = self._annotation_dict[person_key][env_folder]
                 start_frame_offset = int(frame_info.get("start", 0))
                 end_frame = int(frame_info.get("end", 0))
-                total_frames = end_frame - start_frame_offset
+
+            start_frame_offset = max(0, start_frame_offset)
+            end_frame = max(start_frame_offset, end_frame)
+            total_frames = end_frame - start_frame_offset
             
             # 如果无法获取帧数或帧数为0，跳过分块，创建单个item
             if total_frames <= 0:
@@ -645,32 +649,36 @@ class LabeledVideoDataset(Dataset):
 
         # Get start and end frame indices
         if self.load_rgb:
-            # When chunking, frames are already sliced, so start from 0
-            start_frame = 0
-            end_frame = total_frames
+            # When chunking, frames are already sliced to the annotation range
+            if self.max_video_frames is not None:
+                start_frame = 0
+                end_frame = total_frames
+            else:
+                start_frame = 0
+                end_frame = total_frames
 
-            # Try to get frame info from annotation dict
-            person_key = item.person_id  # e.g., "person_01"
-            env_folder = item.env_folder  # e.g., "夜多い"
+                # Try to get frame info from annotation dict
+                person_key = item.person_id  # e.g., "person_01"
+                env_folder = item.env_folder  # e.g., "夜多い"
 
-            if (
-                person_key in self._annotation_dict
-                and env_folder in self._annotation_dict[person_key]
-            ):
-                frame_info = self._annotation_dict[person_key][env_folder]
-                if frame_info.get("start") is not None:
-                    start_frame = int(frame_info.get("start", 0))
-                if frame_info.get("end") is not None:
-                    end_frame = int(frame_info.get("end", total_frames))
+                if (
+                    person_key in self._annotation_dict
+                    and env_folder in self._annotation_dict[person_key]
+                ):
+                    frame_info = self._annotation_dict[person_key][env_folder]
+                    if frame_info.get("start") is not None:
+                        start_frame = int(frame_info.get("start", 0))
+                    if frame_info.get("end") is not None:
+                        end_frame = int(frame_info.get("end", total_frames))
 
-                # Clamp to valid range
-                start_frame = max(0, min(start_frame, total_frames - 1))
-                end_frame = max(start_frame + 1, min(end_frame, total_frames))
+                    # Clamp to valid range
+                    start_frame = max(0, min(start_frame, total_frames - 1))
+                    end_frame = max(start_frame + 1, min(end_frame, total_frames))
 
-            # Slice video to the specified frame range
-            front_frames = front_frames[start_frame:end_frame]
-            left_frames = left_frames[start_frame:end_frame]
-            right_frames = right_frames[start_frame:end_frame]
+                # Slice video to the specified frame range
+                front_frames = front_frames[start_frame:end_frame]
+                left_frames = left_frames[start_frame:end_frame]
+                right_frames = right_frames[start_frame:end_frame]
 
             frame_count = int(front_frames.shape[0])
         else:
@@ -921,8 +929,11 @@ class LabeledVideoDataset(Dataset):
                 "chunk_info": {
                     "chunk_idx": chunk_info['chunk_idx'],
                     "total_chunks": chunk_info['total_chunks'],
-                    "chunk_start_frame": chunk_start_frame,
-                    "chunk_end_frame": chunk_end_frame,
+                    "chunk_start_frame": chunk_start_frame,  # Relative to annotation start
+                    "chunk_end_frame": chunk_end_frame,  # Relative to annotation start
+                    "absolute_start_frame": start_frame_offset + chunk_start_frame,  # Absolute frame index in original video
+                    "absolute_end_frame": start_frame_offset + (chunk_end_frame if chunk_end_frame else chunk_start_frame),  # Absolute frame index in original video
+                    "annotation_start": start_frame_offset,  # Annotation start frame
                 } if self.max_video_frames is not None else None,
             },
         }
