@@ -76,6 +76,14 @@ model:
 
   fuse_method: mid # add, mul, concat, none, late, avg
 
+  # TS-CVA hyperparameters (all optional, defaults are shown)
+  ts_cva_shared_backbone: true          # Share backbone across views (recommended)
+  ts_cva_use_view_embedding: true       # Add view embeddings for view distinction
+  ts_cva_use_gated_aggregation: true    # Use learnable gating (vs. mean pooling)
+  ts_cva_num_heads: 4                   # Number of attention heads
+  ts_cva_temporal_dim: 512              # Hidden dimension for temporal modeling
+  ts_cva_temporal_layers: 2             # Number of TCN layers
+
 train:
   # Training config
   max_epochs: 50 # numer of epochs of training
@@ -87,3 +95,25 @@ train:
 
 log_path: logs/train/${experiment}/${now:%Y-%m-%d}/${now:%H-%M-%S}
 experiment: ${train.view}_${train.view_name}_${model.backbone}_fuse_method_${model.fuse_method} # the experiment name, used for log path
+
+
+# ========================================
+# Ablation Study Configurations
+# ========================================
+
+# Ablation 1: TS-CVA without gated aggregation (use mean pooling)
+# ts_cva_use_gated_aggregation: false
+
+# Ablation 2: TS-CVA without view embeddings
+# ts_cva_use_view_embedding: false
+
+# Ablation 3: TS-CVA with non-shared backbone
+# ts_cva_shared_backbone: false
+
+# Ablation 4: Different number of attention heads
+# ts_cva_num_heads: 8
+
+# Ablation 5: Baseline - Single view
+# train:
+#   view: single
+#   view_name: ['front']  # or ['left'] or ['right']

@@ -11,7 +11,6 @@
 cd /work/SSR/share/code/MultiView_DriverAction_PyTorch
 
 mkdir -p logs/pegasus/
-mkdir -p checkpoints/
 
 # === 下载预训练模型（如果需要） ===
 # wget -O /home/SSR/luoxi/code/MultiView_DriverAction_PyTorch/checkpoints/SLOW_8x8_R50.pyth https://dl.fbaipublicfiles.com/pytorchvideo/model_zoo/kinetics/SLOW_8x8_R50.pyth
@@ -23,21 +22,18 @@ conda env list # 列出所有 Conda 环境以供参考
 # === 可选：打印 GPU 状态 ===
 nvidia-smi
 
-NUM_WORKERS=$(nproc)
 # 输出当前环境信息
 echo "Current working directory: $(pwd)"
-echo "Total CPU cores: $NUM_WORKERS, use $((NUM_WORKERS / 3)) for data loading"
 echo "Current Python version: $(python --version)"
 echo "Current virtual environment: $(which python)"
 
 # === 从 config.yaml 读取配置参数 ===
 root_path=/work/SSR/share/data/drive/multi_view_driver_action
 num_workers=8
-batch_size=1
+batch_size=64
 backbone=3dcnn
 model_class_num=9
-input_type=rgb
-max_video_frames=500
+max_video_frames=120
 
 # mapping view 
 # 声明关联数组
@@ -57,7 +53,6 @@ python -m project.main \
   data.batch_size=${batch_size} \
   model.backbone=${backbone} \
   model.model_class_num=${model_class_num} \
-  model.input_type=${input_type} \
   train.view=single \
   train.view_name=[${VIEW_NAME_MAP[$PBS_SUBREQNO]}] \
   data.max_video_frames=${max_video_frames} \
