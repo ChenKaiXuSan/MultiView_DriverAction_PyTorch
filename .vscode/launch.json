@@ -7,7 +7,7 @@
       "module": "enter-your-module-name"
     },
     {
-      "name": "train_main",
+      "name": "train_single_3dcnn",
       "type": "debugpy",
       "request": "launch",
       "module": "project.main",
@@ -23,5 +23,23 @@
         "data.batch_size=2",
       ]
     },
+    {
+      "name": "train_multi_ts_cva",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "project.main",
+      "cwd": "/workspace/MultiView_DriverAction_PyTorch",
+      "python": "/opt/conda/envs/multiview-video-cls/bin/python",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "args": [
+        "data.num_workers=0",
+        "train.view=multi",
+        "train.view_name=['front', 'left', 'right']",
+        "data.load_kpt=false",
+        "train.gpu=1",
+        "data.batch_size=2",
+      ]
+    }
   ]
 }

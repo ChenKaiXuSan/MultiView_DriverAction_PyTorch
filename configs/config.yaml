@@ -58,18 +58,13 @@ data:
   # 原则：尽量大（减少chunks数量），但不要OOM
 
 model:
-  backbone: 3dcnn # choices=[3dcnn, transformer, mamba, stgcn], help='the backbone of the model'
+  backbone: 3dcnn # choices=[3dcnn, transformer, mamba], help='the backbone of the model'
   model_class_num: 9 # the class num, left, right, up, down, left_up, left_down, right_up, right_down, front
   use_side_heads: True # whether to use side heads for intermediate supervision
-  input_type: rgb # rgb | kpt | rgb_kpt
   fusion_mode: logit_mean # logit_mean | prob_mean | feature_mean | feature_concat
   modality_fusion: concat # concat | mean (for rgb+kpt)
   fusion_feature_dim: 256
-  stgcn_hidden_dim: 64
-  stgcn_layers: 3
-  stgcn_temporal_kernel: 3
-  stgcn_dropout: 0.1
-  stgcn_num_kpts: null
+  
   transformer_dim: 256
   transformer_layers: 4
   transformer_heads: 4
@@ -79,7 +74,7 @@ model:
   mamba_layers: 2
   mamba_dropout: 0.1
 
-  fuse_method: late # add, mul, concat, none, late, avg, cross_atn, se_atn, pose_atn
+  fuse_method: mid # add, mul, concat, none, late, avg
 
 train:
   # Training config
@@ -87,9 +82,8 @@ train:
 
   view: single # single or multi
   view_name: ['front'] # used for train view, choices=['front', 'left', 'right']
-  feature_map_batches: 10 # dump CAM features for first N test batches
 
   gpu: 0 # choices=[0, 1], help='the gpu number whicht to train'
 
 log_path: logs/train/${experiment}/${now:%Y-%m-%d}/${now:%H-%M-%S}
-experiment: view_${train.view}_${train.view_name}_${model.backbone}_fuse_method_${model.fuse_method} # the experiment name, used for log path
+experiment: ${train.view}_${train.view_name}_${model.backbone}_fuse_method_${model.fuse_method} # the experiment name, used for log path

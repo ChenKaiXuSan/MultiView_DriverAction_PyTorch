@@ -27,6 +27,7 @@ import torch
 import torch.nn as nn
 from pytorchvideo.models.hub.resnet import slow_r50
 import requests, shutil, tempfile
+import socket, errno
 
 root_dir = "https://dl.fbaipublicfiles.com/pytorchvideo/model_zoo"
 checkpoint_paths = {
@@ -36,10 +37,13 @@ checkpoint_paths = {
     "i3d_r50": f"{root_dir}/kinetics/I3D_8x8_R50.pyth",
 }
 
+# 默认权重缓存目录
+DEFAULT_CACHE_DIR = Path.home() / ".cache" / "pytorchvideo"
+
 
 # ---------------- 辅助函数 ---------------- #
-def has_internet(host="github.com", timeout=3) -> bool:
-    import socket, errno
+def has_internet(host="dl.fbaipublicfiles.com", timeout=3) -> bool:
+    """检查是否有网络连接"""
 
     try:
         socket.create_connection((host, 443), timeout=timeout)
@@ -55,7 +59,8 @@ def download_file(url: str, save_path: Path):
     save_path = Path(save_path)
     save_path.parent.mkdir(parents=True, exist_ok=True)
 
-    with requests.get(url, stream=True, timeout=10) as r:
+    print(f"[INFO] Downloading weights from {url}...")
+    with requests.get(url, stream=True, timeout=30) as r:
         r.raise_for_status()
         with open(save_path, "wb") as f:
             for chunk in r.iter_content(chunk_size=8192):
@@ -63,6 +68,46 @@ def download_file(url: str, save_path: Path):
                     f.write(chunk)
 
     print(f"[INFO] Weights downloaded to {save_path.resolve()}")
+
+
+def get_or_download_weights(model_name: str = "slow_r50") -> Path | None:
+    """
+    获取或下载预训练权重
+
+    Args:
+        model_name: 模型名称，用于查找对应的 checkpoint URL
+
+    Returns:
+        权重文件路径 (如果成功下载或已存在)，否则返回 None
+    """
+    # 1) 检查缓存目录中是否已有权重
+    cache_path = DEFAULT_CACHE_DIR / f"{model_name}.pyth"
+
+    if cache_path.exists():
+        print(f"[INFO] Found cached weights at {cache_path}")
+        return cache_path
+
+    # 2) 检查网络连接
+    if not has_internet():
+        print(
+            "[WARN] No internet connection and no cached weights — model will be randomly initialized."
+        )
+        return None
+
+    # 3) 下载权重
+    try:
+        url = checkpoint_paths.get(model_name)
+        if not url:
+            print(f"[ERROR] Unknown model name: {model_name}")
+            return None
+
+        download_file(url, cache_path)
+        return cache_path
+    except Exception as e:
+        print(f"[ERROR] Failed to download weights: {e}")
+        print("[WARN] Model will be randomly initialized.")
+        return None
+
 
 class BaseModel(nn.Module):
     """
@@ -93,36 +138,34 @@ class BaseModel(nn.Module):
         torch.save(self.model.state_dict(), path)
 
     @staticmethod
-    def init_resnet(
-        class_num: int = 3, weight_path: str = "") -> nn.Module:
+    def init_resnet(class_num: int = 3) -> nn.Module:
         """
+        初始化 ResNet 3D CNN
+
         Args:
             class_num: 输出类别数
-            weight_path: 预训练权重(.pth/.pyth)保存路径；若为空则跳过下载/加载
-        """
-        weight_path = Path(weight_path) if weight_path else None
 
+        Returns:
+            初始化好的模型（如果有网络连接，会自动下载并加载预训练权重）
+        """
         # 1) 初始化模型结构
         model = slow_r50(pretrained=False)
 
-        # 2) 加载权重
-        if weight_path:
-            if weight_path.exists():
-                print(f"[INFO] Loading local weights: {weight_path}")
+        # 2) 获取或下载权重
+        weight_path = get_or_download_weights("slow_r50")
+
+        if weight_path and weight_path.exists():
+            print(f"[INFO] Loading pretrained weights from {weight_path}")
+            try:
                 state = torch.load(weight_path, map_location="cpu")
-                model_state = state["model_state"]
+                model_state = state.get("model_state", state)
                 model.load_state_dict(model_state)
-            elif has_internet():
-                print("[INFO] No local weights, downloading …")
-                url = checkpoint_paths["slow_r50"]
-                download_file(url, weight_path)
-                state = torch.load(weight_path, map_location="cpu")
-                model_state = state["model_state"]
-                model.load_state_dict(model_state)
-            else:
-                print("[WARN] No internet and no local weights — model will be random.")
+                print("[INFO] Pretrained weights loaded successfully.")
+            except Exception as e:
+                print(f"[ERROR] Failed to load weights: {e}")
+                print("[WARN] Using randomly initialized model.")
         else:
-            print("[INFO] No weight_path specified — model will be random.")
+            print("[INFO] Using randomly initialized model.")
 
         # 3) 修改首层和最后输出层
         model.blocks[0].conv = nn.Conv3d(
@@ -137,46 +180,38 @@ class BaseModel(nn.Module):
         return model
 
     @staticmethod
-    def init_resnet_separable(
-        class_num: int = 3, weight_path: str = "", return_feature_dim: bool = False
-    ):
+    def init_resnet_separable(class_num: int = 3, return_feature_dim: bool = False):
         """
         Initialize ResNet 3D CNN with separable stem, body, and head.
-        
+
         Args:
             class_num: 输出类别数
-            weight_path: 预训练权重(.pth/.pyth)保存路径；若为空则跳过下载/加载
             return_feature_dim: 是否返回特征维度
-            
+
         Returns:
             If return_feature_dim is False:
                 (stem, body, head): 三个独立的模块
             If return_feature_dim is True:
                 (stem, body, head, feature_dim): 三个独立模块和特征维度
         """
-        weight_path = Path(weight_path) if weight_path else None
-
         # 1) 初始化完整模型结构
         model = slow_r50(pretrained=False)
 
-        # 2) 加载权重
-        if weight_path:
-            if weight_path.exists():
-                print(f"[INFO] Loading local weights: {weight_path}")
+        # 2) 获取或下载权重
+        weight_path = get_or_download_weights("slow_r50")
+
+        if weight_path and weight_path.exists():
+            print(f"[INFO] Loading pretrained weights from {weight_path}")
+            try:
                 state = torch.load(weight_path, map_location="cpu")
-                model_state = state["model_state"]
+                model_state = state.get("model_state", state)
                 model.load_state_dict(model_state)
-            elif has_internet():
-                print("[INFO] No local weights, downloading …")
-                url = checkpoint_paths["slow_r50"]
-                download_file(url, weight_path)
-                state = torch.load(weight_path, map_location="cpu")
-                model_state = state["model_state"]
-                model.load_state_dict(model_state)
-            else:
-                print("[WARN] No internet and no local weights — model will be random.")
+                print("[INFO] Pretrained weights loaded successfully.")
+            except Exception as e:
+                print(f"[ERROR] Failed to load weights: {e}")
+                print("[WARN] Using randomly initialized model.")
         else:
-            print("[INFO] No weight_path specified — model will be random.")
+            print("[INFO] Using randomly initialized model.")
 
         # 3) 修改首层 (stem)
         model.blocks[0].conv = nn.Conv3d(
@@ -191,14 +226,14 @@ class BaseModel(nn.Module):
         # 4) 分离 stem, body, head
         # Stem: 第一个 block (conv1 + bn + relu + pool)
         stem = model.blocks[0]
-        
+
         # Body: 中间的 ResNet stages (通常是 blocks[1:-1])
         body = nn.Sequential(*model.blocks[1:-1])
-        
+
         # Head: 最后的分类层
         head_block = model.blocks[-1]
         feature_dim = head_block.proj.in_features
-        
+
         # 重新创建 head，使其可以灵活使用
         class ResNetHead(nn.Module):
             def __init__(self, pool, dropout, proj):
@@ -206,31 +241,31 @@ class BaseModel(nn.Module):
                 self.pool = pool
                 self.dropout = dropout
                 self.proj = proj
-                
+
             def forward(self, x):
                 # x: (B, C, T, H, W)
                 # 始终使用自适应池化以确保输出为 (B, C, 1, 1, 1)
                 x = nn.functional.adaptive_avg_pool3d(x, (1, 1, 1))
-                
+
                 # Flatten: (B, C, 1, 1, 1) -> (B, C)
                 x = x.view(x.size(0), -1)
-                
+
                 # Dropout
-                if hasattr(self, 'dropout') and self.dropout is not None:
+                if hasattr(self, "dropout") and self.dropout is not None:
                     x = self.dropout(x)
-                
+
                 # Projection
                 x = self.proj(x)
                 return x
-        
+
         # 修改分类层的输出维度
         new_proj = nn.Linear(feature_dim, class_num)
         head = ResNetHead(
-            pool=getattr(head_block, 'pool', None),
-            dropout=getattr(head_block, 'dropout', None),
-            proj=new_proj
+            pool=getattr(head_block, "pool", None),
+            dropout=getattr(head_block, "dropout", None),
+            proj=new_proj,
         )
-        
+
         if return_feature_dim:
             return stem, body, head, feature_dim
         return stem, body, head
