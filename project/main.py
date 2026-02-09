@@ -28,6 +28,7 @@ from omegaconf import DictConfig
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import (
+    TQDMProgressBar,
     RichModelSummary,
     ModelCheckpoint,
     EarlyStopping,
@@ -84,6 +85,7 @@ def train(hparams: DictConfig, dataset_idx, fold: int):
 
     # some callbacks
     rich_model_summary = RichModelSummary(max_depth=2)
+    progress_bar = TQDMProgressBar(refresh_rate=50)
 
     # define the checkpoint becavier.
     model_check_point = ModelCheckpoint(
@@ -114,7 +116,7 @@ def train(hparams: DictConfig, dataset_idx, fold: int):
         logger=[tb_logger],
         check_val_every_n_epoch=1,
         callbacks=[
-            # progress_bar,
+            progress_bar,
             rich_model_summary,
             model_check_point,
             early_stopping,
