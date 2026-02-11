@@ -33,7 +33,7 @@ num_workers=8
 batch_size=16
 backbone=3dcnn
 model_class_num=9
-max_video_frames=30
+max_video_frames=90
 
 # mapping view 
 # 声明关联数组

@@ -28,11 +28,11 @@ echo "Current virtual environment: $(which python)"
 
 # === 从 config.yaml 读取配置参数 ===
 root_path=/work/SSR/share/data/drive/multi_view_driver_action
-num_workers=16
-batch_size=8
+num_workers=8
+batch_size=16
 backbone=3dcnn
 model_class_num=9
-max_video_frames=30
+max_video_frames=90
 
 # === 运行训练脚本（使用配置中的参数）===
 python -m project.main \

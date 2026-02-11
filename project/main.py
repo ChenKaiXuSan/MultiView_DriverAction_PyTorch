@@ -90,19 +90,19 @@ def train(hparams: DictConfig, dataset_idx, fold: int):
     # define the checkpoint becavier.
     model_check_point = ModelCheckpoint(
         dirpath=os.path.join(hparams.log_path, "checkpoints", "fold_" + str(fold)),
-        filename="{epoch}-{val/loss:.2f}-{val/video_acc:.4f}",
+        filename="{epoch}-{val/loss:.2f}",
         auto_insert_metric_name=False,
-        monitor="val/video_acc",
-        mode="max",
+        monitor="val/loss",
+        mode="min",
         save_last=True,
         save_top_k=2,
     )
 
     # define the early stop.
     early_stopping = EarlyStopping(
-        monitor="val/video_acc",
+        monitor="val/loss",
         patience=5,
-        mode="max",
+        mode="min",
     )
 
     lr_monitor = LearningRateMonitor(logging_interval="step")
