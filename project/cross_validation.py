@@ -27,6 +27,7 @@ Date      	By	Comments
 """
 
 import json
+import random
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
@@ -166,6 +167,44 @@ class DefineCrossValidation(object):
 
         return fold_dict
 
+    def magic_move(
+        self,
+        fold_samples: Dict[int, Dict[str, List[VideoSample]]],
+        ratio: float = 0.1,
+        seed: int = 0,
+    ) -> Dict[int, Dict[str, List[VideoSample]]]:
+        """
+        Move a portion of train samples into val for each fold.
+        """
+        if ratio <= 0:
+            return fold_samples
+
+        rng = random.Random(seed)
+        updated: Dict[int, Dict[str, List[VideoSample]]] = {}
+
+        for fold, splits in fold_samples.items():
+            train_samples = list(splits.get("train", []))
+            val_samples = list(splits.get("val", []))
+
+            if len(train_samples) == 0:
+                updated[fold] = {"train": train_samples, "val": val_samples}
+                continue
+
+            move_count = int(len(train_samples) * ratio)
+            if move_count <= 0 and len(train_samples) > 1:
+                move_count = 1
+
+            rng.shuffle(train_samples)
+            moved = train_samples[:move_count]
+            remaining = train_samples[move_count:]
+
+            updated[fold] = {
+                "train": remaining,
+                "val": val_samples + moved,
+            }
+
+        return updated
+
     # --------- main entry ---------
     def prepare(self):
         samples = self.build_samples()
@@ -187,10 +226,19 @@ class DefineCrossValidation(object):
         """
         target_dir = self.index_mapping
         target_dir.mkdir(parents=True, exist_ok=True)
-        index_file = target_dir / "index.json"
+        enable_magic_move = bool(kwds.get("magic_move", False))
+        magic_move_ratio = float(kwds.get("magic_move_ratio", 0.1))
+        magic_move_seed = int(kwds.get("magic_move_seed", 0))
+
+        index_name = "index_magicmove.json" if enable_magic_move else "index.json"
+        index_file = target_dir / index_name
 
         if not index_file.exists():
             fold_samples = self.prepare()
+            if enable_magic_move:
+                fold_samples = self.magic_move(
+                    fold_samples, ratio=magic_move_ratio, seed=magic_move_seed
+                )
 
             # serialize
             serial: Dict[str, Any] = {}
