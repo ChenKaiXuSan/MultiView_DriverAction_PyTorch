@@ -32,7 +32,7 @@ num_workers=16
 batch_size=4
 backbone=3dcnn
 model_class_num=9
-max_video_frames=90
+max_video_frames=60
 
 # === 运行训练脚本（使用配置中的参数）===
 python -m project.main \
