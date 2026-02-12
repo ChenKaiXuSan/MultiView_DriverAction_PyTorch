@@ -570,6 +570,38 @@ class LabeledVideoDataset(Dataset):
         )
         timeline_list = label_dict.get("timeline_list", [])
 
+        # For chunked case, adjust timeline to chunk boundaries
+        if self.max_video_frames is not None:
+            # timeline_list contains absolute frame indices for the entire video
+            # Need to filter and adjust for the current chunk
+            chunk_abs_start = start_frame_offset + chunk_start_frame
+            chunk_abs_end = start_frame_offset + (
+                chunk_end_frame 
+                if chunk_end_frame is not None 
+                else chunk_start_frame + self.max_video_frames
+            )
+            
+            adjusted_timeline = []
+            for seg in timeline_list:
+                seg_start = int(seg["start"])
+                seg_end = int(seg["end"])
+                
+                # Only include segments that overlap with current chunk
+                if seg_end <= chunk_abs_start or seg_start >= chunk_abs_end:
+                    continue
+                
+                # Adjust to chunk-relative coordinates
+                adjusted_start = max(0, seg_start - chunk_abs_start)
+                adjusted_end = min(chunk_abs_end - chunk_abs_start, seg_end - chunk_abs_start)
+                
+                adjusted_timeline.append({
+                    "start": adjusted_start,
+                    "end": adjusted_end,
+                    "label": seg["label"]
+                })
+            
+            timeline_list = adjusted_timeline
+
         (
             batch_front,
             batch_left,

@@ -49,7 +49,7 @@ data:
   # 🔑 关键参数：分块加载
   # 如果video超过这个帧数，会被自动分成多个chunks
   # 每次只加载一个chunk，避免加载OOM
-  max_video_frames: 500 # 推荐值：500-2000
+  max_video_frames: 120 # 推荐值：500-2000
   
   # max_video_frames 选择指南：
   # - 224×224 分辨率：500-1000
