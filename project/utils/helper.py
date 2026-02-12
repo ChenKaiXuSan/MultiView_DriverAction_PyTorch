@@ -136,23 +136,27 @@ def save_metrics(
     _auroc = MulticlassAUROC(num_class)
     _confusion_matrix = MulticlassConfusionMatrix(num_class, normalize="true")
 
+    # For AUROC, use probabilities (all_pred)
+    # For other metrics, use class indices (argmax of all_pred)
+    pred_classes = torch.argmax(all_pred, dim=1) if all_pred.dim() > 1 else all_pred
+
     logger.info("*" * 100)
-    logger.info("accuracy: %s" % _accuracy(all_pred, all_label))
-    logger.info("precision: %s" % _precision(all_pred, all_label))
-    logger.info("recall: %s" % _recall(all_pred, all_label))
-    logger.info("f1_score: %s" % _f1_score(all_pred, all_label))
+    logger.info("accuracy: %s" % _accuracy(pred_classes, all_label))
+    logger.info("precision: %s" % _precision(pred_classes, all_label))
+    logger.info("recall: %s" % _recall(pred_classes, all_label))
+    logger.info("f1_score: %s" % _f1_score(pred_classes, all_label))
     logger.info("aurroc: %s" % _auroc(all_pred, all_label.long()))
-    logger.info("confusion_matrix: %s" % _confusion_matrix(all_pred, all_label))
+    logger.info("confusion_matrix: %s" % _confusion_matrix(pred_classes, all_label))
     logger.info("#" * 100)
 
     with open(save_path, "a") as f:
         f.writelines(f"Fold {fold}\n")
-        f.writelines(f"accuracy: {_accuracy(all_pred, all_label)}\n")
-        f.writelines(f"precision: {_precision(all_pred, all_label)}\n")
-        f.writelines(f"recall: {_recall(all_pred, all_label)}\n")
-        f.writelines(f"f1_score: {_f1_score(all_pred, all_label)}\n")
+        f.writelines(f"accuracy: {_accuracy(pred_classes, all_label)}\n")
+        f.writelines(f"precision: {_precision(pred_classes, all_label)}\n")
+        f.writelines(f"recall: {_recall(pred_classes, all_label)}\n")
+        f.writelines(f"f1_score: {_f1_score(pred_classes, all_label)}\n")
         f.writelines(f"aurroc: {_auroc(all_pred, all_label.long())}\n")
-        f.writelines(f"confusion_matrix: {_confusion_matrix(all_pred, all_label)}\n")
+        f.writelines(f"confusion_matrix: {_confusion_matrix(pred_classes, all_label)}\n")
         f.writelines("#" * 100)
         f.writelines("\n")
 
@@ -179,14 +183,17 @@ def save_CM(
     if save_path.exists() is False:
         save_path.mkdir(parents=True)
 
+    # Convert probabilities to class indices if needed
+    pred_classes = torch.argmax(all_pred, dim=1) if all_pred.dim() > 1 else all_pred
+
     _confusion_matrix = MulticlassConfusionMatrix(num_class, normalize="true")
 
-    logger.info("_confusion_matrix: %s" % _confusion_matrix(all_pred, all_label))
+    logger.info("_confusion_matrix: %s" % _confusion_matrix(pred_classes, all_label))
 
     # set the font and title
     plt.rcParams.update({"font.size": 30, "font.family": "sans-serif"})
 
-    confusion_matrix_data = _confusion_matrix(all_pred, all_label).cpu().numpy() * 100
+    confusion_matrix_data = _confusion_matrix(pred_classes, all_label).cpu().numpy() * 100
 
     axis_labels = list(range(num_class))
 

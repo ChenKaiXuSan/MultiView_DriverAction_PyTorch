@@ -382,7 +382,8 @@ class MultiTSCVATrainer(LightningModule):
         })
         
         # Store predictions and labels for save_helper
-        self.test_pred_list.append(preds.detach())
+        # Store probabilities instead of class indices for AUROC calculation
+        self.test_pred_list.append(probs.detach())
         self.test_label_list.append(labels.detach())
         
         return {
