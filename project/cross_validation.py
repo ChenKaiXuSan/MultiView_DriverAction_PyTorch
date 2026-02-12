@@ -67,6 +67,13 @@ class DefineCrossValidation(object):
             config.paths.index_mapping
         )  # folder to save/load index.json
 
+        # Magic move configuration
+        self.enable_magic_move: bool = bool(getattr(config.data, "magic_move", False))
+        self.magic_move_ratio: float = float(
+            getattr(config.data, "magic_move_ratio", 0.1)
+        )
+        self.magic_move_seed: int = int(getattr(config.data, "magic_move_seed", 0))
+
     # --------- helpers ---------
     @staticmethod
     def _parse_label_filename(p: Path) -> Tuple[str, str, str]:
@@ -226,9 +233,11 @@ class DefineCrossValidation(object):
         """
         target_dir = self.index_mapping
         target_dir.mkdir(parents=True, exist_ok=True)
-        enable_magic_move = bool(kwds.get("magic_move", False))
-        magic_move_ratio = float(kwds.get("magic_move_ratio", 0.1))
-        magic_move_seed = int(kwds.get("magic_move_seed", 0))
+
+        # Use config values, with kwargs override
+        enable_magic_move = self.enable_magic_move
+        magic_move_ratio = self.magic_move_ratio
+        magic_move_seed = self.magic_move_seed
 
         index_name = "index_magicmove.json" if enable_magic_move else "index.json"
         index_file = target_dir / index_name
@@ -251,7 +260,9 @@ class DefineCrossValidation(object):
                             "env_key": s.env_key,
                             "label_path": str(s.label_path),
                             "videos": {k: str(v) for k, v in s.videos.items()},
-                            "sam3d_kpts": {k: str(v) for k, v in s.sam3d_kpts.items()} if s.sam3d_kpts else None,
+                            "sam3d_kpts": {k: str(v) for k, v in s.sam3d_kpts.items()}
+                            if s.sam3d_kpts
+                            else None,
                         }
                         for s in d["train"]
                     ],
@@ -262,7 +273,9 @@ class DefineCrossValidation(object):
                             "env_key": s.env_key,
                             "label_path": str(s.label_path),
                             "videos": {k: str(v) for k, v in s.videos.items()},
-                            "sam3d_kpts": {k: str(v) for k, v in s.sam3d_kpts.items()} if s.sam3d_kpts else None,
+                            "sam3d_kpts": {k: str(v) for k, v in s.sam3d_kpts.items()}
+                            if s.sam3d_kpts
+                            else None,
                         }
                         for s in d["val"]
                     ],
