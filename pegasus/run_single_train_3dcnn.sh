@@ -30,10 +30,10 @@ echo "Current virtual environment: $(which python)"
 # === 从 config.yaml 读取配置参数 ===
 root_path=/work/SSR/share/data/drive/multi_view_driver_action
 num_workers=8
-batch_size=16
+batch_size=8
 backbone=3dcnn
 model_class_num=9
-max_video_frames=90
+max_video_frames=120
 
 # mapping view 
 # 声明关联数组

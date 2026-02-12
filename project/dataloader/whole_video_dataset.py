@@ -6,6 +6,7 @@ import logging
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional, List, Tuple
 import numpy as np
+from collections import OrderedDict
 
 import torch
 from torch.utils.data import Dataset
@@ -55,6 +56,16 @@ class LabeledVideoDataset(Dataset):
         self._label_to_id: Dict[str, int] = {
             v: int(k) for k, v in label_mapping_Dict.items()
         }
+
+        # ===== Performance Optimization: Caching =====
+        # FPS cache: avoid repeated fps probing
+        self._fps_cache: Dict[str, int] = {}
+
+        # LRU frame cache: store recently loaded frames
+        # Key: (video_path, start_sec, end_sec)
+        self._frame_cache: OrderedDict[Tuple[str, Optional[float], Optional[float]], torch.Tensor] = OrderedDict()
+        self._cache_max_size = 2  # Keep most recent 2 videos in memory
+        self._cache_memory_limit_mb = 4096  # ~4GB max cache
 
         # Build chunked index if max_video_frames is set
         if self.max_video_frames is not None:
@@ -138,6 +149,51 @@ class LabeledVideoDataset(Dataset):
             return len(self._chunked_index)
         return len(self._index_mapping)
 
+    # ===== FPS Management =====
+    def _get_fps_cached(self, path: Path) -> int:
+        """
+        Get FPS from cache or probe video metadata.
+        Avoids repeated codec initialization.
+
+        Args:
+            path: Video file path
+
+        Returns:
+            fps: frames per second
+        """
+        path_str = str(path)
+        if path_str not in self._fps_cache:
+            # Only probe once per unique video path
+            try:
+                # Read minimal amount to get metadata
+                _, _, info = read_video(
+                    path_str,
+                    pts_unit="sec",
+                    output_format="TCHW",
+                    start_pts=0.0,
+                    end_pts=0.001,  # Read first 1ms to get header info
+                )
+                fps = int(info.get("video_fps", 0))
+                if fps <= 0:
+                    raise ValueError(f"Invalid fps={fps} for video: {path}")
+                self._fps_cache[path_str] = fps
+                logger.debug(f"Cached FPS for {path_str}: {fps}")
+            except Exception as e:
+                logger.warning(
+                    f"Failed to probe fps from {path}: {e}. "
+                    f"Will retry on full load."
+                )
+                # Fall back to full load to get fps
+                _, _, info = read_video(
+                    path_str, pts_unit="sec", output_format="TCHW"
+                )
+                fps = int(info.get("video_fps", 0))
+                if fps <= 0:
+                    raise ValueError(f"Invalid fps={fps} for video: {path}")
+                self._fps_cache[path_str] = fps
+
+        return self._fps_cache[path_str]
+
     # ---------------- IO ----------------
     def _load_one_view(
         self,
@@ -147,6 +203,7 @@ class LabeledVideoDataset(Dataset):
     ) -> Tuple[torch.Tensor, int]:
         """
         Load one view video and return (video_tchw, fps).
+        Uses LRU cache to avoid repeated decoding.
 
         Args:
             path: Video file path
@@ -157,12 +214,24 @@ class LabeledVideoDataset(Dataset):
             vframes: (T, C, H, W)
             fps: frames per second
         """
+        path_str = str(path)
+        cache_key = (path_str, start_sec, end_sec)
+
+        # Check frame cache first
+        if cache_key in self._frame_cache:
+            logger.debug(f"Frame cache hit: {path_str}[{start_sec}:{end_sec}]")
+            # Move to end (most recently used)
+            self._frame_cache.move_to_end(cache_key)
+            # Still need to return fps from cache
+            fps = self._get_fps_cached(path)
+            return self._frame_cache[cache_key], fps
+
+        # Actual video loading
         kwargs = {
             "pts_unit": "sec",
             "output_format": "TCHW",
         }
 
-        # Add time range if specified (for chunked loading)
         if start_sec is not None:
             kwargs["start_pts"] = start_sec
         if end_sec is not None:
@@ -172,6 +241,26 @@ class LabeledVideoDataset(Dataset):
         fps = int(info.get("video_fps", 0))
         if fps <= 0:
             raise ValueError(f"Invalid fps={fps} for video: {path}")
+
+        # Update FPS cache
+        self._fps_cache[path_str] = fps
+
+        # Add to frame cache with LRU eviction
+        self._frame_cache[cache_key] = vframes
+        self._frame_cache.move_to_end(cache_key)  # Mark as most recently used
+
+        # Evict least recently used if cache too large
+        while len(self._frame_cache) > self._cache_max_size:
+            # Remove oldest
+            oldest_key = next(iter(self._frame_cache))
+            del self._frame_cache[oldest_key]
+            logger.debug(f"LRU evict: {oldest_key[0]}")
+
+        logger.debug(
+            f"Cached frame: {path_str}[{start_sec}:{end_sec}] "
+            f"cache_size={len(self._frame_cache)}"
+        )
+
         return vframes, fps
 
     def _apply_transform(self, video_tchw: torch.Tensor) -> torch.Tensor:
@@ -365,10 +454,8 @@ class LabeledVideoDataset(Dataset):
             chunk_end_frame = chunk_info["chunk_end_frame"]
             start_frame_offset = chunk_info["start_frame_offset"]
 
-            # Calculate time range for video loading
-            # Note: We need to get fps first (make a quick probe)
-            # Quick probe to get fps
-            _, fps = self._load_one_view(item.videos["front"])
+            # ===== OPTIMIZATION: Use cached FPS instead of probing =====
+            fps = self._get_fps_cached(item.videos["front"])
 
             # Calculate actual start/end in seconds
             # chunk frames are relative to the annotation start
@@ -404,8 +491,8 @@ class LabeledVideoDataset(Dataset):
                 if anno_end_frame is not None:
                     anno_end_frame = int(anno_end_frame)
 
-            # Need fps to convert frames to seconds
-            _, fps = self._load_one_view(item.videos["front"])
+            # ===== OPTIMIZATION: Use cached FPS instead of probing =====
+            fps = self._get_fps_cached(item.videos["front"])
 
             # Convert frame indices to seconds for load_one_view
             start_sec = anno_start_frame / fps if anno_start_frame > 0 else None

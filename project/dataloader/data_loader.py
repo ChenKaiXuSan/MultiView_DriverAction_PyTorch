@@ -200,9 +200,10 @@ class DriverDataModule(LightningDataModule):
             self.train_gait_dataset,
             batch_size=self._batch_size,
             num_workers=self._num_workers,
-            pin_memory=False,
+            pin_memory=True,
             shuffle=True,
             drop_last=True,
+            persistent_workers=True,
             collate_fn=self._collate_fn,
         )
 
@@ -219,9 +220,10 @@ class DriverDataModule(LightningDataModule):
             self.val_gait_dataset,
             batch_size=self._batch_size,
             num_workers=self._num_workers,
-            pin_memory=False,
+            pin_memory=True,
             shuffle=False,
             drop_last=True,
+            persistent_workers=True,
             collate_fn=self._collate_fn,
         )
 
@@ -238,9 +240,10 @@ class DriverDataModule(LightningDataModule):
             self.test_gait_dataset,
             batch_size=self._batch_size,
             num_workers=self._num_workers,
-            pin_memory=False,
+            pin_memory=True,
             shuffle=False,
             drop_last=True,
+            persistent_workers=True,
             collate_fn=self._collate_fn,
         )
 
