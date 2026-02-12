@@ -16,7 +16,7 @@
       "console": "integratedTerminal",
       "justMyCode": true,
       "args": [
-        "data.num_workers=2",
+        "data.num_workers=8",
         "train.view=single",
         "train.gpu=1",
         "data.batch_size=2",

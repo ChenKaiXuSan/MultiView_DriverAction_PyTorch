@@ -20,33 +20,30 @@ Date      	By	Comments
 ----------	---	---------------------------------------------------------
 """
 
-import os
 import logging
+import os
+
 import hydra
 from omegaconf import DictConfig
-
 from pytorch_lightning import Trainer, seed_everything
-from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import (
-    TQDMProgressBar,
-    RichModelSummary,
-    ModelCheckpoint,
+    DeviceStatsMonitor,
     EarlyStopping,
     LearningRateMonitor,
-    DeviceStatsMonitor,
+    ModelCheckpoint,
+    RichModelSummary,
+    TQDMProgressBar,
 )
+from pytorch_lightning.loggers import TensorBoardLogger
 
+from project.cross_validation import DefineCrossValidation
 from project.dataloader.data_loader import DriverDataModule
 
 #####################################
 # select different experiment trainer
 #####################################
-
-# baseline
-from project.trainer.single_selector import build_single_trainer
 from project.trainer.multi_selector import build_multi_trainer
-
-from project.cross_validation import DefineCrossValidation
+from project.trainer.single_selector import build_single_trainer
 
 logger = logging.getLogger(__name__)
 
