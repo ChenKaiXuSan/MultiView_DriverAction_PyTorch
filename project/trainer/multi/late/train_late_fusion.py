@@ -255,10 +255,10 @@ class LateFusion3DCNNTrainer(LightningModule):
         return self._shared_step(batch, stage="train")
 
     def validation_step(self, batch: Dict[str, Any], batch_idx: int):
-        self._shared_step(batch, stage="val")
+        return self._shared_step(batch, stage="val")
 
     def test_step(self, batch: Dict[str, Any], batch_idx: int):
-        self._shared_step(batch, stage="test")
+        return self._shared_step(batch, stage="test")
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
