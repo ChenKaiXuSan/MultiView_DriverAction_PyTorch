@@ -403,9 +403,19 @@ class LabeledVideoDataset(Dataset):
 
         T = int(front_view.shape[0])
 
-        # 1) fill uncovered as front
-        timeline = self._fill_tail_as_front(
-            timeline_list, total_frames=T, front_label="front"
+        # 1) 只使用 annotation_dict 中的标注，不填充 front
+        # 对 timeline 进行排序和清理，但不填充空白区域
+        timeline = sorted(
+            (
+                {
+                    "start": int(x["start"]),
+                    "end": int(x["end"]),
+                    "label": str(x["label"]),
+                }
+                for x in timeline_list
+                if x is not None and "start" in x and "end" in x and "label" in x
+            ),
+            key=lambda d: (d["start"], d["end"]),
         )
 
         batch_front: List[torch.Tensor] = []
@@ -565,8 +575,9 @@ class LabeledVideoDataset(Dataset):
             end_frame = total_frames
 
         # labels
+        # 不填充 front，直接使用 annotation_dict 中的标注。对于未标注区域，不进行训练（即不生成对应的样本）。如果 timeline 没有覆盖整个视频，则只使用 timeline 中的 segments 进行切分和标签分配，未覆盖的部分将被丢弃。
         label_dict = prepare_label_dict(
-            item.label_path, total_end=int(front_frames.shape[0])
+            item.label_path, total_end=int(front_frames.shape[0]), fill_front=False
         )
         timeline_list = label_dict.get("timeline_list", [])
 

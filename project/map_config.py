@@ -33,7 +33,7 @@ label_mapping_Dict: Dict = {
     5: "right_down",
     6: "left_down",
     7: "left_up",
-    8: "front",
+    # 8: "front",
 }
 
 environment_mapping_Dict: Dict = {
