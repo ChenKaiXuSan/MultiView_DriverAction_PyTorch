@@ -31,7 +31,6 @@ root_path=/work/SSR/share/data/drive/multi_view_driver_action
 num_workers=16
 batch_size=4
 backbone=3dcnn
-model_class_num=9
 max_video_frames=60
 
 # === 运行训练脚本（使用配置中的参数）===
@@ -42,7 +41,6 @@ python -m project.main \
   data.num_workers=${num_workers} \
   data.batch_size=${batch_size} \
   model.backbone=${backbone} \
-  model.model_class_num=${model_class_num} \
   train.view=multi \
   train.view_name=['front','left','right'] \
   model.fuse_method=mid \

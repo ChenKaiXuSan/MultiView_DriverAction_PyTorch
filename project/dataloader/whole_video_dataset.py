@@ -574,44 +574,83 @@ class LabeledVideoDataset(Dataset):
             # For non-chunked case: end_frame was None, now set it
             end_frame = total_frames
 
-        # labels
-        # 不填充 front，直接使用 annotation_dict 中的标注。对于未标注区域，不进行训练（即不生成对应的样本）。如果 timeline 没有覆盖整个视频，则只使用 timeline 中的 segments 进行切分和标签分配，未覆盖的部分将被丢弃。
-        label_dict = prepare_label_dict(
-            item.label_path, total_end=int(front_frames.shape[0]), fill_front=False
-        )
-        timeline_list = label_dict.get("timeline_list", [])
-
-        # For chunked case, adjust timeline to chunk boundaries
+        # ==================== Label Coordinate Conversion ====================
+        # 标签处理：不填充 front，直接使用 annotation_dict 中的标注
+        # 
+        # 坐标系统说明：
+        # 1. 标签文件中的帧索引是相对于原始完整视频的绝对索引（例如：2000-3000）
+        # 2. 加载的视频帧在内存中是从 0 开始的相对索引
+        # 3. 需要将标签的绝对索引转换为相对于加载视频的索引
+        #
+        # 例如：
+        #   原始视频: [0 .................. 1000 ........ 2000 ........ 3000 ........ 5000]
+        #   标签范围:                              |<--- label [2000, 3000) --->|
+        #   加载视频:                              [0 ................... total_frames)
+        #   目标索引:                              [0 ................... 1000)
+        # ======================================================================
+        
+        # Step 1: 确定实际加载的视频在原始视频中的绝对位置
+        # Determine the absolute frame range of the loaded video in the original video
         if self.max_video_frames is not None:
-            # timeline_list contains absolute frame indices for the entire video
-            # Need to filter and adjust for the current chunk
-            chunk_abs_start = start_frame_offset + chunk_start_frame
-            chunk_abs_end = start_frame_offset + (
-                chunk_end_frame 
-                if chunk_end_frame is not None 
+            # Chunked mode: 加载了 chunk [chunk_start_frame, chunk_end_frame) 相对于 annotation start
+            # 绝对位置 = annotation_start + chunk_position
+            loaded_video_abs_start = start_frame_offset + chunk_start_frame
+            loaded_video_abs_end = start_frame_offset + (
+                chunk_end_frame if chunk_end_frame is not None 
                 else chunk_start_frame + self.max_video_frames
             )
+        else:
+            # Non-chunked mode: 加载了从 annotation start 到 end 的整段视频
+            loaded_video_abs_start = start_frame_offset
+            loaded_video_abs_end = start_frame_offset + total_frames
+        
+        # Step 2: 加载标签，只获取与当前加载视频重叠的 segments
+        # Load labels, filtering to only segments that overlap with loaded video
+        label_dict = prepare_label_dict(
+            item.label_path, 
+            total_end=None, 
+            fill_front=False,
+            start_frame=loaded_video_abs_start,
+            end_frame=loaded_video_abs_end,
+        )
+        timeline_list = label_dict.get("timeline_list", [])
+        
+        # Step 3: 将标签的绝对帧索引转换为相对于加载视频的索引
+        # Convert label's absolute frame indices to relative indices (0-based, relative to loaded video)
+        # Note: timeline_list now only contains segments that overlap with loaded video
+        logger.debug("[Label Coordinate Conversion]")
+        logger.debug(f"  Loaded video (absolute): [{loaded_video_abs_start}, {loaded_video_abs_end})")
+        logger.debug(f"  Loaded video (relative): [0, {total_frames})")
+        logger.debug(f"  Filtered timeline segments: {len(timeline_list)}")
+        
+        adjusted_timeline = []
+        for seg in timeline_list:
+            seg_abs_start = int(seg["start"])  # 标签文件中的绝对起始帧
+            seg_abs_end = int(seg["end"])      # 标签文件中的绝对结束帧
             
-            adjusted_timeline = []
-            for seg in timeline_list:
-                seg_start = int(seg["start"])
-                seg_end = int(seg["end"])
-                
-                # Only include segments that overlap with current chunk
-                if seg_end <= chunk_abs_start or seg_start >= chunk_abs_end:
-                    continue
-                
-                # Adjust to chunk-relative coordinates
-                adjusted_start = max(0, seg_start - chunk_abs_start)
-                adjusted_end = min(chunk_abs_end - chunk_abs_start, seg_end - chunk_abs_start)
-                
-                adjusted_timeline.append({
-                    "start": adjusted_start,
-                    "end": adjusted_end,
-                    "label": seg["label"]
-                })
+            # 转换公式：relative_index = absolute_index - loaded_video_abs_start
+            seg_rel_start = seg_abs_start - loaded_video_abs_start
+            seg_rel_end = seg_abs_end - loaded_video_abs_start
             
-            timeline_list = adjusted_timeline
+            # 裁剪到有效范围 [0, total_frames)
+            # Clip to valid range [0, total_frames) to handle partial overlaps
+            seg_rel_start = max(0, seg_rel_start)
+            seg_rel_end = min(total_frames, seg_rel_end)
+            
+            if seg_rel_end <= seg_rel_start:
+                logger.debug(f"  [{seg_abs_start:5d}, {seg_abs_end:5d}) -> [{seg_rel_start:5d}, {seg_rel_end:5d}) {seg['label']:8s} FILTERED (empty after clipping)")
+                continue
+                
+            adjusted_timeline.append({
+                "start": seg_rel_start,
+                "end": seg_rel_end,
+                "label": seg["label"]
+            })
+            logger.debug(f"  [{seg_abs_start:5d}, {seg_abs_end:5d}) -> [{seg_rel_start:5d}, {seg_rel_end:5d}) {seg['label']:8s} INCLUDED")
+        
+        timeline_list = adjusted_timeline
+        logger.debug(f"  Final timeline segments: {len(timeline_list)}")
+        # ==================== End Label Coordinate Conversion ====================
 
         (
             batch_front,

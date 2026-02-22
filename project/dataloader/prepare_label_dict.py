@@ -218,6 +218,8 @@ def prepare_label_dict(
     total_end: Optional[float] = 3000.0,
     merge_all: bool = True,
     fill_front: bool = True,
+    start_frame: Optional[int] = None,
+    end_frame: Optional[int] = None,
 ) -> Dict[str, Any]:
     """
     Returns a dict containing both:
@@ -225,7 +227,20 @@ def prepare_label_dict(
       - timeline_list: [{"label":..., "start":..., "end":...}, ...] (sorted)
       - timeline_dict: {"front":{"start":0,"end":5}, ...}  (may overwrite if repeated)
 
-    Also prints label stats.
+    Args:
+        path: Path to label JSON file
+        total_end: Total end frame for filling front (if fill_front=True)
+        merge_all: Merge all annotations
+        fill_front: Fill unlabeled regions as "front"
+        start_frame: Optional start frame to filter labels (absolute frame index)
+        end_frame: Optional end frame to filter labels (absolute frame index)
+
+    Returns:
+        Dict containing label_dict and timeline_list
+        
+    Note:
+        If start_frame and end_frame are provided, only labels overlapping 
+        with [start_frame, end_frame) will be included in the result.
     """
     labels = load_label_dict(path, merge_all=merge_all)
     if fill_front:
@@ -234,6 +249,38 @@ def prepare_label_dict(
     # print_label_stats(labels)
 
     timeline_list = label_dict_to_timeline(labels)
+    
+    # Filter timeline by frame range if specified
+    if start_frame is not None or end_frame is not None:
+        _start = start_frame if start_frame is not None else 0
+        _end = end_frame if end_frame is not None else float('inf')
+        
+        filtered_timeline = []
+        for seg in timeline_list:
+            seg_start = seg["start"]
+            seg_end = seg["end"]
+            
+            # Check if segment overlaps with [_start, _end)
+            if seg_end <= _start or seg_start >= _end:
+                continue
+            
+            # Clip segment to [_start, _end) range
+            # 将与边界重叠的部分裁剪到指定范围内
+            clipped_start = max(_start, seg_start)
+            clipped_end = min(_end, seg_end)
+            
+            # Skip if clipped segment is empty
+            if clipped_end <= clipped_start:
+                continue
+            
+            # Add clipped segment with absolute coordinates
+            filtered_timeline.append({
+                "label": seg["label"],
+                "start": clipped_start,
+                "end": clipped_end,
+            })
+        
+        timeline_list = filtered_timeline
 
     return {
         "label_dict": labels,

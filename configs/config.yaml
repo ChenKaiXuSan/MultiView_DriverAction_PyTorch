@@ -49,7 +49,7 @@ data:
   # 🔑 关键参数：分块加载
   # 如果video超过这个帧数，会被自动分成多个chunks
   # 每次只加载一个chunk，避免加载OOM
-  max_video_frames: 120 # 推荐值：500-2000
+  max_video_frames: 1000 # 推荐值：500-2000
   
   # max_video_frames 选择指南：
   # - 224×224 分辨率：500-1000
@@ -59,7 +59,7 @@ data:
 
 model:
   backbone: 3dcnn # choices=[3dcnn, transformer, mamba], help='the backbone of the model'
-  model_class_num: 9 # the class num, left, right, up, down, left_up, left_down, right_up, right_down, front
+  model_class_num: 8 # the class num, left, right, up, down, left_up, left_down, right_up, right_down
   use_side_heads: True # whether to use side heads for intermediate supervision
   fusion_mode: logit_mean # logit_mean | prob_mean | feature_mean | feature_concat
   modality_fusion: concat # concat | mean (for rgb+kpt)
