@@ -20,6 +20,7 @@ Date      	By	Comments
 ----------	---	---------------------------------------------------------
 """
 
+import logging
 import requests
 from pathlib import Path
 
@@ -28,6 +29,9 @@ import torch.nn as nn
 from pytorchvideo.models.hub.resnet import slow_r50
 import requests, shutil, tempfile
 import socket, errno
+
+
+logger = logging.getLogger(__name__)
 
 root_dir = "https://dl.fbaipublicfiles.com/pytorchvideo/model_zoo"
 checkpoint_paths = {
@@ -59,7 +63,7 @@ def download_file(url: str, save_path: Path):
     save_path = Path(save_path)
     save_path.parent.mkdir(parents=True, exist_ok=True)
 
-    print(f"[INFO] Downloading weights from {url}...")
+    logger.info("Downloading weights from %s...", url)
     with requests.get(url, stream=True, timeout=30) as r:
         r.raise_for_status()
         with open(save_path, "wb") as f:
@@ -67,7 +71,7 @@ def download_file(url: str, save_path: Path):
                 if chunk:  # 避免 keep-alive 空包
                     f.write(chunk)
 
-    print(f"[INFO] Weights downloaded to {save_path.resolve()}")
+    logger.info("Weights downloaded to %s", save_path.resolve())
 
 
 def get_or_download_weights(model_name: str = "slow_r50") -> Path | None:
@@ -84,13 +88,13 @@ def get_or_download_weights(model_name: str = "slow_r50") -> Path | None:
     cache_path = DEFAULT_CACHE_DIR / f"{model_name}.pyth"
 
     if cache_path.exists():
-        print(f"[INFO] Found cached weights at {cache_path}")
+        logger.info("Found cached weights at %s", cache_path)
         return cache_path
 
     # 2) 检查网络连接
     if not has_internet():
-        print(
-            "[WARN] No internet connection and no cached weights — model will be randomly initialized."
+        logger.warning(
+            "No internet connection and no cached weights — model will be randomly initialized."
         )
         return None
 
@@ -98,14 +102,14 @@ def get_or_download_weights(model_name: str = "slow_r50") -> Path | None:
     try:
         url = checkpoint_paths.get(model_name)
         if not url:
-            print(f"[ERROR] Unknown model name: {model_name}")
+            logger.error("Unknown model name: %s", model_name)
             return None
 
         download_file(url, cache_path)
         return cache_path
     except Exception as e:
-        print(f"[ERROR] Failed to download weights: {e}")
-        print("[WARN] Model will be randomly initialized.")
+        logger.error("Failed to download weights: %s", e)
+        logger.warning("Model will be randomly initialized.")
         return None
 
 
@@ -155,17 +159,17 @@ class BaseModel(nn.Module):
         weight_path = get_or_download_weights("slow_r50")
 
         if weight_path and weight_path.exists():
-            print(f"[INFO] Loading pretrained weights from {weight_path}")
+            logger.info("Loading pretrained weights from %s", weight_path)
             try:
                 state = torch.load(weight_path, map_location="cpu")
                 model_state = state.get("model_state", state)
                 model.load_state_dict(model_state)
-                print("[INFO] Pretrained weights loaded successfully.")
+                logger.info("Pretrained weights loaded successfully.")
             except Exception as e:
-                print(f"[ERROR] Failed to load weights: {e}")
-                print("[WARN] Using randomly initialized model.")
+                logger.error("Failed to load weights: %s", e)
+                logger.warning("Using randomly initialized model.")
         else:
-            print("[INFO] Using randomly initialized model.")
+            logger.info("Using randomly initialized model.")
 
         # 3) 修改首层和最后输出层
         model.blocks[0].conv = nn.Conv3d(
@@ -201,17 +205,17 @@ class BaseModel(nn.Module):
         weight_path = get_or_download_weights("slow_r50")
 
         if weight_path and weight_path.exists():
-            print(f"[INFO] Loading pretrained weights from {weight_path}")
+            logger.info("Loading pretrained weights from %s", weight_path)
             try:
                 state = torch.load(weight_path, map_location="cpu")
                 model_state = state.get("model_state", state)
                 model.load_state_dict(model_state)
-                print("[INFO] Pretrained weights loaded successfully.")
+                logger.info("Pretrained weights loaded successfully.")
             except Exception as e:
-                print(f"[ERROR] Failed to load weights: {e}")
-                print("[WARN] Using randomly initialized model.")
+                logger.error("Failed to load weights: %s", e)
+                logger.warning("Using randomly initialized model.")
         else:
-            print("[INFO] Using randomly initialized model.")
+            logger.info("Using randomly initialized model.")
 
         # 3) 修改首层 (stem)
         model.blocks[0].conv = nn.Conv3d(
