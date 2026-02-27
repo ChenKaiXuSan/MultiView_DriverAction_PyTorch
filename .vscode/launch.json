@@ -16,7 +16,7 @@
       "console": "integratedTerminal",
       "justMyCode": true,
       "args": [
-        "data.num_workers=8",
+        "data.num_workers=1",
         "train.view=single",
         "train.gpu=1",
         "data.batch_size=2",
@@ -32,7 +32,7 @@
       "console": "integratedTerminal",
       "justMyCode": true,
       "args": [
-        "data.num_workers=0",
+        "data.num_workers=1",
         "train.view=multi",
         "train.view_name=['front', 'left', 'right']",
         "data.load_kpt=false",

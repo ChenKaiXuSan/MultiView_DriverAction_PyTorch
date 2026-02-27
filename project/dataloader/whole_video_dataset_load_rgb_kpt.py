@@ -724,14 +724,15 @@ class LabeledVideoDataset(Dataset):
             left_kpts = None
             right_kpts = None
 
-        # labels (ensure total_end = T, or use total_frames if not loading RGB)
-        if self.load_rgb:
-            label_dict = prepare_label_dict(
-                item.label_path, total_end=int(front_frames.shape[0])
+        # labels
+        label_dict_by_annotator = prepare_label_dict(item.label_path)
+        if len(label_dict_by_annotator) > 0:
+            selected_annotator_key = sorted(label_dict_by_annotator.keys())[0]
+            timeline_list = label_dict_by_annotator[selected_annotator_key].get(
+                "timeline_list", []
             )
         else:
-            label_dict = prepare_label_dict(item.label_path, total_end=frame_count)
-        timeline_list = label_dict.get("timeline_list", [])
+            timeline_list = []
 
         # Split frames by label only if loading RGB
         if self.load_rgb:

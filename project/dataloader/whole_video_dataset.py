@@ -38,6 +38,7 @@ class LabeledVideoDataset(Dataset):
         decode_audio: bool = False,
         max_video_frames: Optional[int] = None,  # 如果设置，将长video分块加载
         view_name: list = ["front", "left", "right"],
+        annotator_id: Optional[int] = None,
     ) -> None:
         super().__init__()
         self._experiment = experiment
@@ -45,6 +46,7 @@ class LabeledVideoDataset(Dataset):
         self._annotation_dict = annotation_dict
         self._transform = transform
         self._decode_audio = bool(decode_audio)
+        self._annotator_id = annotator_id
 
         self.view_name = view_name
 
@@ -63,9 +65,15 @@ class LabeledVideoDataset(Dataset):
 
         # LRU frame cache: store recently loaded frames
         # Key: (video_path, start_sec, end_sec)
-        self._frame_cache: OrderedDict[Tuple[str, Optional[float], Optional[float]], torch.Tensor] = OrderedDict()
+        self._frame_cache: OrderedDict[
+            Tuple[str, Optional[float], Optional[float]], torch.Tensor
+        ] = OrderedDict()
         self._cache_max_size = 2  # Keep most recent 2 videos in memory
         self._cache_memory_limit_mb = 4096  # ~4GB max cache
+
+        # Label cache + valid index mapping (for proper shuffle with unlabeled skip)
+        self._label_cache: Dict[str, Dict[str, Any]] = {}
+        self._valid_source_indices: List[int] = []
 
         # Build chunked index if max_video_frames is set
         if self.max_video_frames is not None:
@@ -74,6 +82,119 @@ class LabeledVideoDataset(Dataset):
                 f"Video chunking enabled: {len(self._index_mapping)} videos -> "
                 f"{len(self._chunked_index)} chunks (max {self.max_video_frames} frames/chunk)"
             )
+
+        self._build_valid_source_indices()
+        source_total = (
+            len(self._chunked_index)
+            if self.max_video_frames is not None
+            else len(self._index_mapping)
+        )
+        logger.info(
+            f"Labeled sample filtering: kept {len(self._valid_source_indices)}/{source_total} samples"
+        )
+
+    def _get_annotation_range(
+        self, item: VideoSample
+    ) -> Tuple[int, Optional[int]]:
+        person_key = item.person_id
+        env_folder = item.env_folder
+        anno_start_frame = 0
+        anno_end_frame: Optional[int] = None
+
+        if (
+            person_key in self._annotation_dict
+            and env_folder in self._annotation_dict[person_key]
+        ):
+            frame_info = self._annotation_dict[person_key][env_folder]
+            anno_start_frame = int(frame_info.get("start", 0))
+            end_value = frame_info.get("end")
+            if end_value is not None:
+                anno_end_frame = int(end_value)
+
+        return max(0, anno_start_frame), anno_end_frame
+
+    def _get_label_dict_by_annotator_cached(self, label_path: Path) -> Dict[str, Any]:
+        path_str = str(label_path)
+        if path_str not in self._label_cache:
+            self._label_cache[path_str] = prepare_label_dict(
+                label_path,
+                annotator=self._annotator_id,
+            )
+        return self._label_cache[path_str]
+
+    def _get_timeline_in_abs_range(
+        self,
+        item: VideoSample,
+        abs_start: int,
+        abs_end: Optional[int],
+    ) -> List[Dict[str, Any]]:
+        label_dict_by_annotator = self._get_label_dict_by_annotator_cached(item.label_path)
+
+        selected_annotator_key: Optional[str] = None
+        if self._annotator_id is not None:
+            selected_annotator_key = str(self._annotator_id)
+            if selected_annotator_key not in label_dict_by_annotator:
+                return []
+
+        if selected_annotator_key is None and len(label_dict_by_annotator) > 0:
+            selected_annotator_key = sorted(label_dict_by_annotator.keys())[0]
+
+        if selected_annotator_key is None:
+            return []
+
+        timeline_list = label_dict_by_annotator[selected_annotator_key].get(
+            "timeline_list", []
+        )
+
+        filtered: List[Dict[str, Any]] = []
+        range_end = abs_end if abs_end is not None else float("inf")
+        for seg in timeline_list:
+            seg_start = int(seg["start"])
+            seg_end = int(seg["end"])
+            if seg_end <= abs_start or seg_start >= range_end:
+                continue
+            clipped_start = max(abs_start, seg_start)
+            clipped_end = min(range_end, seg_end)
+            if clipped_end <= clipped_start:
+                continue
+            filtered.append(
+                {
+                    "start": clipped_start,
+                    "end": clipped_end,
+                    "label": seg["label"],
+                }
+            )
+
+        return filtered
+
+    def _build_valid_source_indices(self) -> None:
+        self._valid_source_indices = []
+
+        if self.max_video_frames is not None:
+            for source_index, chunk_info in enumerate(self._chunked_index):
+                item = chunk_info["original_item"]
+                start_frame_offset = int(chunk_info["start_frame_offset"])
+                chunk_start_frame = int(chunk_info["chunk_start_frame"])
+                chunk_end_frame = chunk_info["chunk_end_frame"]
+                abs_start = start_frame_offset + chunk_start_frame
+                abs_end = (
+                    start_frame_offset + int(chunk_end_frame)
+                    if chunk_end_frame is not None
+                    else None
+                )
+                timeline = self._get_timeline_in_abs_range(item, abs_start, abs_end)
+                if len(timeline) > 0:
+                    self._valid_source_indices.append(source_index)
+        else:
+            for source_index, item in enumerate(self._index_mapping):
+                anno_start_frame, anno_end_frame = self._get_annotation_range(item)
+                timeline = self._get_timeline_in_abs_range(
+                    item,
+                    anno_start_frame,
+                    anno_end_frame,
+                )
+                if len(timeline) > 0:
+                    self._valid_source_indices.append(source_index)
 
     def _build_chunked_index(self) -> None:
         """
@@ -145,9 +266,7 @@ class LabeledVideoDataset(Dataset):
                 )
 
     def __len__(self) -> int:
-        if self.max_video_frames is not None:
-            return len(self._chunked_index)
-        return len(self._index_mapping)
+        return len(self._valid_source_indices)
 
     # ===== FPS Management =====
     def _get_fps_cached(self, path: Path) -> int:
@@ -180,13 +299,10 @@ class LabeledVideoDataset(Dataset):
                 logger.debug(f"Cached FPS for {path_str}: {fps}")
             except Exception as e:
                 logger.warning(
-                    f"Failed to probe fps from {path}: {e}. "
-                    f"Will retry on full load."
+                    f"Failed to probe fps from {path}: {e}. Will retry on full load."
                 )
                 # Fall back to full load to get fps
-                _, _, info = read_video(
-                    path_str, pts_unit="sec", output_format="TCHW"
-                )
+                _, _, info = read_video(path_str, pts_unit="sec", output_format="TCHW")
                 fps = int(info.get("video_fps", 0))
                 if fps <= 0:
                     raise ValueError(f"Invalid fps={fps} for video: {path}")
@@ -456,9 +572,10 @@ class LabeledVideoDataset(Dataset):
         )
 
     def __getitem__(self, index: int) -> Dict[str, Any]:
+        source_index = self._valid_source_indices[index]
         # Handle chunked vs non-chunked index
         if self.max_video_frames is not None:
-            chunk_info = self._chunked_index[index]
+            chunk_info = self._chunked_index[source_index]
             item = chunk_info["original_item"]
             chunk_start_frame = chunk_info["chunk_start_frame"]
             chunk_end_frame = chunk_info["chunk_end_frame"]
@@ -480,7 +597,7 @@ class LabeledVideoDataset(Dataset):
             end_sec = actual_end_frame / fps
 
         else:
-            item = self._index_mapping[index]
+            item = self._index_mapping[source_index]
             chunk_start_frame = 0
             chunk_end_frame = None
             start_frame_offset = 0
@@ -497,6 +614,7 @@ class LabeledVideoDataset(Dataset):
             ):
                 frame_info = self._annotation_dict[person_key][env_folder]
                 anno_start_frame = int(frame_info.get("start", 0))
+                start_frame_offset = max(0, anno_start_frame)
                 anno_end_frame = frame_info.get("end")
                 if anno_end_frame is not None:
                     anno_end_frame = int(anno_end_frame)
@@ -576,7 +694,7 @@ class LabeledVideoDataset(Dataset):
 
         # ==================== Label Coordinate Conversion ====================
         # 标签处理：不填充 front，直接使用 annotation_dict 中的标注
-        # 
+        #
         # 坐标系统说明：
         # 1. 标签文件中的帧索引是相对于原始完整视频的绝对索引（例如：2000-3000）
         # 2. 加载的视频帧在内存中是从 0 开始的相对索引
@@ -588,7 +706,7 @@ class LabeledVideoDataset(Dataset):
         #   加载视频:                              [0 ................... total_frames)
         #   目标索引:                              [0 ................... 1000)
         # ======================================================================
-        
+
         # Step 1: 确定实际加载的视频在原始视频中的绝对位置
         # Determine the absolute frame range of the loaded video in the original video
         if self.max_video_frames is not None:
@@ -596,61 +714,70 @@ class LabeledVideoDataset(Dataset):
             # 绝对位置 = annotation_start + chunk_position
             loaded_video_abs_start = start_frame_offset + chunk_start_frame
             loaded_video_abs_end = start_frame_offset + (
-                chunk_end_frame if chunk_end_frame is not None 
+                chunk_end_frame
+                if chunk_end_frame is not None
                 else chunk_start_frame + self.max_video_frames
             )
         else:
             # Non-chunked mode: 加载了从 annotation start 到 end 的整段视频
             loaded_video_abs_start = start_frame_offset
             loaded_video_abs_end = start_frame_offset + total_frames
-        
+
         # Step 2: 加载标签，只获取与当前加载视频重叠的 segments
         # Load labels, filtering to only segments that overlap with loaded video
-        label_dict = prepare_label_dict(
-            item.label_path, 
-            total_end=None, 
-            fill_front=False,
-            start_frame=loaded_video_abs_start,
-            end_frame=loaded_video_abs_end,
+        # TODO: 下面的操作有问题，感觉会得到空的timeline_list，后续需要修正prepare_label_dict函数
+        timeline_list = self._get_timeline_in_abs_range(
+            item,
+            loaded_video_abs_start,
+            loaded_video_abs_end,
         )
-        timeline_list = label_dict.get("timeline_list", [])
-        
+
         # Step 3: 将标签的绝对帧索引转换为相对于加载视频的索引
         # Convert label's absolute frame indices to relative indices (0-based, relative to loaded video)
         # Note: timeline_list now only contains segments that overlap with loaded video
         logger.debug("[Label Coordinate Conversion]")
-        logger.debug(f"  Loaded video (absolute): [{loaded_video_abs_start}, {loaded_video_abs_end})")
+        logger.debug(
+            f"  Loaded video (absolute): [{loaded_video_abs_start}, {loaded_video_abs_end})"
+        )
         logger.debug(f"  Loaded video (relative): [0, {total_frames})")
         logger.debug(f"  Filtered timeline segments: {len(timeline_list)}")
-        
+
         adjusted_timeline = []
         for seg in timeline_list:
             seg_abs_start = int(seg["start"])  # 标签文件中的绝对起始帧
-            seg_abs_end = int(seg["end"])      # 标签文件中的绝对结束帧
-            
+            seg_abs_end = int(seg["end"])  # 标签文件中的绝对结束帧
+
             # 转换公式：relative_index = absolute_index - loaded_video_abs_start
             seg_rel_start = seg_abs_start - loaded_video_abs_start
             seg_rel_end = seg_abs_end - loaded_video_abs_start
-            
+
             # 裁剪到有效范围 [0, total_frames)
             # Clip to valid range [0, total_frames) to handle partial overlaps
             seg_rel_start = max(0, seg_rel_start)
             seg_rel_end = min(total_frames, seg_rel_end)
-            
+
             if seg_rel_end <= seg_rel_start:
-                logger.debug(f"  [{seg_abs_start:5d}, {seg_abs_end:5d}) -> [{seg_rel_start:5d}, {seg_rel_end:5d}) {seg['label']:8s} FILTERED (empty after clipping)")
+                logger.debug(
+                    f"  [{seg_abs_start:5d}, {seg_abs_end:5d}) -> [{seg_rel_start:5d}, {seg_rel_end:5d}) {seg['label']:8s} FILTERED (empty after clipping)"
+                )
                 continue
-                
-            adjusted_timeline.append({
-                "start": seg_rel_start,
-                "end": seg_rel_end,
-                "label": seg["label"]
-            })
-            logger.debug(f"  [{seg_abs_start:5d}, {seg_abs_end:5d}) -> [{seg_rel_start:5d}, {seg_rel_end:5d}) {seg['label']:8s} INCLUDED")
-        
+
+            adjusted_timeline.append(
+                {"start": seg_rel_start, "end": seg_rel_end, "label": seg["label"]}
+            )
+            logger.debug(
+                f"  [{seg_abs_start:5d}, {seg_abs_end:5d}) -> [{seg_rel_start:5d}, {seg_rel_end:5d}) {seg['label']:8s} INCLUDED"
+            )
+
         timeline_list = adjusted_timeline
         logger.debug(f"  Final timeline segments: {len(timeline_list)}")
         # ==================== End Label Coordinate Conversion ====================
+
+        if len(timeline_list) == 0:
+            raise RuntimeError(
+                f"No labeled timeline after clipping for source_index={source_index} "
+                f"(person={item.person_id}, env={item.env_folder})."
+            )
 
         (
             batch_front,
@@ -684,7 +811,7 @@ class LabeledVideoDataset(Dataset):
             "label_info": labels,  # List[str]
             "meta": {
                 "experiment": self._experiment,
-                "index": index,
+                "index": source_index,
                 "person_id": item.person_id,
                 "env_folder": item.env_folder,
                 "env_key": item.env_key,
@@ -718,6 +845,7 @@ def whole_video_dataset(
     transform: Optional[Callable[[torch.Tensor], torch.Tensor]] = None,
     max_video_frames: Optional[int] = None,
     view_name: List[str] = ["front", "left", "right"],
+    annotator_id: Optional[int] = None,
 ) -> LabeledVideoDataset:
     """
     Create a LabeledVideoDataset for whole video processing.
@@ -733,6 +861,8 @@ def whole_video_dataset(
             split into multiple samples. Recommended: 500-2000 depending on resolution.
             (default: None - load entire video)
         view_name: List of view names to load (default: ["front", "left", "right"])
+        annotator_id: Optional annotator id. If provided, only this annotator's
+            labels will be used when parsing `item.label_path`.
 
     Returns:
         LabeledVideoDataset instance
@@ -744,4 +874,5 @@ def whole_video_dataset(
         transform=transform,
         max_video_frames=max_video_frames,
         view_name=view_name,
+        annotator_id=annotator_id,
     )
