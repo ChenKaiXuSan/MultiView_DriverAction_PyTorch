@@ -40,7 +40,8 @@ data:
 
   batch_size: 1 # load video number
 
-  fold: 5 # the fold number of the cross validation
+  # fold: 5 # the fold number of the cross validation
+  fold: 10
 
   magic_move: true              # 是否启用 magic_move
   magic_move_ratio: 0.1         # 比例（默认 0.1 = 10%）
