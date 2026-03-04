@@ -12,9 +12,6 @@ cd /work/SSR/share/code/MultiView_DriverAction_PyTorch
 
 mkdir -p logs/pegasus/
 
-# === 下载预训练模型（如果需要） ===
-# wget -O /home/SSR/luoxi/code/MultiView_DriverAction_PyTorch/checkpoints/SLOW_8x8_R50.pyth https://dl.fbaipublicfiles.com/pytorchvideo/model_zoo/kinetics/SLOW_8x8_R50.pyth
-
 # === 加载 Python + 激活 Conda 环境 ===
 source activate /home/SSR/luoxi/miniconda3/envs/multiview-video-cls
 conda env list # 列出所有 Conda 环境以供参考

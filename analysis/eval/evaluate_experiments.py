@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import itertools
 from pathlib import Path
 
 import numpy as np
@@ -69,6 +70,12 @@ def parse_args() -> argparse.Namespace:
         help="Optional experiment names to evaluate. Default: evaluate all under train-root.",
     )
     parser.add_argument(
+        "--reference-experiment",
+        type=str,
+        default=None,
+        help="Reference experiment for significance test. Default: best f1_macro_mean experiment.",
+    )
+    parser.add_argument(
         "--class-names",
         nargs="*",
         default=None,
@@ -93,6 +100,29 @@ def ci95(values: list[float]) -> tuple[float, float, float, float]:
     std = float(arr.std(ddof=1))
     margin = 1.96 * std / np.sqrt(arr.size)
     return mean, std, float(mean - margin), float(mean + margin)
+
+
+def paired_permutation_pvalue(a: list[float], b: list[float]) -> float:
+    a_arr = np.asarray(a, dtype=np.float64)
+    b_arr = np.asarray(b, dtype=np.float64)
+    if a_arr.shape != b_arr.shape:
+        raise ValueError("paired test requires equal-length vectors")
+
+    diff = a_arr - b_arr
+    obs = abs(float(diff.mean()))
+    n = diff.size
+    if n == 0:
+        return 1.0
+
+    count = 0
+    total = 0
+    for signs in itertools.product([-1.0, 1.0], repeat=n):
+        s = np.asarray(signs, dtype=np.float64)
+        val = abs(float((diff * s).mean()))
+        if val >= obs - 1e-12:
+            count += 1
+        total += 1
+    return float((count + 1) / (total + 1))
 
 
 def count_valid_pairs(best_preds_dir: Path) -> int:
@@ -306,6 +336,7 @@ def evaluate_experiment(experiment_name: str, run_dir: Path, output_root: Path, 
 
     # fold ci summary
     ci_rows = []
+    fold_metric_by_id: dict[str, dict[str, float]] = {}
     summary = {
         "experiment": experiment_name,
         "run_dir": str(run_dir),
@@ -321,6 +352,20 @@ def evaluate_experiment(experiment_name: str, run_dir: Path, output_root: Path, 
         summary[f"{k}_std"] = std
         summary[f"{k}_ci95_low"] = lo
         summary[f"{k}_ci95_high"] = hi
+
+    for row in fold_metric_rows:
+        fold_id = str(row[0])
+        fold_metric_by_id[fold_id] = {
+            "accuracy": float(row[2]),
+            "balanced_accuracy": float(row[3]),
+            "precision_macro": float(row[4]),
+            "recall_macro": float(row[5]),
+            "f1_macro": float(row[6]),
+            "precision_weighted": float(row[7]),
+            "recall_weighted": float(row[8]),
+            "f1_weighted": float(row[9]),
+        }
+    summary["fold_metric_by_id"] = fold_metric_by_id
 
     write_csv(exp_out / "fold_ci95_metrics.csv", ["metric", "mean", "std", "ci95_low", "ci95_high"], ci_rows)
 
@@ -379,6 +424,94 @@ def main() -> None:
 
     all_summaries = sorted(all_summaries, key=lambda x: (x["f1_macro_mean"], x["accuracy_mean"]), reverse=True)
 
+    reference_name = args.reference_experiment if args.reference_experiment else all_summaries[0]["experiment"]
+    reference = None
+    for row in all_summaries:
+        if row["experiment"] == reference_name:
+            reference = row
+            break
+    if reference is None:
+        raise ValueError(f"reference experiment not found: {reference_name}")
+
+    sig_rows: list[list] = []
+    sig_json: list[dict] = []
+    for row in all_summaries:
+        if row["experiment"] == reference_name:
+            sig_rows.append([
+                row["experiment"],
+                reference_name,
+                len(row["folds"]),
+                0.0,
+                0.0,
+                1.0,
+                1.0,
+            ])
+            sig_json.append(
+                {
+                    "experiment": row["experiment"],
+                    "reference": reference_name,
+                    "n_common_folds": len(row["folds"]),
+                    "delta_f1_macro_mean": 0.0,
+                    "delta_accuracy_mean": 0.0,
+                    "pvalue_f1_macro": 1.0,
+                    "pvalue_accuracy": 1.0,
+                }
+            )
+            continue
+
+        common_folds = sorted(set(row["folds"]) & set(reference["folds"]))
+        if not common_folds:
+            delta_f1 = float("nan")
+            delta_acc = float("nan")
+            p_f1 = float("nan")
+            p_acc = float("nan")
+        else:
+            row_f1 = [row["fold_metric_by_id"][f]["f1_macro"] for f in common_folds]
+            ref_f1 = [reference["fold_metric_by_id"][f]["f1_macro"] for f in common_folds]
+            row_acc = [row["fold_metric_by_id"][f]["accuracy"] for f in common_folds]
+            ref_acc = [reference["fold_metric_by_id"][f]["accuracy"] for f in common_folds]
+            p_f1 = paired_permutation_pvalue(row_f1, ref_f1)
+            p_acc = paired_permutation_pvalue(row_acc, ref_acc)
+            delta_f1 = float(np.mean(np.asarray(row_f1) - np.asarray(ref_f1)))
+            delta_acc = float(np.mean(np.asarray(row_acc) - np.asarray(ref_acc)))
+
+        sig_rows.append([
+            row["experiment"],
+            reference_name,
+            len(common_folds),
+            delta_f1,
+            delta_acc,
+            p_f1,
+            p_acc,
+        ])
+        sig_json.append(
+            {
+                "experiment": row["experiment"],
+                "reference": reference_name,
+                "n_common_folds": len(common_folds),
+                "delta_f1_macro_mean": delta_f1,
+                "delta_accuracy_mean": delta_acc,
+                "pvalue_f1_macro": p_f1,
+                "pvalue_accuracy": p_acc,
+            }
+        )
+
+    write_csv(
+        output_root / "significance_vs_reference.csv",
+        [
+            "experiment",
+            "reference",
+            "n_common_folds",
+            "delta_f1_macro_mean",
+            "delta_accuracy_mean",
+            "pvalue_f1_macro",
+            "pvalue_accuracy",
+        ],
+        sig_rows,
+    )
+    with (output_root / "significance_vs_reference.json").open("w", encoding="utf-8") as f:
+        json.dump(sig_json, f, indent=2, ensure_ascii=False)
+
     header = [
         "experiment",
         "run_dir",
@@ -424,6 +557,7 @@ def main() -> None:
     print("=" * 96)
     if plt is None or sns is None:
         print("matplotlib/seaborn not available -> saved numeric results only (CSV/JSON).")
+    print(f"reference for significance test: {reference_name}")
     print(f"saved evaluation outputs to: {output_root}")
 
 

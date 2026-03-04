@@ -25,6 +25,7 @@ Copyright (c) 2026 The University of Tsukuba
 
 from typing import Any, Dict, Optional, List
 import logging
+from pathlib import Path
 
 import torch
 import torch.nn.functional as F
@@ -117,8 +118,8 @@ class MultiTSCVATrainer(LightningModule):
         self.validation_step_outputs = []
         self.test_step_outputs = []
         
-        # Save path for results
-        self.save_root = None
+        # Save path for results (same root as other trainers, used by save_helper)
+        self.save_root = getattr(hparams, "log_path", None) or getattr(hparams.train, "log_path", None)
         
         logger.info(f"MultiTSCVATrainer initialized with {self.num_classes} classes")
         logger.info(f"Learning rate: {self.lr}, Image size: {self.img_size}")
@@ -430,21 +431,20 @@ class MultiTSCVATrainer(LightningModule):
         
         # Save results using save_helper
         if self.test_pred_list and self.test_label_list:
-            # Determine fold number from logger
-            fold = None
-            if self.logger and hasattr(self.logger, 'root_dir'):
-                fold = self.logger.root_dir.split("/")[-1]
-            else:
-                fold = "test"
-            
-            # Determine save path
+            # Determine fold name from logger (expected: fold_0, fold_1, ...)
+            fold = (
+                Path(getattr(self.logger, "root_dir", "fold")).name
+                if self.logger
+                else "fold"
+            )
+
+            # Determine save path (root experiment log dir)
             save_path = self.save_root
             if save_path is None:
-                if self.logger and hasattr(self.logger, 'root_dir'):
-                    from pathlib import Path
+                if self.logger and hasattr(self.logger, "root_dir"):
                     save_path = str(Path(self.logger.root_dir).parent)
                 else:
-                    save_path = "./test_results"
+                    save_path = "./logs"
             
             logger.info(f"Saving test results to {save_path}")
             save_helper(
