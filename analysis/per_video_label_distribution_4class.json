@@ -1,0 +1,1780 @@
+[
+  {
+    "video": "person_05_night_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 217,
+    "total_duration": 6045.0,
+    "imbalance_ratio_max_min": 145.0,
+    "label_entropy": 0.9867280562310548,
+    "label_count": {
+      "left": 145,
+      "right": 70,
+      "down": 1,
+      "up": 1
+    },
+    "label_duration": {
+      "left": 4195.0,
+      "right": 1808.0,
+      "down": 14.0,
+      "up": 28.0
+    }
+  },
+  {
+    "video": "person_04_night_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 122,
+    "total_duration": 4981.0,
+    "imbalance_ratio_max_min": 76.0,
+    "label_entropy": 1.3784630944167562,
+    "label_count": {
+      "left": 25,
+      "down": 76,
+      "right": 20,
+      "up": 1
+    },
+    "label_duration": {
+      "left": 845.0,
+      "down": 2427.0,
+      "right": 1685.0,
+      "up": 24.0
+    }
+  },
+  {
+    "video": "person_05_day_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 3,
+    "num_segments": 98,
+    "total_duration": 3183.0,
+    "imbalance_ratio_max_min": 64.0,
+    "label_entropy": 0.9977199875965453,
+    "label_count": {
+      "left": 64,
+      "right": 33,
+      "up": 1
+    },
+    "label_duration": {
+      "left": 2203.0,
+      "right": 969.0,
+      "up": 11.0
+    }
+  },
+  {
+    "video": "person_15_day_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 109,
+    "total_duration": 5749.0,
+    "imbalance_ratio_max_min": 61.0,
+    "label_entropy": 1.3158578491692772,
+    "label_count": {
+      "right": 40,
+      "left": 61,
+      "down": 7,
+      "up": 1
+    },
+    "label_duration": {
+      "right": 2412.0,
+      "left": 3143.0,
+      "down": 158.0,
+      "up": 36.0
+    }
+  },
+  {
+    "video": "person_05_night_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 3,
+    "num_segments": 215,
+    "total_duration": 7894.0,
+    "imbalance_ratio_max_min": 57.0,
+    "label_entropy": 0.8046240136034445,
+    "label_count": {
+      "left": 171,
+      "down": 3,
+      "right": 41
+    },
+    "label_duration": {
+      "left": 6130.0,
+      "down": 77.0,
+      "right": 1687.0
+    }
+  },
+  {
+    "video": "person_10_day_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 80,
+    "total_duration": 3308.0,
+    "imbalance_ratio_max_min": 49.0,
+    "label_entropy": 1.3135573775963636,
+    "label_count": {
+      "right": 24,
+      "left": 49,
+      "down": 6,
+      "up": 1
+    },
+    "label_duration": {
+      "right": 1457.0,
+      "left": 1661.0,
+      "down": 166.0,
+      "up": 24.0
+    }
+  },
+  {
+    "video": "person_05_day_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 3,
+    "num_segments": 251,
+    "total_duration": 9652.0,
+    "imbalance_ratio_max_min": 40.2,
+    "label_entropy": 0.8137570211370795,
+    "label_count": {
+      "left": 201,
+      "down": 5,
+      "right": 45
+    },
+    "label_duration": {
+      "left": 7946.0,
+      "down": 125.0,
+      "right": 1581.0
+    }
+  },
+  {
+    "video": "person_18_night_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 3,
+    "num_segments": 75,
+    "total_duration": 3182.0,
+    "imbalance_ratio_max_min": 38.0,
+    "label_entropy": 1.088304749658821,
+    "label_count": {
+      "left": 38,
+      "right": 36,
+      "down": 1
+    },
+    "label_duration": {
+      "left": 1210.0,
+      "right": 1935.0,
+      "down": 37.0
+    }
+  },
+  {
+    "video": "person_15_night_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 127,
+    "total_duration": 7384.0,
+    "imbalance_ratio_max_min": 36.5,
+    "label_entropy": 1.2112605713229536,
+    "label_count": {
+      "down": 2,
+      "left": 73,
+      "right": 49,
+      "up": 3
+    },
+    "label_duration": {
+      "down": 64.0,
+      "left": 4275.0,
+      "right": 2988.0,
+      "up": 57.0
+    }
+  },
+  {
+    "video": "person_19_night_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 51,
+    "total_duration": 5466.0,
+    "imbalance_ratio_max_min": 35.0,
+    "label_entropy": 1.2493144910286702,
+    "label_count": {
+      "left": 35,
+      "right": 11,
+      "up": 1,
+      "down": 4
+    },
+    "label_duration": {
+      "left": 4737.0,
+      "right": 607.0,
+      "up": 17.0,
+      "down": 105.0
+    }
+  },
+  {
+    "video": "person_15_day_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 110,
+    "total_duration": 4593.0,
+    "imbalance_ratio_max_min": 34.0,
+    "label_entropy": 1.2045221204750445,
+    "label_count": {
+      "left": 68,
+      "right": 37,
+      "up": 2,
+      "down": 3
+    },
+    "label_duration": {
+      "left": 2873.0,
+      "right": 1411.0,
+      "up": 25.0,
+      "down": 284.0
+    }
+  },
+  {
+    "video": "person_18_day_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 109,
+    "total_duration": 6085.0,
+    "imbalance_ratio_max_min": 28.5,
+    "label_entropy": 1.2218271610888,
+    "label_count": {
+      "right": 48,
+      "left": 57,
+      "down": 2,
+      "up": 2
+    },
+    "label_duration": {
+      "right": 3217.0,
+      "left": 2649.0,
+      "down": 39.0,
+      "up": 180.0
+    }
+  },
+  {
+    "video": "person_08_day_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 59,
+    "total_duration": 5077.0,
+    "imbalance_ratio_max_min": 27.0,
+    "label_entropy": 1.5802717038424985,
+    "label_count": {
+      "down": 27,
+      "right": 21,
+      "left": 10,
+      "up": 1
+    },
+    "label_duration": {
+      "down": 1346.0,
+      "right": 3199.0,
+      "left": 514.0,
+      "up": 18.0
+    }
+  },
+  {
+    "video": "person_01_day_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 353,
+    "total_duration": 14686.0,
+    "imbalance_ratio_max_min": 26.77777777777778,
+    "label_entropy": 1.310602520522198,
+    "label_count": {
+      "right": 63,
+      "left": 40,
+      "down": 241,
+      "up": 9
+    },
+    "label_duration": {
+      "right": 5143.0,
+      "left": 1410.0,
+      "down": 7926.0,
+      "up": 207.0
+    }
+  },
+  {
+    "video": "person_16_day_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 238,
+    "total_duration": 9032.0,
+    "imbalance_ratio_max_min": 25.666666666666668,
+    "label_entropy": 1.348959471221439,
+    "label_count": {
+      "right": 56,
+      "down": 154,
+      "left": 22,
+      "up": 6
+    },
+    "label_duration": {
+      "right": 3369.0,
+      "down": 4926.0,
+      "left": 576.0,
+      "up": 161.0
+    }
+  },
+  {
+    "video": "person_16_day_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 271,
+    "total_duration": 10005.0,
+    "imbalance_ratio_max_min": 24.25,
+    "label_entropy": 1.2276978862868153,
+    "label_count": {
+      "right": 47,
+      "down": 194,
+      "left": 22,
+      "up": 8
+    },
+    "label_duration": {
+      "right": 2506.0,
+      "down": 6298.0,
+      "left": 1014.0,
+      "up": 187.0
+    }
+  },
+  {
+    "video": "person_14_night_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 3,
+    "num_segments": 93,
+    "total_duration": 4941.0,
+    "imbalance_ratio_max_min": 24.0,
+    "label_entropy": 0.9042326000115628,
+    "label_count": {
+      "left": 72,
+      "right": 18,
+      "down": 3
+    },
+    "label_duration": {
+      "left": 3439.0,
+      "right": 1455.0,
+      "down": 47.0
+    }
+  },
+  {
+    "video": "person_20_night_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 231,
+    "total_duration": 8729.0,
+    "imbalance_ratio_max_min": 22.5,
+    "label_entropy": 1.48533008763429,
+    "label_count": {
+      "down": 135,
+      "left": 58,
+      "right": 32,
+      "up": 6
+    },
+    "label_duration": {
+      "down": 4284.0,
+      "left": 2366.0,
+      "right": 1895.0,
+      "up": 184.0
+    }
+  },
+  {
+    "video": "person_07_night_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 3,
+    "num_segments": 82,
+    "total_duration": 5766.0,
+    "imbalance_ratio_max_min": 21.0,
+    "label_entropy": 1.1392766720868133,
+    "label_count": {
+      "right": 38,
+      "left": 42,
+      "up": 2
+    },
+    "label_duration": {
+      "right": 2633.0,
+      "left": 3029.0,
+      "up": 104.0
+    }
+  },
+  {
+    "video": "person_20_day_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 242,
+    "total_duration": 10648.0,
+    "imbalance_ratio_max_min": 19.857142857142858,
+    "label_entropy": 1.531168402041749,
+    "label_count": {
+      "right": 44,
+      "down": 139,
+      "up": 7,
+      "left": 52
+    },
+    "label_duration": {
+      "right": 3377.0,
+      "down": 4927.0,
+      "up": 133.0,
+      "left": 2211.0
+    }
+  },
+  {
+    "video": "person_20_day_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 264,
+    "total_duration": 11033.0,
+    "imbalance_ratio_max_min": 19.333333333333332,
+    "label_entropy": 1.3800971935956166,
+    "label_count": {
+      "right": 31,
+      "down": 174,
+      "up": 9,
+      "left": 50
+    },
+    "label_duration": {
+      "right": 2633.0,
+      "down": 5986.0,
+      "up": 257.0,
+      "left": 2157.0
+    }
+  },
+  {
+    "video": "person_10_night_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 3,
+    "num_segments": 65,
+    "total_duration": 3066.0,
+    "imbalance_ratio_max_min": 19.0,
+    "label_entropy": 1.1374808860250027,
+    "label_count": {
+      "left": 38,
+      "down": 2,
+      "right": 25
+    },
+    "label_duration": {
+      "left": 1803.0,
+      "down": 73.0,
+      "right": 1190.0
+    }
+  },
+  {
+    "video": "person_07_day_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 68,
+    "total_duration": 5761.0,
+    "imbalance_ratio_max_min": 18.5,
+    "label_entropy": 1.3563438015135305,
+    "label_count": {
+      "left": 37,
+      "right": 26,
+      "down": 2,
+      "up": 3
+    },
+    "label_duration": {
+      "left": 3040.0,
+      "right": 2485.0,
+      "down": 89.0,
+      "up": 147.0
+    }
+  },
+  {
+    "video": "person_17_night_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 3,
+    "num_segments": 29,
+    "total_duration": 2464.0,
+    "imbalance_ratio_max_min": 18.0,
+    "label_entropy": 1.1242592373746325,
+    "label_count": {
+      "right": 18,
+      "left": 10,
+      "down": 1
+    },
+    "label_duration": {
+      "right": 2066.0,
+      "left": 352.0,
+      "down": 46.0
+    }
+  },
+  {
+    "video": "person_16_night_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 182,
+    "total_duration": 6308.0,
+    "imbalance_ratio_max_min": 17.625,
+    "label_entropy": 1.0965969253456156,
+    "label_count": {
+      "right": 22,
+      "down": 141,
+      "up": 8,
+      "left": 11
+    },
+    "label_duration": {
+      "right": 2043.0,
+      "down": 3599.0,
+      "up": 280.0,
+      "left": 386.0
+    }
+  },
+  {
+    "video": "person_02_day_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 160,
+    "total_duration": 9160.0,
+    "imbalance_ratio_max_min": 17.0,
+    "label_entropy": 1.4003637614634974,
+    "label_count": {
+      "down": 102,
+      "left": 37,
+      "right": 15,
+      "up": 6
+    },
+    "label_duration": {
+      "down": 5285.0,
+      "left": 2535.0,
+      "right": 1232.0,
+      "up": 108.0
+    }
+  },
+  {
+    "video": "person_07_night_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 114,
+    "total_duration": 7336.0,
+    "imbalance_ratio_max_min": 17.0,
+    "label_entropy": 1.3389699421671013,
+    "label_count": {
+      "left": 68,
+      "right": 37,
+      "up": 5,
+      "down": 4
+    },
+    "label_duration": {
+      "left": 4652.0,
+      "right": 2364.0,
+      "up": 162.0,
+      "down": 158.0
+    }
+  },
+  {
+    "video": "person_08_day_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 122,
+    "total_duration": 7104.0,
+    "imbalance_ratio_max_min": 16.666666666666668,
+    "label_entropy": 1.6644380415402773,
+    "label_count": {
+      "down": 26,
+      "right": 43,
+      "left": 50,
+      "up": 3
+    },
+    "label_duration": {
+      "down": 946.0,
+      "right": 3678.0,
+      "left": 2323.0,
+      "up": 157.0
+    }
+  },
+  {
+    "video": "person_16_night_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 211,
+    "total_duration": 7820.0,
+    "imbalance_ratio_max_min": 15.444444444444445,
+    "label_entropy": 1.4073883947155497,
+    "label_count": {
+      "right": 35,
+      "down": 139,
+      "up": 9,
+      "left": 28
+    },
+    "label_duration": {
+      "right": 2450.0,
+      "down": 3911.0,
+      "up": 441.0,
+      "left": 1018.0
+    }
+  },
+  {
+    "video": "person_01_day_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 321,
+    "total_duration": 13153.0,
+    "imbalance_ratio_max_min": 15.428571428571429,
+    "label_entropy": 1.3787313218444424,
+    "label_count": {
+      "left": 50,
+      "right": 41,
+      "down": 216,
+      "up": 14
+    },
+    "label_duration": {
+      "left": 1983.0,
+      "right": 3352.0,
+      "down": 7412.0,
+      "up": 406.0
+    }
+  },
+  {
+    "video": "person_17_night_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 33,
+    "total_duration": 2678.0,
+    "imbalance_ratio_max_min": 15.0,
+    "label_entropy": 1.509205775567614,
+    "label_count": {
+      "right": 14,
+      "left": 15,
+      "down": 3,
+      "up": 1
+    },
+    "label_duration": {
+      "right": 1826.0,
+      "left": 616.0,
+      "down": 93.0,
+      "up": 143.0
+    }
+  },
+  {
+    "video": "person_15_night_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 3,
+    "num_segments": 112,
+    "total_duration": 5403.0,
+    "imbalance_ratio_max_min": 14.2,
+    "label_entropy": 1.1434354041005284,
+    "label_count": {
+      "down": 5,
+      "left": 71,
+      "right": 36
+    },
+    "label_duration": {
+      "down": 103.0,
+      "left": 3310.0,
+      "right": 1990.0
+    }
+  },
+  {
+    "video": "person_02_night_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 84,
+    "total_duration": 4072.0,
+    "imbalance_ratio_max_min": 13.2,
+    "label_entropy": 1.0810163177010037,
+    "label_count": {
+      "down": 66,
+      "left": 8,
+      "right": 5,
+      "up": 5
+    },
+    "label_duration": {
+      "down": 2628.0,
+      "left": 320.0,
+      "right": 847.0,
+      "up": 277.0
+    }
+  },
+  {
+    "video": "person_19_day_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 56,
+    "total_duration": 4752.0,
+    "imbalance_ratio_max_min": 13.0,
+    "label_entropy": 1.5240870982108807,
+    "label_count": {
+      "right": 23,
+      "left": 26,
+      "up": 5,
+      "down": 2
+    },
+    "label_duration": {
+      "right": 2068.0,
+      "left": 2245.0,
+      "up": 368.0,
+      "down": 71.0
+    }
+  },
+  {
+    "video": "person_07_day_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 92,
+    "total_duration": 4656.0,
+    "imbalance_ratio_max_min": 12.5,
+    "label_entropy": 1.4863404390447021,
+    "label_count": {
+      "right": 31,
+      "left": 50,
+      "down": 7,
+      "up": 4
+    },
+    "label_duration": {
+      "right": 1575.0,
+      "left": 2715.0,
+      "down": 201.0,
+      "up": 165.0
+    }
+  },
+  {
+    "video": "person_14_day_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 3,
+    "num_segments": 102,
+    "total_duration": 5292.0,
+    "imbalance_ratio_max_min": 12.333333333333334,
+    "label_entropy": 1.0536329922568903,
+    "label_count": {
+      "left": 74,
+      "right": 22,
+      "up": 6
+    },
+    "label_duration": {
+      "left": 2958.0,
+      "right": 1447.0,
+      "up": 887.0
+    }
+  },
+  {
+    "video": "person_02_day_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 129,
+    "total_duration": 10563.0,
+    "imbalance_ratio_max_min": 11.75,
+    "label_entropy": 1.2578543882704776,
+    "label_count": {
+      "down": 94,
+      "left": 11,
+      "right": 8,
+      "up": 16
+    },
+    "label_duration": {
+      "down": 4834.0,
+      "left": 3228.0,
+      "right": 742.0,
+      "up": 1759.0
+    }
+  },
+  {
+    "video": "person_20_night_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 249,
+    "total_duration": 9978.0,
+    "imbalance_ratio_max_min": 11.666666666666666,
+    "label_entropy": 1.564126107860054,
+    "label_count": {
+      "down": 140,
+      "left": 65,
+      "right": 32,
+      "up": 12
+    },
+    "label_duration": {
+      "down": 4461.0,
+      "left": 2497.0,
+      "right": 2443.0,
+      "up": 577.0
+    }
+  },
+  {
+    "video": "person_01_night_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 332,
+    "total_duration": 13367.0,
+    "imbalance_ratio_max_min": 10.9,
+    "label_entropy": 1.4408318518421124,
+    "label_count": {
+      "down": 218,
+      "right": 45,
+      "up": 20,
+      "left": 49
+    },
+    "label_duration": {
+      "down": 6589.0,
+      "right": 3358.0,
+      "up": 790.0,
+      "left": 2630.0
+    }
+  },
+  {
+    "video": "person_14_night_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 3,
+    "num_segments": 58,
+    "total_duration": 3443.0,
+    "imbalance_ratio_max_min": 10.75,
+    "label_entropy": 1.041030438968943,
+    "label_count": {
+      "left": 43,
+      "up": 4,
+      "right": 11
+    },
+    "label_duration": {
+      "left": 1508.0,
+      "up": 356.0,
+      "right": 1579.0
+    }
+  },
+  {
+    "video": "person_19_day_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 23,
+    "total_duration": 1461.0,
+    "imbalance_ratio_max_min": 10.0,
+    "label_entropy": 1.7200660483303318,
+    "label_count": {
+      "down": 5,
+      "up": 1,
+      "left": 7,
+      "right": 10
+    },
+    "label_duration": {
+      "down": 179.0,
+      "up": 60.0,
+      "left": 462.0,
+      "right": 760.0
+    }
+  },
+  {
+    "video": "person_04_day_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 80,
+    "total_duration": 3585.0,
+    "imbalance_ratio_max_min": 9.6,
+    "label_entropy": 1.4789745774906973,
+    "label_count": {
+      "up": 5,
+      "right": 21,
+      "down": 48,
+      "left": 6
+    },
+    "label_duration": {
+      "up": 299.0,
+      "right": 1418.0,
+      "down": 1709.0,
+      "left": 159.0
+    }
+  },
+  {
+    "video": "person_03_day_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 3,
+    "num_segments": 40,
+    "total_duration": 3585.0,
+    "imbalance_ratio_max_min": 9.5,
+    "label_entropy": 1.236396957115956,
+    "label_count": {
+      "right": 19,
+      "left": 19,
+      "up": 2
+    },
+    "label_duration": {
+      "right": 1325.0,
+      "left": 2213.0,
+      "up": 47.0
+    }
+  },
+  {
+    "video": "person_03_day_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 3,
+    "num_segments": 51,
+    "total_duration": 3232.0,
+    "imbalance_ratio_max_min": 9.333333333333334,
+    "label_entropy": 1.2449863769220126,
+    "label_count": {
+      "left": 28,
+      "right": 20,
+      "up": 3
+    },
+    "label_duration": {
+      "left": 1013.0,
+      "right": 2139.0,
+      "up": 80.0
+    }
+  },
+  {
+    "video": "person_10_day_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 3,
+    "num_segments": 85,
+    "total_duration": 3712.0,
+    "imbalance_ratio_max_min": 9.0,
+    "label_entropy": 1.2050367612492034,
+    "label_count": {
+      "right": 25,
+      "left": 54,
+      "down": 6
+    },
+    "label_duration": {
+      "right": 1146.0,
+      "left": 2337.0,
+      "down": 229.0
+    }
+  },
+  {
+    "video": "person_01_night_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 316,
+    "total_duration": 12520.0,
+    "imbalance_ratio_max_min": 8.88,
+    "label_entropy": 1.339469681464932,
+    "label_count": {
+      "right": 41,
+      "up": 25,
+      "down": 222,
+      "left": 28
+    },
+    "label_duration": {
+      "right": 3727.0,
+      "up": 676.0,
+      "down": 7225.0,
+      "left": 892.0
+    }
+  },
+  {
+    "video": "person_24_day_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 167,
+    "total_duration": 6530.0,
+    "imbalance_ratio_max_min": 8.818181818181818,
+    "label_entropy": 1.5419397538551791,
+    "label_count": {
+      "right": 11,
+      "left": 43,
+      "down": 97,
+      "up": 16
+    },
+    "label_duration": {
+      "right": 729.0,
+      "left": 2535.0,
+      "down": 2560.0,
+      "up": 706.0
+    }
+  },
+  {
+    "video": "person_11_night_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 237,
+    "total_duration": 9540.0,
+    "imbalance_ratio_max_min": 8.153846153846153,
+    "label_entropy": 1.7273260900264875,
+    "label_count": {
+      "right": 45,
+      "down": 106,
+      "left": 73,
+      "up": 13
+    },
+    "label_duration": {
+      "right": 2233.0,
+      "down": 3308.0,
+      "left": 2966.0,
+      "up": 1033.0
+    }
+  },
+  {
+    "video": "person_13_day_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 217,
+    "total_duration": 7680.0,
+    "imbalance_ratio_max_min": 8.0,
+    "label_entropy": 1.7386271933455224,
+    "label_count": {
+      "left": 88,
+      "up": 11,
+      "right": 43,
+      "down": 75
+    },
+    "label_duration": {
+      "left": 2589.0,
+      "up": 626.0,
+      "right": 1743.0,
+      "down": 2722.0
+    }
+  },
+  {
+    "video": "person_08_night_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 58,
+    "total_duration": 4335.0,
+    "imbalance_ratio_max_min": 8.0,
+    "label_entropy": 1.7649232976517273,
+    "label_count": {
+      "down": 16,
+      "up": 3,
+      "right": 24,
+      "left": 15
+    },
+    "label_duration": {
+      "down": 643.0,
+      "up": 93.0,
+      "right": 1972.0,
+      "left": 1627.0
+    }
+  },
+  {
+    "video": "person_11_night_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 163,
+    "total_duration": 6208.0,
+    "imbalance_ratio_max_min": 7.416666666666667,
+    "label_entropy": 1.6599754332730976,
+    "label_count": {
+      "down": 89,
+      "up": 12,
+      "left": 35,
+      "right": 27
+    },
+    "label_duration": {
+      "down": 2778.0,
+      "up": 543.0,
+      "left": 1041.0,
+      "right": 1846.0
+    }
+  },
+  {
+    "video": "person_02_night_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 116,
+    "total_duration": 5777.0,
+    "imbalance_ratio_max_min": 6.545454545454546,
+    "label_entropy": 1.5265190009561276,
+    "label_count": {
+      "left": 22,
+      "down": 72,
+      "right": 11,
+      "up": 11
+    },
+    "label_duration": {
+      "left": 1563.0,
+      "down": 2721.0,
+      "right": 1035.0,
+      "up": 458.0
+    }
+  },
+  {
+    "video": "person_04_night_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 171,
+    "total_duration": 7288.0,
+    "imbalance_ratio_max_min": 6.0,
+    "label_entropy": 1.6007806375919273,
+    "label_count": {
+      "down": 102,
+      "up": 24,
+      "right": 28,
+      "left": 17
+    },
+    "label_duration": {
+      "down": 3538.0,
+      "up": 885.0,
+      "right": 2227.0,
+      "left": 638.0
+    }
+  },
+  {
+    "video": "person_24_day_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 140,
+    "total_duration": 4844.0,
+    "imbalance_ratio_max_min": 5.733333333333333,
+    "label_entropy": 1.5585359684453683,
+    "label_count": {
+      "right": 15,
+      "left": 24,
+      "down": 86,
+      "up": 15
+    },
+    "label_duration": {
+      "right": 911.0,
+      "left": 1069.0,
+      "down": 2468.0,
+      "up": 396.0
+    }
+  },
+  {
+    "video": "person_09_day_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 84,
+    "total_duration": 5190.0,
+    "imbalance_ratio_max_min": 5.375,
+    "label_entropy": 1.7186555139787836,
+    "label_count": {
+      "left": 43,
+      "down": 21,
+      "up": 8,
+      "right": 12
+    },
+    "label_duration": {
+      "left": 2124.0,
+      "down": 880.0,
+      "up": 625.0,
+      "right": 1561.0
+    }
+  },
+  {
+    "video": "person_12_day_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 3,
+    "num_segments": 9,
+    "total_duration": 686.0,
+    "imbalance_ratio_max_min": 5.0,
+    "label_entropy": 1.3516441151533922,
+    "label_count": {
+      "right": 5,
+      "left": 3,
+      "down": 1
+    },
+    "label_duration": {
+      "right": 438.0,
+      "left": 202.0,
+      "down": 46.0
+    }
+  },
+  {
+    "video": "person_21_night_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 154,
+    "total_duration": 7107.0,
+    "imbalance_ratio_max_min": 4.909090909090909,
+    "label_entropy": 1.8180430106186762,
+    "label_count": {
+      "right": 35,
+      "down": 54,
+      "left": 54,
+      "up": 11
+    },
+    "label_duration": {
+      "right": 2865.0,
+      "down": 1731.0,
+      "left": 2199.0,
+      "up": 312.0
+    }
+  },
+  {
+    "video": "person_24_night_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 111,
+    "total_duration": 3877.0,
+    "imbalance_ratio_max_min": 4.75,
+    "label_entropy": 1.727032061768254,
+    "label_count": {
+      "left": 27,
+      "down": 57,
+      "right": 12,
+      "up": 15
+    },
+    "label_duration": {
+      "left": 997.0,
+      "down": 1599.0,
+      "right": 880.0,
+      "up": 401.0
+    }
+  },
+  {
+    "video": "person_24_night_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 131,
+    "total_duration": 4627.0,
+    "imbalance_ratio_max_min": 4.714285714285714,
+    "label_entropy": 1.7375708125965725,
+    "label_count": {
+      "left": 33,
+      "down": 66,
+      "up": 14,
+      "right": 18
+    },
+    "label_duration": {
+      "left": 1400.0,
+      "down": 1905.0,
+      "up": 665.0,
+      "right": 657.0
+    }
+  },
+  {
+    "video": "person_21_day_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 262,
+    "total_duration": 10269.0,
+    "imbalance_ratio_max_min": 4.68,
+    "label_entropy": 1.8159709293103075,
+    "label_count": {
+      "right": 57,
+      "left": 63,
+      "up": 25,
+      "down": 117
+    },
+    "label_duration": {
+      "right": 3302.0,
+      "left": 2222.0,
+      "up": 833.0,
+      "down": 3912.0
+    }
+  },
+  {
+    "video": "person_13_day_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 213,
+    "total_duration": 6869.0,
+    "imbalance_ratio_max_min": 4.666666666666667,
+    "label_entropy": 1.8158234375269342,
+    "label_count": {
+      "right": 41,
+      "up": 18,
+      "down": 70,
+      "left": 84
+    },
+    "label_duration": {
+      "right": 1448.0,
+      "up": 424.0,
+      "down": 2083.0,
+      "left": 2914.0
+    }
+  },
+  {
+    "video": "person_04_day_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 178,
+    "total_duration": 6858.0,
+    "imbalance_ratio_max_min": 4.4,
+    "label_entropy": 1.8533072718126289,
+    "label_count": {
+      "right": 50,
+      "left": 47,
+      "down": 66,
+      "up": 15
+    },
+    "label_duration": {
+      "right": 2233.0,
+      "left": 1743.0,
+      "down": 2156.0,
+      "up": 726.0
+    }
+  },
+  {
+    "video": "person_11_day_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 168,
+    "total_duration": 6883.0,
+    "imbalance_ratio_max_min": 3.9411764705882355,
+    "label_entropy": 1.8614905184192985,
+    "label_count": {
+      "down": 67,
+      "right": 39,
+      "up": 17,
+      "left": 45
+    },
+    "label_duration": {
+      "down": 2058.0,
+      "right": 2204.0,
+      "up": 1088.0,
+      "left": 1533.0
+    }
+  },
+  {
+    "video": "person_11_day_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 207,
+    "total_duration": 9602.0,
+    "imbalance_ratio_max_min": 3.75,
+    "label_entropy": 1.8617897170140867,
+    "label_count": {
+      "right": 45,
+      "down": 75,
+      "up": 20,
+      "left": 67
+    },
+    "label_duration": {
+      "right": 2813.0,
+      "down": 2588.0,
+      "up": 777.0,
+      "left": 3424.0
+    }
+  },
+  {
+    "video": "person_13_night_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 241,
+    "total_duration": 8325.0,
+    "imbalance_ratio_max_min": 3.3333333333333335,
+    "label_entropy": 1.85354584983487,
+    "label_count": {
+      "left": 70,
+      "down": 100,
+      "up": 30,
+      "right": 41
+    },
+    "label_duration": {
+      "left": 2254.0,
+      "down": 3400.0,
+      "up": 1134.0,
+      "right": 1537.0
+    }
+  },
+  {
+    "video": "person_09_night_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 156,
+    "total_duration": 8206.0,
+    "imbalance_ratio_max_min": 3.2777777777777777,
+    "label_entropy": 1.8764735291512298,
+    "label_count": {
+      "down": 59,
+      "right": 31,
+      "left": 48,
+      "up": 18
+    },
+    "label_duration": {
+      "down": 2686.0,
+      "right": 2621.0,
+      "left": 2071.0,
+      "up": 828.0
+    }
+  },
+  {
+    "video": "person_06_day_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 129,
+    "total_duration": 6529.0,
+    "imbalance_ratio_max_min": 3.2142857142857144,
+    "label_entropy": 1.8782993077159231,
+    "label_count": {
+      "right": 45,
+      "left": 27,
+      "up": 14,
+      "down": 43
+    },
+    "label_duration": {
+      "right": 2780.0,
+      "left": 1688.0,
+      "up": 607.0,
+      "down": 1454.0
+    }
+  },
+  {
+    "video": "person_06_night_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 149,
+    "total_duration": 12904.0,
+    "imbalance_ratio_max_min": 3.2,
+    "label_entropy": 1.858224351971938,
+    "label_count": {
+      "left": 64,
+      "down": 20,
+      "right": 39,
+      "up": 26
+    },
+    "label_duration": {
+      "left": 7841.0,
+      "down": 1030.0,
+      "right": 2951.0,
+      "up": 1082.0
+    }
+  },
+  {
+    "video": "person_21_day_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 180,
+    "total_duration": 7098.0,
+    "imbalance_ratio_max_min": 3.0416666666666665,
+    "label_entropy": 1.8877980000938819,
+    "label_count": {
+      "left": 46,
+      "down": 73,
+      "right": 37,
+      "up": 24
+    },
+    "label_duration": {
+      "left": 1491.0,
+      "down": 2320.0,
+      "right": 2544.0,
+      "up": 743.0
+    }
+  },
+  {
+    "video": "person_13_night_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 251,
+    "total_duration": 8142.0,
+    "imbalance_ratio_max_min": 3.037037037037037,
+    "label_entropy": 1.8941175497583795,
+    "label_count": {
+      "right": 60,
+      "left": 82,
+      "down": 82,
+      "up": 27
+    },
+    "label_duration": {
+      "right": 2267.0,
+      "left": 2566.0,
+      "down": 2444.0,
+      "up": 865.0
+    }
+  },
+  {
+    "video": "person_09_day_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 142,
+    "total_duration": 10225.0,
+    "imbalance_ratio_max_min": 2.9375,
+    "label_entropy": 1.9092784312719593,
+    "label_count": {
+      "left": 47,
+      "down": 41,
+      "right": 38,
+      "up": 16
+    },
+    "label_duration": {
+      "left": 2782.0,
+      "down": 1857.0,
+      "right": 4647.0,
+      "up": 939.0
+    }
+  },
+  {
+    "video": "person_21_night_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 218,
+    "total_duration": 7912.0,
+    "imbalance_ratio_max_min": 2.888888888888889,
+    "label_entropy": 1.9120533364373407,
+    "label_count": {
+      "right": 60,
+      "left": 78,
+      "down": 53,
+      "up": 27
+    },
+    "label_duration": {
+      "right": 3098.0,
+      "left": 2171.0,
+      "down": 1635.0,
+      "up": 1008.0
+    }
+  },
+  {
+    "video": "person_06_night_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 122,
+    "total_duration": 6828.0,
+    "imbalance_ratio_max_min": 2.7333333333333334,
+    "label_entropy": 1.9206002250548473,
+    "label_count": {
+      "left": 32,
+      "down": 34,
+      "right": 41,
+      "up": 15
+    },
+    "label_duration": {
+      "left": 2443.0,
+      "down": 1183.0,
+      "right": 2649.0,
+      "up": 553.0
+    }
+  },
+  {
+    "video": "person_14_day_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 2,
+    "num_segments": 84,
+    "total_duration": 6193.0,
+    "imbalance_ratio_max_min": 2.5,
+    "label_entropy": 0.863120568566631,
+    "label_count": {
+      "right": 24,
+      "left": 60
+    },
+    "label_duration": {
+      "right": 3079.0,
+      "left": 3114.0
+    }
+  },
+  {
+    "video": "person_12_night_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 3,
+    "num_segments": 10,
+    "total_duration": 997.0,
+    "imbalance_ratio_max_min": 2.5,
+    "label_entropy": 1.4854752972273344,
+    "label_count": {
+      "left": 5,
+      "right": 3,
+      "down": 2
+    },
+    "label_duration": {
+      "left": 428.0,
+      "right": 428.0,
+      "down": 141.0
+    }
+  },
+  {
+    "video": "person_08_night_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 71,
+    "total_duration": 2902.0,
+    "imbalance_ratio_max_min": 2.4,
+    "label_entropy": 1.9314788540886914,
+    "label_count": {
+      "down": 16,
+      "up": 10,
+      "right": 21,
+      "left": 24
+    },
+    "label_duration": {
+      "down": 457.0,
+      "up": 286.0,
+      "right": 1146.0,
+      "left": 1013.0
+    }
+  },
+  {
+    "video": "person_18_night_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 2,
+    "num_segments": 39,
+    "total_duration": 2046.0,
+    "imbalance_ratio_max_min": 2.25,
+    "label_entropy": 0.8904916402194913,
+    "label_count": {
+      "left": 27,
+      "right": 12
+    },
+    "label_duration": {
+      "left": 1270.0,
+      "right": 776.0
+    }
+  },
+  {
+    "video": "person_09_night_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 105,
+    "total_duration": 6251.0,
+    "imbalance_ratio_max_min": 2.2,
+    "label_entropy": 1.9412477117868385,
+    "label_count": {
+      "left": 25,
+      "down": 32,
+      "up": 33,
+      "right": 15
+    },
+    "label_duration": {
+      "left": 1875.0,
+      "down": 1191.0,
+      "up": 1139.0,
+      "right": 2046.0
+    }
+  },
+  {
+    "video": "person_12_night_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 3,
+    "num_segments": 12,
+    "total_duration": 617.0,
+    "imbalance_ratio_max_min": 2.0,
+    "label_entropy": 1.5,
+    "label_count": {
+      "left": 6,
+      "down": 3,
+      "right": 3
+    },
+    "label_duration": {
+      "left": 219.0,
+      "down": 68.0,
+      "right": 330.0
+    }
+  },
+  {
+    "video": "person_19_night_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 42,
+    "total_duration": 3270.0,
+    "imbalance_ratio_max_min": 2.0,
+    "label_entropy": 1.9385400412082456,
+    "label_count": {
+      "left": 16,
+      "down": 9,
+      "up": 8,
+      "right": 9
+    },
+    "label_duration": {
+      "left": 784.0,
+      "down": 834.0,
+      "up": 792.0,
+      "right": 860.0
+    }
+  },
+  {
+    "video": "person_06_day_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 4,
+    "num_segments": 101,
+    "total_duration": 6293.0,
+    "imbalance_ratio_max_min": 1.8421052631578947,
+    "label_entropy": 1.9620079841862406,
+    "label_count": {
+      "right": 35,
+      "down": 24,
+      "up": 23,
+      "left": 19
+    },
+    "label_duration": {
+      "right": 2958.0,
+      "down": 1011.0,
+      "up": 981.0,
+      "left": 1343.0
+    }
+  },
+  {
+    "video": "person_10_night_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 2,
+    "num_segments": 85,
+    "total_duration": 3607.0,
+    "imbalance_ratio_max_min": 1.8333333333333333,
+    "label_entropy": 0.9366673818775626,
+    "label_count": {
+      "right": 30,
+      "left": 55
+    },
+    "label_duration": {
+      "right": 1452.0,
+      "left": 2155.0
+    }
+  },
+  {
+    "video": "person_03_night_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 2,
+    "num_segments": 46,
+    "total_duration": 2791.0,
+    "imbalance_ratio_max_min": 1.5555555555555556,
+    "label_entropy": 0.9656361333706098,
+    "label_count": {
+      "left": 28,
+      "right": 18
+    },
+    "label_duration": {
+      "left": 1374.0,
+      "right": 1417.0
+    }
+  },
+  {
+    "video": "person_03_night_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 2,
+    "num_segments": 54,
+    "total_duration": 2545.0,
+    "imbalance_ratio_max_min": 1.3478260869565217,
+    "label_entropy": 0.9841095278800533,
+    "label_count": {
+      "right": 23,
+      "left": 31
+    },
+    "label_duration": {
+      "right": 1343.0,
+      "left": 1202.0
+    }
+  },
+  {
+    "video": "person_17_day_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 2,
+    "num_segments": 32,
+    "total_duration": 2334.0,
+    "imbalance_ratio_max_min": 1.2857142857142858,
+    "label_entropy": 0.9886994082884974,
+    "label_count": {
+      "right": 18,
+      "left": 14
+    },
+    "label_duration": {
+      "right": 1789.0,
+      "left": 545.0
+    }
+  },
+  {
+    "video": "person_17_day_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 2,
+    "num_segments": 25,
+    "total_duration": 2186.0,
+    "imbalance_ratio_max_min": 1.2727272727272727,
+    "label_entropy": 0.9895875212220557,
+    "label_count": {
+      "left": 11,
+      "right": 14
+    },
+    "label_duration": {
+      "left": 306.0,
+      "right": 1880.0
+    }
+  },
+  {
+    "video": "person_18_day_low_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 2,
+    "num_segments": 55,
+    "total_duration": 3101.0,
+    "imbalance_ratio_max_min": 1.1153846153846154,
+    "label_entropy": 0.9978527766088782,
+    "label_count": {
+      "left": 29,
+      "right": 26
+    },
+    "label_duration": {
+      "left": 972.0,
+      "right": 2129.0
+    }
+  },
+  {
+    "video": "person_12_day_high_h265.mp4",
+    "num_annotators": 3,
+    "num_classes": 2,
+    "num_segments": 6,
+    "total_duration": 500.0,
+    "imbalance_ratio_max_min": 1.0,
+    "label_entropy": 1.0,
+    "label_count": {
+      "right": 3,
+      "left": 3
+    },
+    "label_duration": {
+      "right": 273.0,
+      "left": 227.0
+    }
+  }
+]
