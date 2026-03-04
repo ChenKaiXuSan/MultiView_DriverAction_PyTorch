@@ -59,7 +59,7 @@ data:
 
 model:
   backbone: 3dcnn # choices=[3dcnn, transformer, mamba], help='the backbone of the model'
-  model_class_num: 8 # the class num, left, right, up, down, left_up, left_down, right_up, right_down
+  model_class_num: 4 # 4-class: left(含left_up/left_down), right(含right_up/right_down), up, down
   use_side_heads: True # whether to use side heads for intermediate supervision
   fusion_mode: logit_mean # logit_mean | prob_mean | feature_mean | feature_concat
   modality_fusion: concat # concat | mean (for rgb+kpt)

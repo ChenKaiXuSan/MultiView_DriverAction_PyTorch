@@ -13,7 +13,11 @@ from torch.utils.data import Dataset
 from torchvision.io import read_video
 
 from project.dataloader.prepare_label_dict import prepare_label_dict
-from project.map_config import VideoSample, label_mapping_Dict
+from project.map_config import (
+    VideoSample,
+    label_mapping_Dict,
+    normalize_label_to_4_class,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -544,6 +548,8 @@ class LabeledVideoDataset(Dataset):
             s, e, lb = int(seg["start"]), int(seg["end"]), str(seg["label"])
             if e <= s:
                 continue
+
+            lb = normalize_label_to_4_class(lb)
 
             seg_front = self._apply_transform(front_view[s:e])
             seg_left = self._apply_transform(left_view[s:e])

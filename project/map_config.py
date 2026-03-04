@@ -29,12 +29,27 @@ label_mapping_Dict: Dict = {
     1: "right",
     2: "down",
     3: "up",
-    4: "right_up",
-    5: "right_down",
-    6: "left_down",
-    7: "left_up",
-    # 8: "front",
 }
+
+# Original 8-class labels -> merged 4-class labels
+label_mapping_8_to_4_Dict: Dict[str, str] = {
+    "left": "left",
+    "left_up": "left",
+    "left_down": "left",
+    "right": "right",
+    "right_up": "right",
+    "right_down": "right",
+    "up": "up",
+    "down": "down",
+}
+
+
+def normalize_label_to_4_class(label: str) -> str:
+    """Map raw label name to 4-class label name.
+
+    Unknown labels are returned as-is so caller can handle them safely.
+    """
+    return label_mapping_8_to_4_Dict.get(str(label), str(label))
 
 environment_mapping_Dict: Dict = {
     0: "夜多い",  # night_high

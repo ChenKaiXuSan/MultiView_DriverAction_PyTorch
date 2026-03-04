@@ -33,9 +33,11 @@ Date      	By	Comments
 
 import logging
 from pathlib import Path
+import ast
 import matplotlib.pyplot as plt
 import seaborn as sns
 import torch
+from project.map_config import label_mapping_Dict
 
 from torchmetrics.classification import (
     MulticlassAccuracy,
@@ -49,11 +51,85 @@ from torchmetrics.classification import (
 logger = logging.getLogger(__name__)
 
 
+def _get_class_axis_labels(num_class: int) -> list[str]:
+    """Return stable class labels for outputs (metrics text and confusion matrix)."""
+    if num_class == 4:
+        return ["left", "right", "down", "up"]
+
+    labels = [
+        label_mapping_Dict[idx]
+        for idx in sorted(label_mapping_Dict.keys())
+        if idx < num_class
+    ]
+    if len(labels) == num_class:
+        return labels
+
+    return [str(i) for i in range(num_class)]
+
+
+def load_class_order_from_metrics(save_root: str | Path) -> list[str] | None:
+    """Load class order from metrics.txt if present.
+
+    Args:
+        save_root: training log root directory (the same root passed to save_helper).
+
+    Returns:
+        Parsed class order list if found, otherwise None.
+    """
+    metrics_path = Path(save_root) / "metrics.txt"
+    if not metrics_path.exists():
+        return None
+
+    lines = metrics_path.read_text(encoding="utf-8").splitlines()
+    for line in reversed(lines):
+        if line.startswith("class_order:"):
+            value = line.split(":", 1)[1].strip()
+            try:
+                parsed = ast.literal_eval(value)
+                if isinstance(parsed, list) and all(
+                    isinstance(item, str) for item in parsed
+                ):
+                    return parsed
+            except Exception:
+                logger.warning("Failed to parse class_order from metrics.txt: %s", value)
+                return None
+
+    return None
+
+
+def load_saved_inference_with_class_order(
+    save_root: str | Path,
+    fold: str,
+) -> tuple[torch.Tensor, torch.Tensor, list[str] | None]:
+    """Load saved prediction/label tensors together with class order.
+
+    Args:
+        save_root: training log root directory (the same root passed to save_helper).
+        fold: fold name used in save_helper (e.g., "0", "fold0", etc.).
+
+    Returns:
+        (pred_tensor, label_tensor, class_order)
+    """
+    pred_path = Path(save_root) / "best_preds" / f"{fold}_pred.pt"
+    label_path = Path(save_root) / "best_preds" / f"{fold}_label.pt"
+
+    if not pred_path.exists():
+        raise FileNotFoundError(f"Prediction file not found: {pred_path}")
+    if not label_path.exists():
+        raise FileNotFoundError(f"Label file not found: {label_path}")
+
+    pred_tensor = torch.load(pred_path, map_location="cpu")
+    label_tensor = torch.load(label_path, map_location="cpu")
+    class_order = load_class_order_from_metrics(save_root)
+
+    return pred_tensor, label_tensor, class_order
+
+
 def save_helper(
     all_pred: list[torch.Tensor],
     all_label: list[torch.Tensor],
     fold: str,
-    save_path: str,
+    save_path: str | Path,
     num_class: int,
 ):
     """save the inference results and metrics.
@@ -67,21 +143,19 @@ def save_helper(
     """
 
     # check device 
-    if all_pred[0].is_cuda:
-        all_pred = [pred.cpu() for pred in all_pred]
-    if all_label[0].is_cuda:
-        all_label = [label.cpu() for label in all_label]
-        
-    all_pred: torch.Tensor = torch.cat(all_pred, dim=0)
-    all_label: torch.Tensor = torch.cat(all_label, dim=0)
+    pred_list = [pred.cpu() if pred.is_cuda else pred for pred in all_pred]
+    label_list = [label.cpu() if label.is_cuda else label for label in all_label]
 
-    save_inference(all_pred, all_label, fold, save_path)
-    save_metrics(all_pred, all_label, fold, save_path, num_class)
-    save_CM(all_pred, all_label, save_path, num_class, fold)
+    all_pred_tensor = torch.cat(pred_list, dim=0)
+    all_label_tensor = torch.cat(label_list, dim=0)
+
+    save_inference(all_pred_tensor, all_label_tensor, fold, save_path)
+    save_metrics(all_pred_tensor, all_label_tensor, fold, save_path, num_class)
+    save_CM(all_pred_tensor, all_label_tensor, save_path, num_class, fold)
 
 
 def save_inference(
-    all_pred: torch.Tensor, all_label: torch.Tensor, fold: str, save_path: str
+    all_pred: torch.Tensor, all_label: torch.Tensor, fold: str, save_path: str | Path
 ):
     """save the inference results to .pt file.
 
@@ -93,28 +167,28 @@ def save_inference(
     """
 
     # save the results
-    save_path = Path(save_path) / "best_preds"
+    save_dir = Path(save_path) / "best_preds"
 
-    if save_path.exists() is False:
-        save_path.mkdir(parents=True)
+    if save_dir.exists() is False:
+        save_dir.mkdir(parents=True)
 
     torch.save(
         all_pred,
-        save_path / f"{fold}_pred.pt",
+        save_dir / f"{fold}_pred.pt",
     )
     torch.save(
         all_label,
-        save_path / f"{fold}_label.pt",
+        save_dir / f"{fold}_label.pt",
     )
 
-    logger.info(f"save the pred and label into {save_path} / {fold}")
+    logger.info(f"save the pred and label into {save_dir} / {fold}")
 
 
 def save_metrics(
     all_pred: torch.Tensor,
     all_label: torch.Tensor,
     fold: str,
-    save_path: str,
+    save_path: str | Path,
     num_class: int,
 ):
     """save the metrics to .txt file.
@@ -127,7 +201,7 @@ def save_metrics(
         num_class (int): number of class.
     """
 
-    save_path = Path(save_path) / "metrics.txt"
+    metrics_path = Path(save_path) / "metrics.txt"
 
     _accuracy = MulticlassAccuracy(num_class)
     _precision = MulticlassPrecision(num_class)
@@ -135,6 +209,7 @@ def save_metrics(
     _f1_score = MulticlassF1Score(num_class)
     _auroc = MulticlassAUROC(num_class)
     _confusion_matrix = MulticlassConfusionMatrix(num_class, normalize="true")
+    class_labels = _get_class_axis_labels(num_class)
 
     # For AUROC, use probabilities (all_pred)
     # For other metrics, use class indices (argmax of all_pred)
@@ -149,8 +224,9 @@ def save_metrics(
     logger.info("confusion_matrix: %s" % _confusion_matrix(pred_classes, all_label))
     logger.info("#" * 100)
 
-    with open(save_path, "a") as f:
+    with open(metrics_path, "a") as f:
         f.writelines(f"Fold {fold}\n")
+        f.writelines(f"class_order: {class_labels}\n")
         f.writelines(f"accuracy: {_accuracy(pred_classes, all_label)}\n")
         f.writelines(f"precision: {_precision(pred_classes, all_label)}\n")
         f.writelines(f"recall: {_recall(pred_classes, all_label)}\n")
@@ -164,7 +240,7 @@ def save_metrics(
 def save_CM(
     all_pred: torch.Tensor,
     all_label: torch.Tensor,
-    save_path: str,
+    save_path: str | Path,
     num_class: int,
     fold: str,
 ):
@@ -178,10 +254,10 @@ def save_CM(
         fold (str): the fold number.
     """
 
-    save_path = Path(save_path) / "CM"
+    save_dir = Path(save_path) / "CM"
 
-    if save_path.exists() is False:
-        save_path.mkdir(parents=True)
+    if save_dir.exists() is False:
+        save_dir.mkdir(parents=True)
 
     # Convert probabilities to class indices if needed
     pred_classes = torch.argmax(all_pred, dim=1) if all_pred.dim() > 1 else all_pred
@@ -195,7 +271,7 @@ def save_CM(
 
     confusion_matrix_data = _confusion_matrix(pred_classes, all_label).cpu().numpy() * 100
 
-    axis_labels = list(range(num_class))
+    axis_labels = _get_class_axis_labels(num_class)
 
     plt.figure(figsize=(8, 6))
     sns.heatmap(
@@ -213,10 +289,10 @@ def save_CM(
     plt.xlabel("Predicted Label", fontsize=30)
 
     plt.savefig(
-        save_path / f"fold{fold}_confusion_matrix.png", dpi=300, bbox_inches="tight"
+        save_dir / f"fold{fold}_confusion_matrix.png", dpi=300, bbox_inches="tight"
     )
 
     logger.info(
-        f"save the confusion matrix into {save_path}/fold{fold}_confusion_matrix.png"
+        f"save the confusion matrix into {save_dir}/fold{fold}_confusion_matrix.png"
     )
 
