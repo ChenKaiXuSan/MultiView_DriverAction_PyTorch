@@ -31,7 +31,7 @@ index_mapping=${root_path}/index_mapping
 sam3d_results_path=/work/SKIING/chenkaixu/data/drive/sam3d_body_results_right
 
 num_workers=16
-batch_size=64
+batch_size=32
 uniform_temporal_subsample_num=16
 max_epochs=50
 devices=1

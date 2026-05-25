@@ -165,10 +165,6 @@ def train_one_fold(
 def init_params(config: DictConfig) -> None:
     fold_dataset_idx = load_fold_dataset_idx_from_json(config)
 
-    logger.info("%s", "#" * 50)
-    logger.info("Start training selected fold")
-    logger.info("%s", "#" * 50)
-
     for fold, dataset_value in fold_dataset_idx.items():
         logger.info("%s", "#" * 50)
         logger.info("Start train fold: %s", fold)
