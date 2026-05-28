@@ -66,38 +66,30 @@ camera_position:
   baseline: 0.70 # left–right 的水平间距 (m)
 
 triangulation:
-  # SAM3D pred_keypoints_2d are in the original projection coordinate system,
-  # not in the saved 224x332 debug-frame coordinate system.
-  keypoint_image_size: null # set [width, height] only if you want boundary filtering
-  resize_intrinsics: false
-  intrinsics_image_size: [2304, 1296] # used only when resize_intrinsics=true
-  resize_mode: letterbox
+  # SAM3D output["frame"] coordinate size where pred_keypoints_2d is defined.
+  keypoint_image_size:
+    front: [332, 224]
+    left: [330, 224]
+    right: [332, 224]
+  # Target video coordinate size for both triangulation keypoints and scaled K.
+  # This matches paths.video_path=/workspace/data/videos_split.
+  triangulation_image_size:
+    front: [332, 224]
+    left: [330, 224]
+    right: [332, 224]
+  resize_intrinsics: true
+  intrinsics_image_size: [2304, 1296] # calibration K coordinate size
+  intrinsics_resize_mode: letterbox
+  keypoint_to_triangulation_resize_mode: non_uniform
   valid_margin_px: 8.0
-  # Rough camera layout is approximate, so keep this consistent with mesh triangulation.
-  max_reproj_error_px: 800.0
+  # SAM3D pred_keypoints_2d are projected joints and may fall outside the video frame.
+  filter_keypoints_by_image_bounds: true
+  triangulation_strategy: best_subset
+  min_views: 2
+  # Reject unstable triangulated points after choosing the best visible-view subset.
+  max_reproj_error_px: 40.0
 
-
-COCO_SKELETON:
-  - (0, 1),
-  - (0, 2),
-  - (1, 3),
-  - (2, 4),
-  - (5, 7),
-  - (7, 9),
-  - (6, 8),
-  - (8, 10),
-  - (5, 6),
-  - (5, 11),
-  - (6, 12),
-  - (11, 12),
-  - (11, 13),
-  - (13, 15),
-  - (12, 14),
-  - (14, 16),
-
-debug: false
-
-vis:
-  save_mesh_frame: true
-  save_mesh_3d: true
-  merge_3d_frames_to_video: true
+processing:
+  # Number of person/env sequences processed concurrently.
+  # Use 1 for deterministic single-thread execution.
+  num_workers: 32

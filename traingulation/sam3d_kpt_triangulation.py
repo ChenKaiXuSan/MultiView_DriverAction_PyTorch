@@ -7,6 +7,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import itertools
 import math
 import re
 from pathlib import Path
@@ -15,6 +16,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 import numpy as np
 import yaml
 import concurrent.futures
+from tqdm import tqdm
 
 
 LOGGER = logging.getLogger("sam3d_kpt_triangulation")
@@ -34,8 +36,21 @@ def reshape_k(raw: Iterable[float]) -> np.ndarray:
     return np.asarray(list(raw), dtype=np.float64).reshape(3, 3)
 
 
-def resize_k(
-    k: np.ndarray,
+def _size_tuple(raw: Iterable[int]) -> Tuple[int, int]:
+    size = tuple(int(x) for x in raw)
+    if len(size) != 2:
+        raise ValueError(f"Expected [width, height], got {raw}")
+    return size
+
+
+def view_size_maps(raw: Any) -> Dict[str, Tuple[int, int]]:
+    if isinstance(raw, dict):
+        return {view: _size_tuple(raw[view]) for view in VIEW_NAMES}
+    size = _size_tuple(raw)
+    return {view: size for view in VIEW_NAMES}
+
+
+def resize_transform(
     old_size: Tuple[int, int],
     new_size: Tuple[int, int],
     mode: str = "letterbox",
@@ -55,7 +70,33 @@ def resize_k(
         tx, ty = -(s * old_w - new_w) / 2.0, -(s * old_h - new_h) / 2.0
     else:
         raise ValueError(f"Unknown resize mode: {mode}")
-    return np.array([[sx, 0.0, tx], [0.0, sy, ty], [0.0, 0.0, 1.0]]) @ k
+    return np.array([[sx, 0.0, tx], [0.0, sy, ty], [0.0, 0.0, 1.0]], dtype=np.float64)
+
+
+def resize_k(
+    k: np.ndarray,
+    old_size: Tuple[int, int],
+    new_size: Tuple[int, int],
+    mode: str = "letterbox",
+) -> np.ndarray:
+    return resize_transform(old_size, new_size, mode) @ k
+
+
+def transform_points_between_sizes(
+    points: np.ndarray,
+    from_size: Tuple[int, int],
+    to_size: Tuple[int, int],
+    mode: str = "letterbox",
+) -> np.ndarray:
+    if from_size == to_size:
+        return points.astype(np.float32, copy=True)
+    to_from = resize_transform(to_size, from_size, mode)
+    from_to = np.linalg.inv(to_from)
+    points64 = np.asarray(points, dtype=np.float64)
+    ones = np.ones((points64.shape[0], 1), dtype=np.float64)
+    points_h = np.concatenate([points64[:, :2], ones], axis=1)
+    transformed = (from_to @ points_h.T).T[:, :2]
+    return transformed.astype(np.float32)
 
 
 def normalize(v: np.ndarray, eps: float = 1e-12) -> np.ndarray:
@@ -120,10 +161,14 @@ def build_camera_maps(config: Dict[str, Any]) -> Tuple[Dict[str, np.ndarray], Di
 
     tri_cfg = config.get("triangulation", {})
     if bool(tri_cfg.get("resize_intrinsics", True)):
-        old_size = tuple(int(x) for x in tri_cfg.get("intrinsics_image_size", [2304, 1296]))
-        new_size = tuple(int(x) for x in tri_cfg.get("keypoint_image_size", [332, 224]))
-        resize_mode = str(tri_cfg.get("resize_mode", "letterbox"))
-        k_maps = {view: resize_k(k, old_size, new_size, resize_mode) for view, k in k_maps.items()}
+        old_size = _size_tuple(tri_cfg.get("intrinsics_image_size", [2304, 1296]))
+        target_size_raw = tri_cfg.get("triangulation_image_size", tri_cfg.get("keypoint_image_size", [332, 224]))
+        new_size_maps = view_size_maps(target_size_raw)
+        resize_mode = str(tri_cfg.get("intrinsics_resize_mode", tri_cfg.get("resize_mode", "letterbox")))
+        k_maps = {
+            view: resize_k(k, old_size, new_size_maps[view], resize_mode)
+            for view, k in k_maps.items()
+        }
 
     rt_maps: Dict[str, Dict[str, np.ndarray]] = {}
     for view, center in centers.items():
@@ -178,10 +223,15 @@ def collect_frame_map(view_dir: Path) -> Dict[str, Path]:
     return {frame_id(path): path for path in sorted(view_dir.glob("*_sam3d_body.npz"))}
 
 
-def valid_observation(pt: np.ndarray, image_size: Optional[Tuple[int, int]], margin: float) -> bool:
+def valid_observation(
+    pt: np.ndarray,
+    image_size: Optional[Tuple[int, int]],
+    margin: float,
+    filter_bounds: bool,
+) -> bool:
     if not np.all(np.isfinite(pt[:2])):
         return False
-    if image_size is None:
+    if not filter_bounds or image_size is None:
         return True
     w, h = image_size
     x, y = float(pt[0]), float(pt[1])
@@ -192,9 +242,12 @@ def triangulate_frame(
     points_by_view: Dict[str, np.ndarray],
     projection_maps: Dict[str, np.ndarray],
     rt_maps: Dict[str, Dict[str, np.ndarray]],
-    image_size: Optional[Tuple[int, int]],
+    image_sizes: Optional[Dict[str, Tuple[int, int]]],
     margin_px: float,
+    filter_bounds: bool,
     max_reproj_error_px: float,
+    triangulation_strategy: str = "all_visible",
+    min_views: int = 2,
 ) -> Tuple[
     np.ndarray,
     np.ndarray,
@@ -224,24 +277,59 @@ def triangulate_frame(
         used_xs: List[np.ndarray] = []
         for view in VIEW_NAMES:
             pt = points_by_view[view][idx]
-            if valid_observation(pt, image_size=image_size, margin=margin_px):
+            image_size = image_sizes.get(view) if image_sizes else None
+            if valid_observation(
+                pt,
+                image_size=image_size,
+                margin=margin_px,
+                filter_bounds=filter_bounds,
+            ):
                 used_views.append(view)
                 used_ps.append(projection_maps[view])
                 used_xs.append(pt.astype(np.float64))
         if len(used_views) < 2:
             continue
 
-        x_world = triangulate_point(used_ps, used_xs)
-        if not np.all(np.isfinite(x_world)):
-            continue
+        candidates = []
+        if triangulation_strategy == "best_subset":
+            min_subset = max(2, int(min_views))
+            for n_views in range(min_subset, len(used_views) + 1):
+                for combo in itertools.combinations(range(len(used_views)), n_views):
+                    combo_views = [used_views[i] for i in combo]
+                    combo_ps = [used_ps[i] for i in combo]
+                    combo_xs = [used_xs[i] for i in combo]
+                    x_candidate = triangulate_point(combo_ps, combo_xs)
+                    if not np.all(np.isfinite(x_candidate)):
+                        continue
+                    combo_depths = [
+                        float((rt_maps[v]["R"] @ x_candidate + rt_maps[v]["t"])[2])
+                        for v in combo_views
+                    ]
+                    if not all(depth > 0.0 for depth in combo_depths):
+                        continue
+                    combo_errs = [
+                        np.linalg.norm(project(p, x_candidate) - x)
+                        for p, x in zip(combo_ps, combo_xs)
+                    ]
+                    candidates.append((float(np.mean(combo_errs)), -n_views, combo_views, combo_ps, combo_xs, x_candidate))
+        elif triangulation_strategy == "all_visible":
+            x_candidate = triangulate_point(used_ps, used_xs)
+            if np.all(np.isfinite(x_candidate)):
+                depths = [float((rt_maps[v]["R"] @ x_candidate + rt_maps[v]["t"])[2]) for v in used_views]
+                if all(depth > 0.0 for depth in depths):
+                    errs = [np.linalg.norm(project(p, x_candidate) - x) for p, x in zip(used_ps, used_xs)]
+                    candidates.append((float(np.mean(errs)), -len(used_views), used_views, used_ps, used_xs, x_candidate))
+        else:
+            raise ValueError(f"Unknown triangulation_strategy: {triangulation_strategy}")
 
-        depths = [float((rt_maps[v]["R"] @ x_world + rt_maps[v]["t"])[2]) for v in used_views]
-        if not any(depth > 0.0 for depth in depths):
+        if not candidates:
             continue
-        errs = [np.linalg.norm(project(p, x_world) - x) for p, x in zip(used_ps, used_xs)]
-        mean_err = float(np.mean(errs))
+        mean_err, _, used_views, used_ps, used_xs, x_world = min(candidates, key=lambda item: (item[0], item[1]))
         if mean_err > max_reproj_error_px:
             continue
+
+        errs = [np.linalg.norm(project(p, x_world) - x) for p, x in zip(used_ps, used_xs)]
+        depths = [float((rt_maps[v]["R"] @ x_world + rt_maps[v]["t"])[2]) for v in used_views]
 
         # fill per-view reproj errors and depths into arrays (match VIEW_NAMES order)
         for vi, view in enumerate(VIEW_NAMES):
@@ -304,12 +392,20 @@ def process_sequence(
     rt_maps: Dict[str, Dict[str, np.ndarray]],
     config: Dict[str, Any],
     max_frames: Optional[int] = None,
+    show_progress: bool = False,
+    position: int = 0,
 ) -> Dict[str, Any]:
     tri_cfg = config.get("triangulation", {})
-    image_size_raw = tri_cfg.get("keypoint_image_size")
-    image_size = tuple(int(x) for x in image_size_raw) if image_size_raw else None
+    keypoint_size_raw = tri_cfg.get("keypoint_image_size")
+    target_size_raw = tri_cfg.get("triangulation_image_size", keypoint_size_raw)
+    keypoint_sizes = view_size_maps(keypoint_size_raw) if keypoint_size_raw else None
+    image_sizes = view_size_maps(target_size_raw) if target_size_raw else None
+    keypoint_to_target_mode = str(tri_cfg.get("keypoint_to_triangulation_resize_mode", tri_cfg.get("resize_mode", "letterbox")))
     margin_px = float(tri_cfg.get("valid_margin_px", 8.0))
+    filter_bounds = bool(tri_cfg.get("filter_keypoints_by_image_bounds", False))
     max_reproj_error_px = float(tri_cfg.get("max_reproj_error_px", 25.0))
+    triangulation_strategy = str(tri_cfg.get("triangulation_strategy", "all_visible"))
+    min_views = int(tri_cfg.get("min_views", 2))
 
     sequence_dir = input_root / person_id / env_name
     view_dirs = {view: sequence_dir / view for view in VIEW_NAMES}
@@ -340,10 +436,30 @@ def process_sequence(
     all_depth_var: List[np.ndarray] = []
     source_frames: List[str] = []
 
-    for frame_name in common_ids:
-        points_by_view = {
+    frame_iter = tqdm(
+        common_ids,
+        desc=f"{person_id}/{env_name}",
+        unit="frame",
+        leave=False,
+        position=position,
+        disable=not show_progress,
+    )
+    for frame_name in frame_iter:
+        sam3d_points_by_view = {
             view: load_sam3d_npz(frame_maps[view][frame_name])[0] for view in VIEW_NAMES
         }
+        if keypoint_sizes and image_sizes:
+            points_by_view = {
+                view: transform_points_between_sizes(
+                    sam3d_points_by_view[view],
+                    keypoint_sizes[view],
+                    image_sizes[view],
+                    keypoint_to_target_mode,
+                )
+                for view in VIEW_NAMES
+            }
+        else:
+            points_by_view = sam3d_points_by_view
         (
             keypoints_3d,
             valid_mask,
@@ -358,9 +474,12 @@ def process_sequence(
             points_by_view,
             projection_maps,
             rt_maps,
-            image_size=image_size,
+            image_sizes=image_sizes,
             margin_px=margin_px,
+            filter_bounds=filter_bounds,
             max_reproj_error_px=max_reproj_error_px,
+            triangulation_strategy=triangulation_strategy,
+            min_views=min_views,
         )
 
         frame_file = frame_out_dir / f"{frame_name}_triangulated_kpt.npz"
@@ -378,11 +497,10 @@ def process_sequence(
             pred_keypoints_2d_front=points_by_view["front"],
             pred_keypoints_2d_left=points_by_view["left"],
             pred_keypoints_2d_right=points_by_view["right"],
+            sam3d_pred_keypoints_2d_front=sam3d_points_by_view["front"],
+            sam3d_pred_keypoints_2d_left=sam3d_points_by_view["left"],
+            sam3d_pred_keypoints_2d_right=sam3d_points_by_view["right"],
         )
-        try:
-            print(f"已保存合成帧文件: {frame_file}")
-        except Exception:
-            pass
         all_kpts.append(keypoints_3d)
         all_masks.append(valid_mask)
         all_errors.append(reproj_error)
@@ -462,11 +580,6 @@ def process_sequence(
                     _maybe_float(loo_max_seq[fi, kp]),
                     _maybe_float(depth_var_seq[fi, kp]),
                 ])
-    try:
-        print(f"已保存序列质量 CSV: {csv_file}")
-    except Exception:
-        pass
-
     valid_ratio = float(valid_mask_seq.mean()) if valid_mask_seq.size else 0.0
     mean_reproj = float(np.nanmean(reproj_error_seq)) if np.isfinite(reproj_error_seq).any() else float("nan")
     summary = {
@@ -480,11 +593,6 @@ def process_sequence(
     }
     with open(out_dir / "summary.json", "w", encoding="utf-8") as f:
         json.dump(summary, f, ensure_ascii=False, indent=2)
-    try:
-        print("合成摘要:")
-        print(json.dumps(summary, ensure_ascii=False, indent=2))
-    except Exception:
-        pass
     return summary
 
 
@@ -500,7 +608,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--config",
         type=Path,
-        default=Path(__file__).with_name("mesh_triangulation.yaml"),
+        default=Path(__file__).with_name("triangulation.yaml"),
         help="Triangulation yaml config.",
     )
     parser.add_argument("--input-root", type=Path, default=None, help="SAM3D body result root.")
@@ -509,6 +617,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--env-name", type=str, default=None, help="Process one env folder, e.g. 昼多い.")
     parser.add_argument("--debug-one", action="store_true", help="Process the first available sequence only.")
     parser.add_argument("--max-frames", type=int, default=None, help="Limit frames per sequence for smoke tests.")
+    parser.add_argument("--num-workers", type=int, default=None, help="Override processing.num_workers.")
+    parser.add_argument("--no-progress", action="store_true", help="Disable tqdm progress bars.")
     return parser.parse_args()
 
 
@@ -523,89 +633,85 @@ def main() -> None:
     output_root.mkdir(parents=True, exist_ok=True)
 
     k_maps, rt_maps = build_camera_maps(config)
-    # build per-person environment list (preserve iter_sequences order)
+
     if args.person_id or args.env_name:
         if not (args.person_id and args.env_name):
             raise ValueError("--person-id and --env-name must be used together.")
-        persons_to_process = {args.person_id: [args.env_name]}
+        seqs_to_process = [(args.person_id, args.env_name)]
     else:
-        seqs = list(iter_sequences(input_root))
+        seqs_to_process = list(iter_sequences(input_root))
         if args.debug_one:
-            seqs = seqs[:1]
-        persons_to_process: Dict[str, List[str]] = {}
-        for pid, env in seqs:
-            persons_to_process.setdefault(pid, []).append(env)
+            seqs_to_process = seqs_to_process[:1]
 
-    if not persons_to_process:
+    if not seqs_to_process:
         raise RuntimeError(f"No complete front/left/right SAM3D sequences found in {input_root}")
 
+    processing_cfg = config.get("processing", {})
+    num_workers = args.num_workers if args.num_workers is not None else processing_cfg.get("num_workers", 4)
+    num_workers = max(1, int(num_workers))
+    num_workers = min(num_workers, len(seqs_to_process))
+
+    show_progress = bool(config.get("processing", {}).get("show_progress", True)) and not args.no_progress
+
+    if show_progress:
+        tqdm.write(f"Processing {len(seqs_to_process)} sequence(s) with {num_workers} worker(s)")
+    else:
+        LOGGER.info("Processing %d sequence(s) with %d worker(s)", len(seqs_to_process), num_workers)
     summaries = []
-    # process persons in order; for each person run up to 4 envs in parallel
-    for person_id in persons_to_process:
-        envs = persons_to_process[person_id]
-        LOGGER.info("Processing person %s with %d env(s)", person_id, len(envs))
-        if len(envs) <= 1:
-            for env_name in envs:
-                LOGGER.info("Processing %s/%s", person_id, env_name)
-                summary = process_sequence(
-                    input_root,
-                    output_root,
-                    person_id,
-                    env_name,
-                    k_maps,
-                    rt_maps,
-                    config,
-                    max_frames=args.max_frames,
-                )
-                summaries.append(summary)
-                LOGGER.info(
-                    "Done %s/%s: frames=%d valid=%.3f mean_rpe=%.3fpx",
-                    person_id,
-                    env_name,
-                    summary["frames"],
-                    summary["valid_ratio"],
-                    summary["mean_reproj_error_px"],
-                )
+
+    def run_one(seq: Tuple[str, str], position: int = 1) -> Dict[str, Any]:
+        person_id, env_name = seq
+        if not show_progress:
+            LOGGER.info("Processing %s/%s", person_id, env_name)
+        summary = process_sequence(
+            input_root,
+            output_root,
+            person_id,
+            env_name,
+            k_maps,
+            rt_maps,
+            config,
+            max_frames=args.max_frames,
+            show_progress=show_progress and num_workers == 1,
+            position=position,
+        )
+        done_msg = (
+            f"Done {person_id}/{env_name}: frames={summary['frames']} "
+            f"valid={summary['valid_ratio']:.3f} "
+            f"mean_rpe={summary['mean_reproj_error_px']:.3f}px"
+        )
+        if show_progress:
+            tqdm.write(done_msg)
         else:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=4) as ex:
-                future_to_env = {
-                    ex.submit(
-                        process_sequence,
-                        input_root,
-                        output_root,
-                        person_id,
-                        env_name,
-                        k_maps,
-                        rt_maps,
-                        config,
-                        args.max_frames,
-                    ): env_name
-                    for env_name in envs
-                }
-                for fut in concurrent.futures.as_completed(future_to_env):
-                    env_name = future_to_env[fut]
-                    try:
-                        summary = fut.result()
-                        summaries.append(summary)
-                        LOGGER.info(
-                            "Done %s/%s: frames=%d valid=%.3f mean_rpe=%.3fpx",
-                            person_id,
-                            env_name,
-                            summary["frames"],
-                            summary["valid_ratio"],
-                            summary["mean_reproj_error_px"],
-                        )
-                    except Exception:
-                        LOGGER.exception("Failed processing %s/%s", person_id, env_name)
+            LOGGER.info(done_msg)
+        return summary
+
+    if num_workers == 1:
+        for seq in seqs_to_process:
+            summaries.append(run_one(seq, position=0))
+    else:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=num_workers) as ex:
+            future_to_seq = {ex.submit(run_one, seq, 1): seq for seq in seqs_to_process}
+            completed = concurrent.futures.as_completed(future_to_seq)
+            completed = tqdm(
+                completed,
+                total=len(future_to_seq),
+                desc="Sequences",
+                unit="seq",
+                disable=not show_progress,
+            )
+            for fut in completed:
+                person_id, env_name = future_to_seq[fut]
+                try:
+                    summaries.append(fut.result())
+                except Exception:
+                    LOGGER.exception("Failed processing %s/%s", person_id, env_name)
+
+    summaries.sort(key=lambda item: (str(item.get("person_id", "")), str(item.get("env_name", ""))))
 
     with open(output_root / "summary.json", "w", encoding="utf-8") as f:
         json.dump(summaries, f, ensure_ascii=False, indent=2)
     LOGGER.info("Saved global summary to %s", output_root / "summary.json")
-    try:
-        print("已保存全局合成摘要:")
-        print(json.dumps(summaries, ensure_ascii=False, indent=2))
-    except Exception:
-        pass
 
 
 if __name__ == "__main__":
