@@ -30,24 +30,30 @@ import logging
 from typing import Dict, List, Tuple, Optional
 
 import hydra
-from omegaconf import DictConfig
+import torch
+from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.loggers import CSVLogger
 from pytorch_lightning.callbacks import DeviceStatsMonitor
 
 # DataModule
-from project.dataloader.data_loader import DriverDataModule
+from dataloader.data_loader import DriverDataModule
 
 # Trainers (LightningModules)
-from project.trainer.baseline.train_3dcnn import Res3DCNNTrainer
-from project.trainer.mid.train_pose_attn import PoseAttnTrainer
-from project.trainer.early.train_early_fusion import EarlyFusion3DCNNTrainer
-from project.trainer.late.train_late_fusion import LateFusion3DCNNTrainer
+from trainer.baseline.train_3dcnn import Res3DCNNTrainer
+from trainer.mid.train_pose_attn import PoseAttnTrainer
+from trainer.early.train_early_fusion import EarlyFusion3DCNNTrainer
+from trainer.late.train_late_fusion import LateFusion3DCNNTrainer
 
 # K-fold splitter
-from project.cross_validation import DefineCrossValidation
+from cross_validation import DefineCrossValidation
 
 logger = logging.getLogger(__name__)
+
+
+def _cfg_get(config: DictConfig, path: str, default=None):
+    value = OmegaConf.select(config, path)
+    return default if value is None else value
 
 
 def _select_module(hparams: DictConfig):
@@ -215,10 +221,13 @@ def _eval_one_fold(hparams: DictConfig, dataset_idx, fold: int) -> Dict[str, flo
 
     # module and data
     module = _select_module(hparams)
-    datamodule = WalkDataModule(hparams, dataset_idx)
+    datamodule = DriverDataModule(hparams, dataset_idx)
 
     # locate ckpt
-    ckpt = _find_best_ckpt_for_fold(hparams.eval.input_path, fold)
+    ckpt_root = _cfg_get(hparams, "eval.input_path", _cfg_get(hparams, "log_path"))
+    if ckpt_root is None:
+        raise ValueError("Missing eval.input_path or log_path for checkpoint lookup.")
+    ckpt = _find_best_ckpt_for_fold(str(ckpt_root), fold)
     if ckpt:
         logger.info(f"[fold {fold}] Using checkpoint: {ckpt}")
     else:
@@ -249,24 +258,34 @@ def _eval_one_fold(hparams: DictConfig, dataset_idx, fold: int) -> Dict[str, flo
 @hydra.main(
     version_base=None,
     config_path="../configs",
-    config_name="eval.yaml",
+    config_name="config.yaml",
 )
 def main(config: DictConfig):
     """
     K-fold evaluation:
-    - Split folds using DefineCrossValidation(config)()
-    - For each fold, load best ckpt if available and run trainer.test
+    - Load fold mappings using DefineCrossValidation(config)()
+    - Run evaluation for the requested eval.fold, or all folds when eval.fold is unset/all
+    - For each selected fold, load best ckpt if available and run trainer.test
     - Save per-fold results and aggregate mean/std to log_path
     """
     # Prepare folds
     fold_dataset_idx = DefineCrossValidation(config)()
+    eval_fold = _cfg_get(config, "eval.fold")
+    if eval_fold is None or str(eval_fold).lower() == "all":
+        target_folds = sorted(fold_dataset_idx.keys())
+    else:
+        target_folds = [int(eval_fold)]
+        if target_folds[0] not in fold_dataset_idx:
+            raise KeyError(f"Requested eval.fold={target_folds[0]} not found in mapping.")
+
     logger.info("#" * 60)
-    logger.info("Start EVALUATION over all folds")
+    logger.info("Start EVALUATION over fold(s): %s", target_folds)
     logger.info("#" * 60)
 
     per_fold_results: Dict[str, Dict[str, float]] = {}
 
-    for fold, dataset_value in fold_dataset_idx.items():
+    for fold in target_folds:
+        dataset_value = fold_dataset_idx[fold]
         logger.info("#" * 60)
         logger.info(f"Evaluating fold: {fold}")
         logger.info("#" * 60)
@@ -295,12 +314,15 @@ def main(config: DictConfig):
     logger.info("#" * 60)
 
     # Save
-    out_dir = config.eval.log_path
+    out_dir = _cfg_get(config, "eval.log_path", _cfg_get(config, "log_path"))
+    if out_dir is None:
+        raise ValueError("Missing eval.log_path or log_path for evaluation outputs.")
     json_path, csv_path = _save_outputs(out_dir, per_fold_results, aggregate_stats)
     logger.info(f"Saved evaluation results:\n  JSON: {json_path}\n  CSV : {csv_path}")
     logger.info("Finished EVALUATION over all folds.")
 
 
 if __name__ == "__main__":
+    torch.set_float32_matmul_precision("high")
     os.environ["HYDRA_FULL_ERROR"] = "1"
     main()

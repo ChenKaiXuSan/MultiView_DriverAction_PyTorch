@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # === 1. 参数设定 ===
-PROJECT_NAME="SSR"                 # 你的项目名（必须改）
+PROJECT_NAME="SKIING"                 # 你的项目名（必须改）
 TIME="01:00:00"                        # 申请时长（最大 01:00:00）
 
 # === 2. 启动 debug 节点会话 ===

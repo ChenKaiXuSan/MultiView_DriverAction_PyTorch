@@ -13,7 +13,8 @@ from typing import Any, Dict, Iterable, Optional
 
 import hydra
 import torch
-from omegaconf import DictConfig, OmegaConf
+from omegaconf.base import ContainerMetadata
+from omegaconf import DictConfig, ListConfig, OmegaConf
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import DeviceStatsMonitor, RichProgressBar
 from pytorch_lightning.loggers import CSVLogger
@@ -23,6 +24,14 @@ from main import load_fold_dataset_idx_from_json
 from trainer.train_triple_fusion import GeoFusionPoseTrainer
 
 logger = logging.getLogger(__name__)
+
+
+def _configure_torch_safe_globals() -> None:
+    """Allow trusted OmegaConf objects when torch.load uses weights_only=True."""
+    add_safe_globals = getattr(torch.serialization, "add_safe_globals", None)
+    if add_safe_globals is None:
+        return
+    add_safe_globals([DictConfig, ListConfig, ContainerMetadata])
 
 
 def _cfg_get(config: DictConfig, path: str, default: Any = None) -> Any:
@@ -60,8 +69,12 @@ def _parse_val_loss_from_name(path: Path) -> Optional[float]:
 
 def _checkpoint_candidates(root: Path, fold: int) -> list[Path]:
     patterns = [
+        root / "*.ckpt",
+        root / "last.ckpt",
+        root / "checkpoints" / "*.ckpt",
         root / "checkpoints" / f"fold_{fold}" / "*.ckpt",
         root / "**" / "checkpoints" / f"fold_{fold}" / "*.ckpt",
+        root / f"fold_{fold}" / "*.ckpt",
         root / f"fold_{fold}" / "**" / "*.ckpt",
     ]
     candidates: list[Path] = []
@@ -70,44 +83,33 @@ def _checkpoint_candidates(root: Path, fold: int) -> list[Path]:
     return sorted(set(candidates))
 
 
-def _find_ckpt(config: DictConfig, fold: int) -> Optional[Path]:
+def _find_ckpt(config: DictConfig) -> Path:
     explicit = _cfg_get(config, "eval.ckpt_path")
-    if explicit:
-        ckpt = Path(str(explicit)).expanduser()
-        if not ckpt.exists():
-            raise FileNotFoundError(f"eval.ckpt_path does not exist: {ckpt}")
-        return ckpt
+    if not explicit:
+        raise ValueError(
+            "eval.ckpt_path is required. "
+            "Please pass an explicit checkpoint path, e.g. eval.ckpt_path=/abs/path/to/model.ckpt"
+        )
 
-    ckpt_dir = _cfg_get(config, "eval.ckpt_dir") or _cfg_get(config, "log_path")
-    if not ckpt_dir:
-        return None
-
-    root = Path(str(ckpt_dir)).expanduser()
-    if not root.exists():
-        logger.warning("Checkpoint search directory does not exist: %s", root)
-        return None
-
-    candidates = _checkpoint_candidates(root, fold)
-    if not candidates:
-        logger.warning("No checkpoint found for fold %s under %s", fold, root)
-        return None
-
-    non_last = [p for p in candidates if p.name != "last.ckpt"]
-    scored = [(p, _parse_val_loss_from_name(p)) for p in non_last]
-    scored = [(p, loss) for p, loss in scored if loss is not None and math.isfinite(loss)]
-    if scored:
-        return min(scored, key=lambda item: item[1])[0]
-
-    last = [p for p in candidates if p.name == "last.ckpt"]
-    if last:
-        return max(last, key=lambda p: p.stat().st_mtime)
-
-    return max(candidates, key=lambda p: p.stat().st_mtime)
+    ckpt = Path(str(explicit)).expanduser().resolve()
+    if not ckpt.exists():
+        raise FileNotFoundError(f"eval.ckpt_path does not exist: {ckpt}")
+    logger.info("Using explicitly specified eval.ckpt_path: %s", ckpt)
+    return ckpt
 
 
 def _build_trainer(config: DictConfig) -> Trainer:
     accelerator = "gpu" if torch.cuda.is_available() else "cpu"
-    devices = [int(config.train.gpu)] if accelerator == "gpu" else 1
+    devices_cfg = 0
+    if accelerator == "gpu":
+        if isinstance(devices_cfg, int):
+            devices = [devices_cfg]
+        elif isinstance(devices_cfg, str):
+            devices = [int(device.strip()) for device in devices_cfg.split(",") if device.strip()]
+        else:
+            devices = devices_cfg
+    else:
+        devices = 1
     output_dir = Path(str(_cfg_get(config, "eval.output_dir", Path(config.log_path) / "eval")))
 
     return Trainer(
@@ -127,15 +129,26 @@ def _run_split(
     split: str,
 ) -> Dict[str, Any]:
     if split == "val":
-        result = trainer.validate(module, datamodule=data_module, ckpt_path=str(ckpt_path))
+        result = trainer.validate(
+            module,
+            datamodule=data_module,
+            ckpt_path=str(ckpt_path),
+            weights_only=False,
+        )
     elif split == "test":
-        result = trainer.test(module, datamodule=data_module, ckpt_path=str(ckpt_path))
+        result = trainer.test(
+            module,
+            datamodule=data_module,
+            ckpt_path=str(ckpt_path),
+            weights_only=False,
+        )
     elif split == "train":
         data_module.setup("fit")
         result = trainer.validate(
             module,
             dataloaders=data_module.train_dataloader(),
             ckpt_path=str(ckpt_path),
+            weights_only=False,
         )
     else:
         raise ValueError(f"Unsupported eval.split={split!r}. Use train, val, or test.")
@@ -207,6 +220,22 @@ def _selected_folds(config: DictConfig, all_folds: Iterable[int]) -> list[int]:
 def main(config: DictConfig) -> None:
     seed_everything(42, workers=True)
     torch.set_float32_matmul_precision("high")
+    _configure_torch_safe_globals()
+
+    config.paths.root_path = str(Path("/work/SKIING/chenkaixu/data/drive"))
+    ckpt_dir = Path("/work/SKIING/chenkaixu/code/MultiView_DriverAction_PyTorch/logs/train/geofusionpose_['front', 'left', 'right']_16f/2026-05-27/15-31-29/checkpoints/fold_0/49-0.89.ckpt")
+    explicit_ckpt = _cfg_get(config, "eval.ckpt_path")
+    if explicit_ckpt:
+        ckpt = Path(str(explicit_ckpt)).expanduser().resolve()
+        ckpt_source = "eval.ckpt_path"
+    else:
+        ckpt = ckpt_dir.expanduser().resolve()
+        ckpt_source = "hardcoded ckpt_dir"
+
+    if not ckpt.exists():
+        raise FileNotFoundError(f"Checkpoint does not exist ({ckpt_source}): {ckpt}")
+
+    logger.info("Using checkpoint from %s: %s", ckpt_source, ckpt)
 
     split = str(_cfg_get(config, "eval.split", "val")).lower()
     output_dir = Path(str(_cfg_get(config, "eval.output_dir", Path(config.log_path) / "eval")))
@@ -216,13 +245,7 @@ def main(config: DictConfig) -> None:
     for fold in _selected_folds(config, fold_dataset_idx.keys()):
         if fold not in fold_dataset_idx:
             raise KeyError(f"Fold {fold} is not in the dataset index JSON.")
-
-        ckpt = _find_ckpt(config, fold)
-        if ckpt is None:
-            raise FileNotFoundError(
-                f"No checkpoint found for fold {fold}. Set eval.ckpt_path or eval.ckpt_dir."
-            )
-
+        
         logger.info("%s", "#" * 60)
         logger.info("Evaluating fold %s on %s split", fold, split)
         logger.info("Checkpoint: %s", ckpt)
