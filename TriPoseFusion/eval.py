@@ -20,8 +20,8 @@ from pytorch_lightning.callbacks import DeviceStatsMonitor, RichProgressBar
 from pytorch_lightning.loggers import CSVLogger
 
 from dataloader.data_loader import DriverKPTDataModule
-from main import load_fold_dataset_idx_from_json
-from trainer.train_triple_fusion import GeoFusionPoseTrainer
+from TriPoseFusion.train import load_fold_dataset_idx_from_json
+from trainer.train_triple_fusion import TriFusionPoseTrainer
 
 logger = logging.getLogger(__name__)
 
@@ -123,7 +123,7 @@ def _build_trainer(config: DictConfig) -> Trainer:
 
 def _run_split(
     trainer: Trainer,
-    module: GeoFusionPoseTrainer,
+    module: TriFusionPoseTrainer,
     data_module: DriverKPTDataModule,
     ckpt_path: Path,
     split: str,
@@ -251,7 +251,7 @@ def main(config: DictConfig) -> None:
         logger.info("Checkpoint: %s", ckpt)
         logger.info("%s", "#" * 60)
 
-        module = GeoFusionPoseTrainer(config)
+        module = TriFusionPoseTrainer(config)
         data_module = DriverKPTDataModule(config, fold_dataset_idx[fold])
         trainer = _build_trainer(config)
         metrics = _run_split(trainer, module, data_module, ckpt, split)

@@ -7,14 +7,14 @@ hydra:
     subdir: ${experiment}/${now:%Y-%m-%d}/${now:%H-%M-%S}
 
 paths:
-  root_path: /workspace/data/multi_view_driver_action
+  root_path: /home/data/xchen/drive/multi_view_driver_action
   index_mapping: ${paths.root_path}/index_mapping # folder or full path to prebuilt fold index json
   index_file: fold_${train.fold}.json # used only when index_mapping is a folder
-  sam3d_results_path: /workspace/data/sam3d_body_results_right_full
+  sam3d_results_path: /home/data/xchen/drive/sam3d_body_results_right
 
 data:
-  num_workers: 32
-  batch_size: 22
+  num_workers: 16
+  batch_size: 46
   uniform_temporal_subsample_num: 16
   magic_move: false # only used to choose index_magicmove.json when paths.index_file is empty
 
@@ -25,10 +25,10 @@ loss:
 model:
   backbone: triple_fusion
 
-  # Input layout: raw SAM3D 70 keypoints from dataloader.
+  # Input layout: SAM3D keypoints filtered by map_config.KEEP_KEYPOINT_INDICES.
   geofusion_view_names: ['front', 'left', 'right']
-  geofusion_num_joints: 70
-  kpt_neck_index: 69
+  geofusion_num_joints: 52
+  kpt_neck_index: 51
   kpt_left_shoulder_index: 5
   kpt_right_shoulder_index: 6
   kpt_mid_hip_index: -1
@@ -54,15 +54,15 @@ model:
   lambda_info_nce: 0.1
   info_nce_temperature: 0.1
 
-  # Optional bone pairs on raw 70-keypoint layout.
+  # Optional bone pairs on filtered 52-keypoint layout.
   geofusion_bones:
     - [5, 6]
-    - [69, 5]
-    - [69, 6]
+    - [51, 5]
+    - [51, 6]
 
 train:
   max_epochs: 50
-  devices: 1
+  devices: 2
   grad_clip_val: 1.0
   fold: 0
   view: multi
@@ -76,5 +76,5 @@ eval:
   fold: all # all or a single fold id, e.g. 0
   output_dir: ${log_path}/eval
 
-experiment: geofusionpose_${train.view_name}_${data.uniform_temporal_subsample_num}f
+experiment: trifusionpose_${train.view_name}_${data.uniform_temporal_subsample_num}f
 log_path: logs/train/${experiment}/${now:%Y-%m-%d}/${now:%H-%M-%S}

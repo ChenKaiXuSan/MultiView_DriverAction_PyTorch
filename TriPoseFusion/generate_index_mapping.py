@@ -251,22 +251,22 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--root-path",
         type=Path,
-        default=Path("/workspace/data/multi_view_driver_action"),
+        default=Path("/home/data/xchen/drive/multi_view_driver_action"),
     )
-    parser.add_argument("--video-path", type=Path, default="/workspace/data/videos_split")
-    parser.add_argument("--annotation-path", type=Path, default="/workspace/data/multi_view_driver_action/label")
+    parser.add_argument("--video-path", type=Path, default="/home/data/xchen/drive/videos_split")
+    parser.add_argument("--annotation-path", type=Path, default="/home/data/xchen/drive/multi_view_driver_action/label")
     parser.add_argument(
         "--sam3d-results-path",
         type=Path,
-        default=Path("/workspace/data/sam3d_body_results_right"),
+        default=Path("/home/data/xchen/drive/sam3d_body_results_right"),
     )
     parser.add_argument(
         "--index-mapping",
         type=Path,
-        default=Path("/workspace/data/multi_view_driver_action/index_mapping"),
+        default=Path("/home/data/xchen/drive/multi_view_driver_action/index_mapping"),
     )
     parser.add_argument("--fold-file-template", type=str, default="fold_{fold}.json")
-    parser.add_argument("--folds", type=int, default=5)
+    parser.add_argument("--folds", type=int, default=2)
     parser.add_argument("--overwrite", action="store_true")
     return parser
 

@@ -9,18 +9,11 @@ import torch
 import torch.nn.functional as F
 from pytorch_lightning import LightningModule
 
-try:
-    from project.models.keypoint_mlp import GeoFusionPoseNet
-except ImportError:
-    try:
-        from TriPoseFusion.models.keypoint_mlp import GeoFusionPoseNet
-    except ImportError:
-        from models.keypoint_mlp import GeoFusionPoseNet
-
+from models.keypoint_mlp import TriViewKeypointFusionNet  # For backward compatibility with existing configs that specify this class.   
 logger = logging.getLogger(__name__)
 
 
-class GeoFusionPoseTrainer(LightningModule):
+class TriFusionPoseTrainer(LightningModule):
     """Geometry-guided self-supervised multi-view 3D pose fusion trainer."""
 
     def __init__(self, hparams) -> None:
@@ -30,7 +23,7 @@ class GeoFusionPoseTrainer(LightningModule):
         loss_cfg = getattr(hparams, "loss", None)
         train_cfg = getattr(hparams, "train", None)
 
-        self.model = GeoFusionPoseNet(hparams)
+        self.model = TriViewKeypointFusionNet(hparams)
         self.lr = float(getattr(loss_cfg, "lr", 1e-3))
         self.weight_decay = float(getattr(loss_cfg, "weight_decay", 1e-5))
         self.grad_clip_val = float(getattr(train_cfg, "grad_clip_val", 1.0))
@@ -63,7 +56,7 @@ class GeoFusionPoseTrainer(LightningModule):
 
     @staticmethod
     def _get_required(batch: Dict[str, Any], keys: Sequence[str]):
-        value = GeoFusionPoseTrainer._get_optional(batch, keys)
+        value = TriFusionPoseTrainer._get_optional(batch, keys)
         if value is None:
             raise KeyError(f"Missing required 3D keypoints. Expected one of: {keys}")
         return value
@@ -249,6 +242,6 @@ class GeoFusionPoseTrainer(LightningModule):
 
 
 # Backward-compatible aliases for existing imports/configs.
-TripleViewSelfSupervisedFusionTrainer = GeoFusionPoseTrainer
-TripleFusionSelfSupervisedTrainer = GeoFusionPoseTrainer
-MultiFusion3DCNNTrainer = GeoFusionPoseTrainer
+TripleViewSelfSupervisedFusionTrainer = TriFusionPoseTrainer
+TripleFusionSelfSupervisedTrainer = TriFusionPoseTrainer
+MultiFusion3DCNNTrainer = TriFusionPoseTrainer

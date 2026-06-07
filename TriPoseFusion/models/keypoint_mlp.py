@@ -82,7 +82,7 @@ class TemporalPoseRefiner(nn.Module):
         return delta.reshape(bsz, frames, joints, 3)
 
 
-class GeoFusionPoseNet(nn.Module):
+class TriViewKeypointFusionNet(nn.Module):
     """Geometry-guided three-view 3D keypoint fusion network.
 
     This model does not do classification. It outputs fused 3D keypoints.
@@ -273,8 +273,3 @@ class GeoFusionPoseNet(nn.Module):
             "P_views": pose_stack,
             "H_views": hidden,
         }
-
-
-# Backward-compatible names; all now point to the fusion model, not a classifier.
-TriViewKeypointFusionNet = GeoFusionPoseNet
-KeypointTemporalMLP = GeoFusionPoseNet

@@ -2,9 +2,12 @@
 # -*- coding:utf-8 -*-
 from __future__ import annotations
 
+import os
+os.environ.setdefault('NCCL_P2P_DISABLE', '1')
+# os.environ.setdefault('NCCL_SHM_DISABLE', '1')
+
 import json
 import logging
-import os
 from pathlib import Path
 from typing import Any, Dict
 
@@ -22,7 +25,7 @@ from pytorch_lightning.loggers import CSVLogger, TensorBoardLogger
 
 from dataloader.data_loader import DriverKPTDataModule
 from map_config import VideoSample
-from trainer.train_triple_fusion import GeoFusionPoseTrainer
+from trainer.train_triple_fusion import TriFusionPoseTrainer
 
 logger = logging.getLogger(__name__)
 
@@ -99,13 +102,13 @@ def load_fold_dataset_idx_from_json(
     }
 
 
-def build_module(hparams: DictConfig) -> GeoFusionPoseTrainer:
+def build_module(hparams: DictConfig) -> TriFusionPoseTrainer:
     if hparams.model.backbone != "triple_fusion":
         raise ValueError(
             f"Unsupported model.backbone={hparams.model.backbone!r}. "
             "This project entry currently supports only 'triple_fusion'."
         )
-    return GeoFusionPoseTrainer(hparams)
+    return TriFusionPoseTrainer(hparams)
 
 
 def train_one_fold(

@@ -11,7 +11,7 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
-from map_config import VideoSample
+from map_config import KEEP_KEYPOINT_INDICES, VideoSample
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +43,11 @@ class KPTDataset(Dataset):
         self.view_name = view_name or ["front", "left", "right"]
         self.target_t = int(target_t) if target_t is not None and int(target_t) > 0 else None
         self.chunk_frames = self.target_t
+        self.keep_keypoint_indices = (
+            np.asarray(KEEP_KEYPOINT_INDICES, dtype=np.int64)
+            if KEEP_KEYPOINT_INDICES is not None
+            else None
+        )
 
         self._kpt_cache: OrderedDict[Tuple[str, int, Optional[int]], Dict[str, torch.Tensor]] = OrderedDict()
         self._cache_max_size = 128
@@ -169,6 +174,17 @@ class KPTDataset(Dataset):
             k = min(pred2d.shape[0], pred3d.shape[0])
             if k <= 0:
                 raise RuntimeError(f"Empty keypoints in {path}")
+
+            if self.keep_keypoint_indices is not None:
+                max_index = int(np.max(self.keep_keypoint_indices))
+                if max_index >= k:
+                    raise RuntimeError(
+                        f"KEEP_KEYPOINT_INDICES requires keypoint index {max_index}, "
+                        f"but {path} only has {k} aligned 2D/3D keypoints"
+                    )
+                pred2d = pred2d[self.keep_keypoint_indices]
+                pred3d = pred3d[self.keep_keypoint_indices]
+                k = len(self.keep_keypoint_indices)
 
             kpt2d_list.append(pred2d[:k])
             kpt3d_list.append(pred3d[:k])
