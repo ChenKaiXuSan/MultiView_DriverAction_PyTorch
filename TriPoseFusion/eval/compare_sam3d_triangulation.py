@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-比较 SAM3D 原始三视角结果和三角化 GT 的数据质量
+比较 SAM3D 原始三视角 3D keypoints 和三角化/合成 3D keypoints
 
 脚本功能:
-1. 统计三个视角的 SAM3D 单目检测结果的质量指标
-2. 对比三角化后的 3D 关键点质量
-3. 分析不同环境（昼/夜、多/少）下的数据质量差异
-4. 生成详细报告，包括重投影误差、有效帧比例等
+1. 计算 SAM3D 3D keypoints 相对三角化/合成 3D keypoints 的常见指标
+2. 输出 MPJPE、Root-aligned MPJPE、PCK、AUC、per-joint MPJPE 等
+3. 分析不同环境（昼/夜、多/少）和相机视角下的误差差异
+4. 生成详细报告和可视化图表
 
 使用方式:
     conda run -n torch113 python scripts/compare_sam3d_triangulation.py \
@@ -125,13 +125,12 @@ def load_sam3d_frame_sequence(view_dir: Path) -> Tuple[np.ndarray, np.ndarray, L
     return keypoints_3d, confidence, frame_ids
 
 
-def load_triangulated_gt(file_path: Path) -> Tuple[np.ndarray, np.ndarray]:
+def load_triangulated_gt(file_path: Path) -> np.ndarray:
     """
     加载三角化 GT 的 3D 关键点结果
 
     Returns:
         keypoints_3d: (T, J, 3) - 三角化后的 3D 坐标
-        quality_score: (T,) - 质量分数（基于重投影误差）
     """
     data = np.load(file_path, allow_pickle=True)
     keys = list(data.keys())
@@ -147,25 +146,11 @@ def load_triangulated_gt(file_path: Path) -> Tuple[np.ndarray, np.ndarray]:
 
     keypoints_3d = data[key_3d_key]
 
-    # 质量分数键名：'quality_score', 'reproj_error', 'validity'
-    quality_key = None
-    for k in ['quality_score', 'reproj_error', 'validity', 'is_valid']:
-        if k in keys:
-            quality_key = k
-            break
-
-    if not quality_key:
-        print(f"Warning: No quality score found in {file_path}")
-        quality_score = np.ones(keypoints_3d.shape[0])
-    else:
-        quality_score = data[quality_key]
-
     # 应用关键点筛选
     if KEEP_KEYPOINT_INDICES is not None:
         keypoints_3d = keypoints_3d[:, KEEP_KEYPOINT_INDICES]
-        quality_score = quality_score[:, KEEP_KEYPOINT_INDICES]
 
-    return keypoints_3d, quality_score
+    return keypoints_3d[:, :, :3].astype(np.float32)
 
 
 def compute_valid_ratio(confidence: np.ndarray, threshold: float = 0.5) -> float:
@@ -179,30 +164,138 @@ def compute_mean_confidence(confidence: np.ndarray) -> float:
     return float(np.mean(confidence))
 
 
-def compute_pose_std(keypoints_3d: np.ndarray) -> Tuple[float, float, float]:
+def compute_keypoint_metrics(
+    pred_kpts: np.ndarray,
+    gt_kpts: np.ndarray,
+    coord_scale: float = 1000.0,
+    root_index: int = 0,
+    pck_thresholds: Tuple[float, ...] = (50.0, 100.0, 150.0),
+) -> Dict[str, Any]:
     """
-    计算人体姿态的标准差，作为运动幅度的指标
+    计算 SAM3D 3D keypoints 与 GT 3D keypoints 的常见误差指标。
 
-    Returns:
-        x_std, y_std, z_std - 三个坐标轴上的标准差（mm 级别）
+    默认假设输入坐标单位为 meter，并通过 coord_scale 转成 mm。
     """
-    # 计算整体位移
-    pose_center = np.mean(keypoints_3d, axis=(0, 1))
-    deviations = keypoints_3d - pose_center
+    n_frames = min(pred_kpts.shape[0], gt_kpts.shape[0])
+    n_keypoints = min(pred_kpts.shape[1], gt_kpts.shape[1])
+    pred = np.asarray(pred_kpts[:n_frames, :n_keypoints, :3], dtype=np.float32) * coord_scale
+    gt = np.asarray(gt_kpts[:n_frames, :n_keypoints, :3], dtype=np.float32) * coord_scale
 
-    return (
-        float(np.std(deviations[..., 0])),
-        float(np.std(deviations[..., 1])),
-        float(np.std(deviations[..., 2])),
-    )
+    valid_mask = np.isfinite(pred).all(axis=-1) & np.isfinite(gt).all(axis=-1)
+    if not np.any(valid_mask):
+        return {
+            'num_frames': int(n_frames),
+            'num_keypoints': int(n_keypoints),
+            'num_valid_points': 0,
+            'mpjpe_mm': 0.0,
+            'median_error_mm': 0.0,
+            'root_mpjpe_mm': 0.0,
+            'pa_mpjpe_mm': 0.0,
+            'pck': {str(int(t)): 0.0 for t in pck_thresholds},
+            'auc_150': 0.0,
+            'per_axis_mae_mm': {'x': 0.0, 'y': 0.0, 'z': 0.0},
+            'per_joint_mpjpe_mm': [],
+        }
+
+    diff = pred - gt
+    errors = np.linalg.norm(diff, axis=-1)
+    valid_errors = errors[valid_mask]
+
+    root_index = min(max(root_index, 0), n_keypoints - 1)
+    root_pred = pred[:, root_index:root_index + 1, :]
+    root_gt = gt[:, root_index:root_index + 1, :]
+    root_aligned_errors = np.linalg.norm((pred - root_pred) - (gt - root_gt), axis=-1)
+    root_valid_mask = valid_mask & valid_mask[:, root_index:root_index + 1]
+    valid_root_errors = root_aligned_errors[root_valid_mask]
+    root_mpjpe = float(np.mean(valid_root_errors)) if valid_root_errors.size else 0.0
+    pa_mpjpe = compute_pa_mpjpe(pred, gt, valid_mask)
+
+    per_joint_mpjpe = []
+    for joint_idx in range(n_keypoints):
+        joint_mask = valid_mask[:, joint_idx]
+        if np.any(joint_mask):
+            per_joint_mpjpe.append(float(np.mean(errors[:, joint_idx][joint_mask])))
+        else:
+            per_joint_mpjpe.append(0.0)
+
+    abs_diff = np.abs(diff[valid_mask])
+    pck = {
+        str(int(threshold)): float(np.mean(valid_errors <= threshold))
+        for threshold in pck_thresholds
+    }
+
+    auc_thresholds = np.linspace(0.0, 150.0, 31)
+    auc = float(np.mean([np.mean(valid_errors <= threshold) for threshold in auc_thresholds]))
+
+    return {
+        'num_frames': int(n_frames),
+        'num_keypoints': int(n_keypoints),
+        'num_valid_points': int(np.sum(valid_mask)),
+        'mpjpe_mm': float(np.mean(valid_errors)),
+        'median_error_mm': float(np.median(valid_errors)),
+        'root_mpjpe_mm': root_mpjpe,
+        'pa_mpjpe_mm': pa_mpjpe,
+        'pck': pck,
+        'auc_150': auc,
+        'per_axis_mae_mm': {
+            'x': float(np.mean(abs_diff[:, 0])),
+            'y': float(np.mean(abs_diff[:, 1])),
+            'z': float(np.mean(abs_diff[:, 2])),
+        },
+        'per_joint_mpjpe_mm': per_joint_mpjpe,
+    }
+
+
+def compute_pa_mpjpe(pred: np.ndarray, gt: np.ndarray, valid_mask: np.ndarray) -> float:
+    """计算逐帧刚性相似变换对齐后的 MPJPE。"""
+    frame_errors = []
+    for frame_idx in range(pred.shape[0]):
+        mask = valid_mask[frame_idx]
+        if np.sum(mask) < 3:
+            continue
+
+        pred_frame = pred[frame_idx, mask]
+        gt_frame = gt[frame_idx, mask]
+        aligned_pred = procrustes_align(pred_frame, gt_frame)
+        frame_errors.extend(np.linalg.norm(aligned_pred - gt_frame, axis=-1).tolist())
+
+    return float(np.mean(frame_errors)) if frame_errors else 0.0
+
+
+def procrustes_align(source: np.ndarray, target: np.ndarray) -> np.ndarray:
+    """将 source 通过相似变换对齐到 target。"""
+    source_mean = np.mean(source, axis=0, keepdims=True)
+    target_mean = np.mean(target, axis=0, keepdims=True)
+    source_centered = source - source_mean
+    target_centered = target - target_mean
+
+    source_norm = np.linalg.norm(source_centered)
+    target_norm = np.linalg.norm(target_centered)
+    if source_norm < 1e-8 or target_norm < 1e-8:
+        return source.copy()
+
+    source_centered /= source_norm
+    target_centered /= target_norm
+
+    h = source_centered.T @ target_centered
+    u, _, vt = np.linalg.svd(h)
+    rotation = vt.T @ u.T
+    if np.linalg.det(rotation) < 0:
+        vt[-1, :] *= -1
+        rotation = vt.T @ u.T
+
+    scale = target_norm / source_norm
+    return scale * ((source - source_mean) @ rotation) + target_mean
 
 
 def analyze_subject(
     subject_id: str,
     sam3d_root: Path,
     gt_root: Path,
+    coord_scale: float = 1000.0,
+    root_index: int = 0,
 ) -> Dict[str, Any]:
-    """分析单个受试者的数据质量"""
+    """分析单个受试者的 3D keypoint 误差。"""
 
     results = {
         'person_id': subject_id,
@@ -213,7 +306,7 @@ def analyze_subject(
     for env_name in ENV_NAMES.keys():
         env_stats = {}
 
-        # 加载三视角的 SAM3D 结果
+        # 加载三视角的 SAM3D 结果，并与三角化/合成 3D keypoints 对比
         camera_data = {}
         total_frames = None
 
@@ -232,19 +325,32 @@ def analyze_subject(
             # 加载数据
             try:
                 sam3d_kpts, sam3d_conf, sam3d_frame_ids = load_sam3d_frame_sequence(sam3d_path)
-                gt_kpts, gt_quality = load_triangulated_gt(gt_path)
+                gt_kpts = load_triangulated_gt(gt_path)
 
                 # 统一帧数（取最小值）
                 n_frames = min(sam3d_kpts.shape[0], gt_kpts.shape[0])
+                n_keypoints = min(sam3d_kpts.shape[1], gt_kpts.shape[1])
 
                 if total_frames is None:
                     total_frames = n_frames
 
+                metrics = compute_keypoint_metrics(
+                    sam3d_kpts[:n_frames, :n_keypoints],
+                    gt_kpts[:n_frames, :n_keypoints],
+                    coord_scale=coord_scale,
+                    root_index=root_index,
+                )
+
                 camera_data[cam] = {
-                    'sam3d_kpts': sam3d_kpts[:n_frames],
-                    'sam3d_conf': sam3d_conf[:n_frames],
-                    'gt_kpts': gt_kpts[:n_frames],
-                    'gt_quality': gt_quality[:n_frames],
+                    'num_frames': int(n_frames),
+                    'num_keypoints': int(n_keypoints),
+                    'mean_sam3d_confidence': compute_mean_confidence(
+                        sam3d_conf[:n_frames, :n_keypoints]
+                    ),
+                    'valid_ratio': compute_valid_ratio(
+                        sam3d_conf[:n_frames, :n_keypoints]
+                    ),
+                    'metrics': metrics,
                     'frame_ids': sam3d_frame_ids[:n_frames],
                 }
 
@@ -257,30 +363,36 @@ def analyze_subject(
         env_stats['cameras'] = camera_data
 
         if camera_data:
-            # 平均置信度
+            # 平均置信度和有效帧比例只作为辅助参考，不作为 GT 质量指标
             avg_confidence = np.mean([
-                compute_mean_confidence(data['sam3d_conf'])
+                data['mean_sam3d_confidence']
                 for data in camera_data.values()
             ])
-            env_stats['mean_sam3d_confidence'] = avg_confidence
+            env_stats['mean_sam3d_confidence'] = float(avg_confidence)
 
-            # 有效帧比例
             valid_ratios = [
-                compute_valid_ratio(data['sam3d_conf'])
+                data['valid_ratio']
                 for data in camera_data.values()
             ]
-            env_stats['mean_valid_ratio'] = np.mean(valid_ratios)
-            env_stats['valid_ratio_range'] = (min(valid_ratios), max(valid_ratios))
+            env_stats['mean_valid_ratio'] = float(np.mean(valid_ratios))
+            env_stats['valid_ratio_range'] = (
+                float(min(valid_ratios)),
+                float(max(valid_ratios)),
+            )
 
-            # GT 重投影误差（如果有）
-            if 'gt_quality' in camera_data[list(camera_data.keys())[0]]:
-                mean_reproj_error = np.mean(1 - camera_data[list(camera_data.keys())[0]]['gt_quality'])
-                env_stats['mean_triangulation_error'] = float(mean_reproj_error)
+            metric_names = ['mpjpe_mm', 'median_error_mm', 'root_mpjpe_mm', 'pa_mpjpe_mm', 'auc_150']
+            for metric_name in metric_names:
+                env_stats[metric_name] = float(np.mean([
+                    data['metrics'][metric_name]
+                    for data in camera_data.values()
+                ]))
 
-            # 姿态标准差（运动幅度）
-            first_cam = list(camera_data.values())[0]
-            x_std, y_std, z_std = compute_pose_std(first_cam['sam3d_kpts'])
-            env_stats['pose_std_mm'] = {'x': x_std * 1000, 'y': y_std * 1000, 'z': z_std * 1000}
+            env_stats['pck'] = {}
+            for threshold in ['50', '100', '150']:
+                env_stats['pck'][threshold] = float(np.mean([
+                    data['metrics']['pck'][threshold]
+                    for data in camera_data.values()
+                ]))
 
         results['environments'][env_name] = env_stats
 
@@ -308,7 +420,14 @@ def generate_summary_statistics(all_subjects: List[Dict[str, Any]]) -> Dict[str,
                     'subjects': [],
                     'avg_frames': [],
                     'valid_ratios': [],
-                    'reproj_errors': [],
+                    'mpjpe_mm': [],
+                    'median_error_mm': [],
+                    'root_mpjpe_mm': [],
+                    'pa_mpjpe_mm': [],
+                    'pck_50': [],
+                    'pck_100': [],
+                    'pck_150': [],
+                    'auc_150': [],
                 }
 
             summary['environment_summary'][env_name]['subjects'].append(subject['person_id'])
@@ -319,10 +438,15 @@ def generate_summary_statistics(all_subjects: List[Dict[str, Any]]) -> Dict[str,
                     stats['mean_valid_ratio']
                 )
 
-            if 'mean_triangulation_error' in stats:
-                summary['environment_summary'][env_name]['reproj_errors'].append(
-                    stats['mean_triangulation_error']
-                )
+            for metric_name in ['mpjpe_mm', 'median_error_mm', 'root_mpjpe_mm', 'pa_mpjpe_mm', 'auc_150']:
+                if metric_name in stats:
+                    summary['environment_summary'][env_name][metric_name].append(stats[metric_name])
+
+            for threshold in ['50', '100', '150']:
+                if threshold in stats.get('pck', {}):
+                    summary['environment_summary'][env_name][f'pck_{threshold}'].append(
+                        stats['pck'][threshold]
+                    )
 
             # 相机对比
             for cam in CAMERAS:
@@ -334,9 +458,13 @@ def generate_summary_statistics(all_subjects: List[Dict[str, Any]]) -> Dict[str,
         env_data['avg_valid_ratio'] = (
             np.mean(env_data['valid_ratios']) if env_data['valid_ratios'] else 0
         )
-        env_data['avg_reproj_error'] = (
-            np.mean(env_data['reproj_errors']) if env_data['reproj_errors'] else 0
-        )
+        for metric_name in ['mpjpe_mm', 'median_error_mm', 'root_mpjpe_mm', 'pa_mpjpe_mm', 'auc_150']:
+            env_data[f'avg_{metric_name}'] = (
+                np.mean(env_data[metric_name]) if env_data[metric_name] else 0
+            )
+        for threshold in ['50', '100', '150']:
+            key = f'pck_{threshold}'
+            env_data[f'avg_{key}'] = np.mean(env_data[key]) if env_data[key] else 0
         env_data['subjects'] = ','.join(env_data['subjects'])[:50]  # 截断显示
 
     return summary
@@ -346,43 +474,64 @@ def print_report(all_subjects: List[Dict[str, Any]], summary: Dict[str, Any]):
     """打印详细报告"""
 
     print("\n" + "=" * 80)
-    print("SAM3D vs Triangulated GT - Quality Comparison Report")
+    print("SAM3D vs Triangulated GT - 3D Keypoint Comparison Report")
     print("=" * 80)
 
     # 总览
-    print(f"\n📊 TOTAL SUBJECTS: {summary['total_subjects']}")
+    print(f"\nTOTAL SUBJECTS: {summary['total_subjects']}")
 
     # 环境对比
     print("\n" + "=" * 40)
     print("ENVIRONMENT SUMMARY")
     print("=" * 40)
-    print(f"{'Environment':<20} {'Avg Frames':>12} {'Valid Ratio':>12} {'Reproj Error (px)':>18}")
-    print("-" * 62)
+    print(
+        f"{'Environment':<20} {'Avg Frames':>12} {'MPJPE(mm)':>12} "
+        f"{'Root MPJPE':>12} {'PA-MPJPE':>10} {'PCK@100':>10} {'AUC@150':>10}"
+    )
+    print("-" * 86)
 
     for env_name in sorted(summary['environment_summary'].keys()):
         data = summary['environment_summary'][env_name]
         frames = int(np.mean(data.get('avg_frames', [0])))
-        valid_ratio = data.get('avg_valid_ratio', 0)
-        reproj_error = data.get('avg_reproj_error', 0)
+        mpjpe = data.get('avg_mpjpe_mm', 0)
+        root_mpjpe = data.get('avg_root_mpjpe_mm', 0)
+        pa_mpjpe = data.get('avg_pa_mpjpe_mm', 0)
+        pck_100 = data.get('avg_pck_100', 0)
+        auc_150 = data.get('avg_auc_150', 0)
 
-        print(f"{ENV_NAMES.get(env_name, env_name):<20} {frames:>12} {valid_ratio:>12.4f} {reproj_error:>18.4f}")
+        print(
+            f"{ENV_NAMES.get(env_name, env_name):<20} {frames:>12} "
+            f"{mpjpe:>12.2f} {root_mpjpe:>12.2f} "
+            f"{pa_mpjpe:>10.2f} {pck_100:>10.4f} {auc_150:>10.4f}"
+        )
 
     # 相机对比
     print("\n" + "=" * 40)
     print("CAMERA COMPARISON")
     print("=" * 40)
-    print(f"{'Camera':<15} {'Samples':>10} {'Valid Ratio':>15} {'Confidence':>15}")
-    print("-" * 57)
+    print(
+        f"{'Camera':<15} {'Samples':>10} {'MPJPE(mm)':>12} "
+        f"{'Root MPJPE':>12} {'PA-MPJPE':>10} {'PCK@100':>10}"
+    )
+    print("-" * 78)
 
     for cam in CAMERAS:
         samples = len(summary['camera_comparison'].get(cam, []))
-        valid_ratios = [s.get('mean_valid_ratio', 0) for s in summary['camera_comparison'].get(cam, [])]
-        confidences = [np.mean(s.get('sam3d_conf', np.ones(1))) for s in summary['camera_comparison'].get(cam, [])]
+        cam_stats = summary['camera_comparison'].get(cam, [])
+        mpjpes = [s['metrics']['mpjpe_mm'] for s in cam_stats]
+        root_mpjpes = [s['metrics']['root_mpjpe_mm'] for s in cam_stats]
+        pa_mpjpes = [s['metrics']['pa_mpjpe_mm'] for s in cam_stats]
+        pck_100 = [s['metrics']['pck']['100'] for s in cam_stats]
 
-        avg_valid = np.mean(valid_ratios) if valid_ratios else 0
-        avg_conf = np.mean(confidences) if confidences else 0
+        avg_mpjpe = np.mean(mpjpes) if mpjpes else 0
+        avg_root_mpjpe = np.mean(root_mpjpes) if root_mpjpes else 0
+        avg_pa_mpjpe = np.mean(pa_mpjpes) if pa_mpjpes else 0
+        avg_pck_100 = np.mean(pck_100) if pck_100 else 0
 
-        print(f"{cam:<15} {samples:>10} {avg_valid:>15.4f} {avg_conf:>15.6f}")
+        print(
+            f"{cam:<15} {samples:>10} {avg_mpjpe:>12.2f} "
+            f"{avg_root_mpjpe:>12.2f} {avg_pa_mpjpe:>10.2f} {avg_pck_100:>10.4f}"
+        )
 
 
 def create_visualizations(
@@ -394,9 +543,9 @@ def create_visualizations(
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # 1. 重投影误差箱线图
+    # 1. MPJPE 箱线图
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
-    fig.suptitle('Triangulation Quality Analysis', fontsize=14)
+    fig.suptitle('SAM3D vs Triangulated GT - MPJPE by Environment', fontsize=14)
 
     env_names = ['夜多い', '夜少ない', '昼多い', '昼少ない']
 
@@ -406,23 +555,22 @@ def create_visualizations(
         data_list = []
         for subject in all_subjects:
             env_stats = subject.get('environments', {}).get(env_name, {})
-            if 'mean_triangulation_error' in env_stats:
-                error = env_stats['mean_triangulation_error'] * 1000  # 转换为像素
-                data_list.append(error)
+            if 'mpjpe_mm' in env_stats:
+                data_list.append(env_stats['mpjpe_mm'])
 
         if data_list:
             bp = ax.boxplot(data_list, vert=True, patch_artist=True)
             for box in bp['boxes']:
                 box.set_facecolor('lightblue')
 
-            ax.set_ylabel('Reproj Error (scaled)', fontsize=10)
+            ax.set_ylabel('MPJPE (mm)', fontsize=10)
             ax.set_title(ENV_NAMES.get(env_name, env_name), fontsize=12)
             ax.tick_params(axis='both', which='major', labelsize=10)
         else:
             ax.text(0.5, 0.5, 'No Data', ha='center', va='center', fontsize=14)
 
     plt.tight_layout()
-    plt.savefig(output_dir / 'reproj_error_boxplot.png', dpi=150, bbox_inches='tight')
+    plt.savefig(output_dir / 'mpjpe_boxplot.png', dpi=150, bbox_inches='tight')
     plt.close()
 
     # 2. 环境对比柱状图
@@ -430,47 +578,48 @@ def create_visualizations(
 
     fig, ax = plt.subplots(figsize=(10, 6))
 
-    valid_ratios = [
-        env_summary[e].get('avg_valid_ratio', 0) for e in env_names if e in env_summary
+    plot_envs = [e for e in env_names if e in env_summary]
+    mpjpes = [
+        env_summary[e].get('avg_mpjpe_mm', 0) for e in plot_envs
     ]
-    reproj_errors = [
-        env_summary[e].get('avg_reproj_error', 0) * 1000 for e in env_names if e in env_summary
+    root_mpjpes = [
+        env_summary[e].get('avg_root_mpjpe_mm', 0) for e in plot_envs
     ]
 
-    x = np.arange(len(env_names))
+    x = np.arange(len(plot_envs))
     width = 0.35
 
-    bars1 = ax.bar(x - width/2, valid_ratios, width, label='Valid Ratio', color='skyblue')
-    bars2 = ax.bar(x + width/2, reproj_errors, width, label='Reproj Error (x1000)', color='coral')
+    ax.bar(x - width/2, mpjpes, width, label='MPJPE', color='skyblue')
+    ax.bar(x + width/2, root_mpjpes, width, label='Root MPJPE', color='coral')
 
     ax.set_xlabel('Environment', fontsize=12)
-    ax.set_ylabel('Metrics', fontsize=12)
-    ax.set_title('Quality Metrics by Environment', fontsize=14)
+    ax.set_ylabel('Error (mm)', fontsize=12)
+    ax.set_title('3D Keypoint Error by Environment', fontsize=14)
     ax.set_xticks(x)
-    ax.set_xticklabels([ENV_NAMES.get(e, e) for e in env_names])
+    ax.set_xticklabels([ENV_NAMES.get(e, e) for e in plot_envs])
     ax.legend()
 
     plt.tight_layout()
-    plt.savefig(output_dir / 'environment_comparison.png', dpi=150, bbox_inches='tight')
+    plt.savefig(output_dir / 'environment_error_comparison.png', dpi=150, bbox_inches='tight')
     plt.close()
 
-    # 3. 相机对比散点图
+    # 3. 相机对比散点图：MPJPE vs PCK@100
     fig, axes = plt.subplots(1, 3, figsize=(14, 4))
 
     for cam_idx, cam in enumerate(CAMERAS):
         ax = axes[cam_idx]
 
-        valid_ratios = [
-            s.get('mean_valid_ratio', 0) for s in summary['camera_comparison'].get(cam, [])
+        mpjpes = [
+            s['metrics']['mpjpe_mm'] for s in summary['camera_comparison'].get(cam, [])
         ]
-        confidences = [
-            np.mean(s.get('sam3d_conf', np.ones(1))) for s in summary['camera_comparison'].get(cam, [])
+        pck_100 = [
+            s['metrics']['pck']['100'] for s in summary['camera_comparison'].get(cam, [])
         ]
 
-        if valid_ratios and confidences:
-            ax.scatter(valid_ratios, confidences, alpha=0.6, edgecolors='black')
-            ax.set_xlabel('Valid Ratio', fontsize=10)
-            ax.set_ylabel('Mean Confidence', fontsize=10)
+        if mpjpes and pck_100:
+            ax.scatter(mpjpes, pck_100, alpha=0.6, edgecolors='black')
+            ax.set_xlabel('MPJPE (mm)', fontsize=10)
+            ax.set_ylabel('PCK@100', fontsize=10)
             ax.set_title(f'{cam} Camera', fontsize=12)
         else:
             ax.text(0.5, 0.5, 'No Data', ha='center', va='center', fontsize=14)
@@ -480,6 +629,65 @@ def create_visualizations(
     plt.close()
 
     print(f"\nVisualization saved to {output_dir}")
+
+
+def save_results_by_subject_env(
+    all_subjects: List[Dict[str, Any]],
+    summary: Dict[str, Any],
+    output_dir: Path,
+):
+    """按 person/env 组织保存结果，同时保留一份全局汇总。"""
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    for subject in all_subjects:
+        subject_id = subject['person_id']
+        for env_name, env_stats in subject.get('environments', {}).items():
+            if env_stats.get('total_frames', 0) == 0:
+                continue
+
+            env_dir = output_dir / subject_id / ENV_NAMES.get(env_name, env_name)
+            env_dir.mkdir(parents=True, exist_ok=True)
+
+            env_payload = {
+                'person_id': subject_id,
+                'environment': env_name,
+                'environment_name': ENV_NAMES.get(env_name, env_name),
+                'total_frames': env_stats.get('total_frames', 0),
+                'mean_sam3d_confidence': env_stats.get('mean_sam3d_confidence'),
+                'mean_valid_ratio': env_stats.get('mean_valid_ratio'),
+                'valid_ratio_range': env_stats.get('valid_ratio_range'),
+                'metrics': {
+                    'mpjpe_mm': env_stats.get('mpjpe_mm'),
+                    'median_error_mm': env_stats.get('median_error_mm'),
+                    'root_mpjpe_mm': env_stats.get('root_mpjpe_mm'),
+                    'pa_mpjpe_mm': env_stats.get('pa_mpjpe_mm'),
+                    'pck': env_stats.get('pck', {}),
+                    'auc_150': env_stats.get('auc_150'),
+                },
+                'cameras': env_stats.get('cameras', {}),
+            }
+
+            with open(env_dir / 'metrics.json', 'w') as f:
+                json.dump(env_payload, f, indent=2)
+
+    with open(output_dir / 'comparison_data.json', 'w') as f:
+        json.dump({
+            'subjects': all_subjects,
+            'summary': {
+                k: {
+                    'subjects': v['subjects'],
+                    'avg_mpjpe_mm': float(v.get('avg_mpjpe_mm', 0)),
+                    'avg_median_error_mm': float(v.get('avg_median_error_mm', 0)),
+                    'avg_root_mpjpe_mm': float(v.get('avg_root_mpjpe_mm', 0)),
+                    'avg_pa_mpjpe_mm': float(v.get('avg_pa_mpjpe_mm', 0)),
+                    'avg_pck_50': float(v.get('avg_pck_50', 0)),
+                    'avg_pck_100': float(v.get('avg_pck_100', 0)),
+                    'avg_pck_150': float(v.get('avg_pck_150', 0)),
+                    'avg_auc_150': float(v.get('avg_auc_150', 0)),
+                }
+                for k, v in summary['environment_summary'].items()
+            }
+        }, f, indent=2)
 
 
 def main():
@@ -510,6 +718,18 @@ def main():
         default=None,
         help='Optional: analyze specific subject (e.g., "01")'
     )
+    parser.add_argument(
+        '--coord-scale',
+        type=float,
+        default=1000.0,
+        help='Scale factor applied before reporting errors in mm. Use 1000 for meters, 1 for millimeters.'
+    )
+    parser.add_argument(
+        '--root-index',
+        type=int,
+        default=0,
+        help='Root joint index used for root-aligned MPJPE.'
+    )
 
     args = parser.parse_args()
 
@@ -535,7 +755,13 @@ def main():
     all_subjects = []
     for subject_id in subjects:
         print(f"Processing subject {subject_id}...")
-        result = analyze_subject(subject_id, sam3d_root, gt_root)
+        result = analyze_subject(
+            subject_id,
+            sam3d_root,
+            gt_root,
+            coord_scale=args.coord_scale,
+            root_index=args.root_index,
+        )
         all_subjects.append(result)
 
     # 生成汇总统计
@@ -547,21 +773,11 @@ def main():
     # 生成可视化
     create_visualizations(all_subjects, output_dir, summary)
 
-    # 保存详细数据
-    with open(output_dir / 'comparison_data.json', 'w') as f:
-        json.dump({
-            'subjects': all_subjects,
-            'summary': {
-                k: {
-                    'subjects': v['subjects'],
-                    'avg_valid_ratio': v.get('avg_valid_ratio'),
-                    'avg_reproj_error': v.get('avg_reproj_error'),
-                }
-                for k, v in summary['environment_summary'].items()
-            }
-        }, f, indent=2)
+    # 保存详细数据：根目录保留全局汇总，同时按 person/env 拆分 metrics.json
+    save_results_by_subject_env(all_subjects, summary, output_dir)
 
     print(f"\nDetailed results saved to: {output_dir / 'comparison_data.json'}")
+    print(f"Per-subject environment metrics saved under: {output_dir / '<person_id>' / '<env>' / 'metrics.json'}")
 
 
 if __name__ == '__main__':
