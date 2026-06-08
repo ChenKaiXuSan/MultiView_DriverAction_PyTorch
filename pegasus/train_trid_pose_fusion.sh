@@ -41,7 +41,7 @@ echo "Index mapping: ${index_mapping}"
 echo "SAM3D path: ${sam3d_results_path}"
 
 # === 运行 TriPoseFusion 训练脚本 ===
-python TriPoseFusion/main.py \
+python TriPoseFusion/train.py \
   paths.root_path="${root_path}" \
   paths.sam3d_results_path="${sam3d_results_path}" \
   data.num_workers="${num_workers}" \

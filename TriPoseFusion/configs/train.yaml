@@ -13,8 +13,8 @@ paths:
   sam3d_results_path: /home/data/xchen/drive/sam3d_body_results_right
 
 data:
-  num_workers: 16
-  batch_size: 26
+  num_workers: 32
+  batch_size: 30
   uniform_temporal_subsample_num: 16
   magic_move: false # only used to choose index_magicmove.json when paths.index_file is empty
 
@@ -74,7 +74,7 @@ eval:
   ckpt_dir: null
   split: val # train, val, or test; test currently uses the val split in the datamodule.
   fold: all # all or a single fold id, e.g. 0
-  output_dir: ${log_path}/eval
+  output_dir: ${log_path}/eval_trifusion_pesudo_gt
 
 experiment: trifusionpose_${train.view_name}_${data.uniform_temporal_subsample_num}f
 log_path: logs/train/${experiment}/${now:%Y-%m-%d}/${now:%H-%M-%S}
