@@ -7,20 +7,25 @@ import json
 import logging
 import math
 import os
+import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in os.sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from collections import defaultdict
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any, Dict, Iterable
 
 import hydra
 import numpy as np
 import torch
+from dataloader.data_loader import DriverKPTDataModule
+from map_config import KEEP_KEYPOINT_INDICES
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning import seed_everything
 from tqdm.auto import tqdm
-
-from dataloader.data_loader import DriverKPTDataModule
-from map_config import KEEP_KEYPOINT_INDICES
 from train import load_fold_dataset_idx_from_json
 from trainer.train_triple_fusion import TriFusionPoseTrainer
 
@@ -362,7 +367,7 @@ def _evaluate_fold(
     return fold_metrics
 
 
-@hydra.main(version_base=None, config_path="configs", config_name="train.yaml")
+@hydra.main(version_base=None, config_path="../configs", config_name="train.yaml")
 def main(config: DictConfig) -> None:
     seed_everything(42, workers=True)
     torch.set_float32_matmul_precision("high")
