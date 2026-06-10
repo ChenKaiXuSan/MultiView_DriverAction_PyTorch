@@ -1,4 +1,16 @@
-# GeoFusionPose training config
+# =============================================================================
+# GeoFusionPose 3D Keypoint Fusion Training Configuration
+# =============================================================================
+# This config file defines all hyperparameters for training the TriViewKeypointFusionNet.
+# The model fuses three-view (front/left/right) 3D keypoints using cross-view attention
+# and dilated temporal convolutions to produce robust fused 3D pose estimates.
+#
+# Usage:
+#   python -m TriPoseFusion.trainer.train_triple_fusion --config-name train.yaml
+#   python project/main.py -c configs/train.yaml model.fuse_method=ts_cva
+# =============================================================================
+
+# ------ HYDRA CONFIGURATION (Output directory management) -----
 hydra:
   run:
     dir: ${log_path}
@@ -6,75 +18,127 @@ hydra:
     dir: logs/
     subdir: ${experiment}/${now:%Y-%m-%d}/${now:%H-%M-%S}
 
+# ------ DATA PATHS -----
 paths:
   root_path: /home/data/xchen/drive/multi_view_driver_action
-  index_mapping: ${paths.root_path}/index_mapping # folder or full path to prebuilt fold index json
-  index_file: fold_${train.fold}.json # used only when index_mapping is a folder
+  # Can point to either a folder containing fold index files or a direct JSON path
+  index_mapping: ${paths.root_path}/index_mapping
+  index_file: fold_${train.fold}.json
   sam3d_results_path: /home/data/xchen/drive/sam3d_body_results_right
 
+# ------ DATA LOADING CONFIGURATION -----
 data:
-  num_workers: 32
-  batch_size: 30
-  uniform_temporal_subsample_num: 16
-  magic_move: false # only used to choose index_magicmove.json when paths.index_file is empty
+  num_workers: 32           # DataLoader workers (increase for faster loading)
+  batch_size: 30            # Batch size per GPU
+  uniform_temporal_subsample_num: 16  # Number of frames sampled per video chunk
+  magic_move: false         # Use special index mapping for data augmentation
 
+# ------ OPTIMIZATION HYPERPARAMETERS -----
 loss:
-  lr: 0.0001
-  weight_decay: 0.00001
+  lr: 0.0001                # Learning rate (AdamW optimizer)
+  weight_decay: 0.00001     # L2 regularization weight
 
+# ------ MODEL ARCHITECTURE CONFIGURATION -----
 model:
-  backbone: triple_fusion
+  backbone: triple_fusion   # Model backbone type
 
-  # Input layout: SAM3D keypoints filtered by map_config.KEEP_KEYPOINT_INDICES.
+  # --- View Configuration ---
+  # The three camera views used for fusion
   geofusion_view_names: ['front', 'left', 'right']
+
+  # --- Joint Keypoint Configuration ---
+  # Number of joints/keypoints processed by the model
   geofusion_num_joints: 52
-  kpt_neck_index: 51
-  kpt_left_shoulder_index: 5
-  kpt_right_shoulder_index: 6
-  kpt_mid_hip_index: -1
 
-  # GeoFusionPose network.
-  geofusion_hidden_dim: 128
-  geofusion_refiner_dim: 256
-  geofusion_refiner_layers: 2
-  geofusion_dropout: 0.1
-  geofusion_use_2d: true
-  geofusion_use_conf: false
-  geofusion_use_reproj_error_feature: false
-  geofusion_canonicalize: true
-  geofusion_eps: 0.000001
-  geofusion_nce_dim: 64
+  # Landmark indices for canonical coordinate system (SAM3D keypoint layout):
+  kpt_neck_index: 51                # Neck joint index (center reference)
+  kpt_left_shoulder_index: 5        # Left shoulder index (x-axis definition)
+  kpt_right_shoulder_index: 6       # Right shoulder index (x-axis definition)
+  kpt_mid_hip_index: -1             # Mid hip index (-1 = use shoulder midpoint as fallback)
 
-  # Self-supervised loss weights. No camera parameters, so reprojection is off.
-  lambda_tri: 1.0
-  lambda_reproj: 0.0
-  lambda_view: 0.2
-  lambda_bone: 0.5
-  lambda_temp: 0.1
-  lambda_info_nce: 0.1
-  info_nce_temperature: 0.1
+  # --- Network Core Parameters ---
+  geofusion_hidden_dim: 128         # Feature embedding dimension
+  geofusion_refiner_dim: 256        # TCN hidden channel dimension
 
-  # Optional bone pairs on filtered 52-keypoint layout.
+  # === IMPROVEMENT 1: DILATED TCN TEMPORAL REFINER ===
+  # Receptive field with exponential dilation (1,2,4,8...):
+  #   - 2 layers: RF = 3 frames
+  #   - 4 layers: RF = 15 frames (default)
+  geofusion_refiner_layers: 4
+
+  geofusion_dropout: 0.1            # Dropout rate for regularization
+
+  # === IMPROVEMENT 1 (Enhanced): CROSS-VIEW ATTENTION ===
+  # Number of attention heads in multi-head self-attention
+  # Recommended: hidden_dim / num_heads = 32 or larger per head
+  geofusion_attention_num_heads: 4
+
+  # === FEATURE ENGINEERING OPTIONS ===
+  # Enable/disable various input feature types:
+  geofusion_use_2d: true            # Include 2D keypoints + velocity features
+  geofusion_use_conf: false         # Include 2D confidence scores
+  geofusion_use_reproj_error_feature: false # Include reprojection error (requires camera params)
+
+  # === CANONICALIZATION CONFIGURATION ===
+  # Transform poses to body-centered coordinate system for position invariance
+  geofusion_canonicalize: true      # Enable canonicalization
+  geofusion_eps: 0.000001           # Epsilon for numerical stability
+  geofusion_use_robust_canon: false # Use outlier-aware canonicalization (experimental)
+
+  # === NCE CONTRASTIVE LEARNING ===
+  # For contrastive loss between views in latent space
+  geofusion_nce_dim: 64             # Projection dimension for InfoNCE loss
+
+  # === LOSS WEIGHT CONFIGURATION ===
+  # Each weight controls the contribution of a specific loss term:
+  lambda_tri: 1.0                   # Triangulation teacher forcing (primary)
+  lambda_reproj: 0.0                # Reprojection error to 2D keypoints
+  lambda_view: 0.2                  # View consistency with gated fusion
+  lambda_bone: 0.5                  # Bone length preservation constraint
+  lambda_temp: 0.1                  # Temporal smoothness (acceleration)
+  lambda_info_nce: 0.1              # InfoNCE contrastive learning between views
+
+  info_nce_temperature: 0.1         # Temperature scaling for InfoNCE logits
+
+  # === IMPROVEMENT 2: GATE REGULARIZATION ===
+  # Controls regularization strength to prevent some views from being ignored:
+  geofusion_gate_entropy_reg_lambda: 0.01
+
+  # === FEATURE ENGINEERING SWITCHES (ADVANCED) ===
+  # Enable advanced feature computing (may increase memory/computation):
+  geofusion_use_dilated_refiner: true      # Use dilated TCN vs standard TCN
+  geofusion_use_multiscale_velocity: true  # Multi-scale velocity + acceleration features
+
+  # === BONE CONSTRAINTS ===
+  # Pairs of joints that should maintain approximate bone length:
   geofusion_bones:
-    - [5, 6]
-    - [51, 5]
-    - [51, 6]
+    - [5, 6]      # Left-right shoulder (width constraint)
+    - [51, 5]     # Neck-left shoulder (neck-shoulder distance)
+    - [51, 6]     # Neck-right shoulder (neck-shoulder distance)
 
+# ------ TRAINING CONFIGURATION -----
 train:
-  max_epochs: 50
-  devices: 2
-  grad_clip_val: 1.0
-  fold: 0
-  view: multi
+  max_epochs: 50              # Maximum training epochs
+  devices: 2                  # Number of GPUs to use
+  grad_clip_val: 1.0          # Gradient clipping value (norm-based)
+  fold: 0                     # Cross-validation fold ID (0-4 for 5-fold CV)
+
+  # View configuration for multi-view training
+  view: multi                 # 'single' or 'multi'
   view_name: ['front', 'left', 'right']
 
+# ------ EVALUATION CONFIGURATION -----
 eval:
-  # Set ckpt_path for one explicit checkpoint, or ckpt_dir for a training log root.
-  ckpt_path: null
-  ckpt_dir: null
-  split: val # train, val, or test; test currently uses the val split in the datamodule.
-  fold: all # all or a single fold id, e.g. 0
-  output_dir: ${log_path}/eval_trifusion_pesudo_gt
+  # Checkpoint selection: either explicit path or directory to search
+  ckpt_path: null             # Use specific checkpoint file (overrides ckpt_dir)
+  ckpt_dir: null              # Search for checkpoints in this directory
 
+  split: val                  # Data split to evaluate on: 'train', 'val', 'test'
+  fold: all                   # Which folds to evaluate: 'all' or a single fold ID
+
+  # Output settings
+  output_dir: ${log_path}/eval_trifusion_pseudo_gt
+
+# ------ EXPERIMENT NAMING & LOGGING -----
 experiment: trifusionpose_${train.view_name}_${data.uniform_temporal_subsample_num}f
 log_path: logs/train/${experiment}/${now:%Y-%m-%d}/${now:%H-%M-%S}

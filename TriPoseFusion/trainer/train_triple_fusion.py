@@ -35,6 +35,8 @@ class TriFusionPoseTrainer(LightningModule):
         self.lambda_bone = float(getattr(cfg, "lambda_bone", 0.5))
         self.lambda_temp = float(getattr(cfg, "lambda_temp", 0.1))
         self.lambda_info_nce = float(getattr(cfg, "lambda_info_nce", 0.1))
+        # IMPROVEMENT #2: Gate entropy regularization lambda
+        self.lambda_gate_entropy = float(getattr(cfg, "geofusion_gate_entropy_reg_lambda", 0.0))
         self.info_nce_temperature = float(getattr(cfg, "info_nce_temperature", 0.1))
         self.bones = list(getattr(cfg, "geofusion_bones", []))
 
@@ -163,6 +165,20 @@ class TriFusionPoseTrainer(LightningModule):
         loss_bone = self._bone_loss(pred, out)
         loss_temp = self._temporal_loss(pred)
         loss_info_nce = self._info_nce_loss(out)
+
+        # IMPROVEMENT #2: Gate entropy regularization - encourages uniform view usage
+        # This prevents some views from being completely ignored during training
+        if self.lambda_gate_entropy > 0:
+            alpha = out["alpha"]  # (B,T,J,V)
+            # Compute entropy: H(α) = -Σ α log(α)
+            entropy = -(alpha * alpha.log().clamp_min(1e-6)).sum(dim=-1)  # (B,T,J)
+            # Normalize by max possible entropy log(V)
+            max_entropy = torch.tensor([torch.log(torch.tensor(self.model.num_views))], device=entropy.device)
+            # Entropy regularization: encourage uniformity (maximize entropy)
+            loss_gate_entropy = (max_entropy - entropy).mean()
+        else:
+            loss_gate_entropy = pred.new_zeros(())
+
         loss = (
             self.lambda_tri * loss_tri
             + self.lambda_reproj * loss_reproj
@@ -170,6 +186,7 @@ class TriFusionPoseTrainer(LightningModule):
             + self.lambda_bone * loss_bone
             + self.lambda_temp * loss_temp
             + self.lambda_info_nce * loss_info_nce
+            + self.lambda_gate_entropy * loss_gate_entropy
         )
         return {
             "loss": loss,
@@ -179,6 +196,7 @@ class TriFusionPoseTrainer(LightningModule):
             "loss_bone": loss_bone,
             "loss_temp": loss_temp,
             "loss_info_nce": loss_info_nce,
+            "loss_gate_entropy": loss_gate_entropy,
             "alpha": out["alpha"],
             "P_final": pred,
         }
@@ -195,6 +213,7 @@ class TriFusionPoseTrainer(LightningModule):
                 f"{stage}/loss_bone": losses["loss_bone"],
                 f"{stage}/loss_temp": losses["loss_temp"],
                 f"{stage}/loss_info_nce": losses["loss_info_nce"],
+                f"{stage}/loss_gate_entropy": losses.get("loss_gate_entropy", torch.zeros(1)),
             },
             on_step=stage == "train",
             on_epoch=True,
