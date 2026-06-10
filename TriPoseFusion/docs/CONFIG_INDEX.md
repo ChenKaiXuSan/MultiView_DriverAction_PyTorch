@@ -41,6 +41,7 @@ python project/main.py --config-name train_minimal
 |------|------|------|
 | **配置说明** | 详细参数解释 | [CONFIGURATION_GUIDE.md](./CONFIGURATION_GUIDE.md) ⭐ |
 | **改进总结** | 模型改进说明 | [IMPROVEMENT_SUMMARY.md](../../IMPROVEMENT_SUMMARY.md) |
+| **对比实验** | TriPoseFusion 消融实验与 Pegasus 脚本说明 | [ABLATION_EXPERIMENTS.md](./ABLATION_EXPERIMENTS.md) |
 | **OOM 解决方案** | 显存问题处理 | [OOM_SOLUTIONS_INDEX.md](../docs/OOM_SOLUTIONS_INDEX.md) |
 
 ---
