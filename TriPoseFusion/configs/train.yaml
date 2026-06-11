@@ -43,8 +43,8 @@ model:
   backbone: triple_fusion   # Model backbone type
 
   # --- View Configuration ---
-  # The three camera views used for fusion
-  geofusion_view_names: ['front', 'left', 'right']
+  # Keep model fusion views aligned with the dataloader views.
+  geofusion_view_names: ${train.view_name}
 
   # --- Joint Keypoint Configuration ---
   # Number of joints/keypoints processed by the model
@@ -140,5 +140,5 @@ eval:
   output_dir: ${log_path}/eval_trifusion_pseudo_gt
 
 # ------ EXPERIMENT NAMING & LOGGING -----
-experiment: trifusionpose_${train.view_name}_${data.uniform_temporal_subsample_num}f
+experiment: trifusionpose_${train.view_name}_${data.uniform_temporal_subsample_num}f_fold${train.fold}_dilated${model.geofusion_use_dilated_refiner}_msvel${model.geofusion_use_multiscale_velocity}_gate${model.geofusion_gate_entropy_reg_lambda}_robust${model.geofusion_use_robust_canonicalization}
 log_path: logs/train/${experiment}/${now:%Y-%m-%d}/${now:%H-%M-%S}

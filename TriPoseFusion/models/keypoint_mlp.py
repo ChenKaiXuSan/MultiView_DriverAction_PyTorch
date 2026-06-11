@@ -117,7 +117,7 @@ class MultiScaleVelocityFeature(nn.Module):
 class CrossViewAttention(nn.Module):
     """Multi-head attention for cross-view interaction with positional encoding.
 
-    IMPROVEMENT #1: View-specific positional encoding to distinguish front/left/right views.
+    IMPROVEMENT #1: View-specific positional encoding to distinguish camera views.
     This allows the model to learn that 'front view is more reliable for steering'
     vs 'left view is better when checking blind spots'.
 
@@ -126,8 +126,11 @@ class CrossViewAttention(nn.Module):
         num_heads: Number of attention heads (default=4, uses 128/4=32 dim/head)
     """
 
-    def __init__(self, embed_dim: int, num_heads: int = 4) -> None:
+    def __init__(self, embed_dim: int, num_heads: int = 4, num_views: int = 3) -> None:
         super().__init__()
+        if num_views <= 0:
+            raise ValueError(f"num_views must be positive, got {num_views}")
+        self.num_views = int(num_views)
         self.attention = nn.MultiheadAttention(
             embed_dim=embed_dim,
             num_heads=num_heads,
@@ -135,8 +138,8 @@ class CrossViewAttention(nn.Module):
             dropout=0.1
         )
         # IMPROVEMENT: View-specific positional encoding
-        # Each view (front/left/right) has a learnable position embedding
-        self.view_pos_embed = nn.Parameter(torch.randn(1, 1, 3, embed_dim))
+        # Each configured view has a learnable position embedding.
+        self.view_pos_embed = nn.Parameter(torch.randn(1, 1, self.num_views, embed_dim))
 
     def forward(self, H_views: torch.Tensor) -> torch.Tensor:
         """Allow views to communicate with positional context.
@@ -146,10 +149,11 @@ class CrossViewAttention(nn.Module):
 
         Returns:
             Attended features where each view has incorporated contextual information
-            with awareness of which view it is (front vs left vs right)
+            with awareness of which configured view it is
         """
         B, T, J, V, H = H_views.shape
-        assert V == 3, f"Expected 3 views, got {V}"
+        if V != self.num_views:
+            raise ValueError(f"Expected {self.num_views} views, got {V}")
 
         # Add positional encoding to distinguish view positions
         H_with_pos = H_views + self.view_pos_embed[:, :, :V, :]
@@ -176,8 +180,17 @@ class CrossViewAttentionWithGlobalGate(nn.Module):
         use_global_gate: Whether to also compute global view gate
     """
 
-    def __init__(self, embed_dim: int, num_heads: int = 4, use_global_gate: bool = True) -> None:
+    def __init__(
+        self,
+        embed_dim: int,
+        num_heads: int = 4,
+        use_global_gate: bool = True,
+        num_views: int = 3,
+    ) -> None:
         super().__init__()
+        if num_views <= 0:
+            raise ValueError(f"num_views must be positive, got {num_views}")
+        self.num_views = int(num_views)
         self.attention = nn.MultiheadAttention(
             embed_dim=embed_dim,
             num_heads=num_heads,
@@ -187,7 +200,7 @@ class CrossViewAttentionWithGlobalGate(nn.Module):
         self.use_global_gate = use_global_gate
 
         # View-specific positional encoding
-        self.view_pos_embed = nn.Parameter(torch.randn(1, 1, 3, embed_dim))
+        self.view_pos_embed = nn.Parameter(torch.randn(1, 1, self.num_views, embed_dim))
 
         # Global view importance head (for interpretability)
         if use_global_gate:
@@ -206,7 +219,8 @@ class CrossViewAttentionWithGlobalGate(nn.Module):
             and 'global_alpha' (global view importance per frame).
         """
         B, T, J, V, H = H_views.shape
-        assert V == 3, f"Expected 3 views, got {V}"
+        if V != self.num_views:
+            raise ValueError(f"Expected {self.num_views} views, got {V}")
 
         # Add positional encoding
         H_with_pos = H_views + self.view_pos_embed[:, :, :V, :]
@@ -441,6 +455,8 @@ class TriViewKeypointFusionNet(nn.Module):
             getattr(cfg, "geofusion_view_names", ["front", "left", "right"])
         )
         self.num_views = len(self.view_names)
+        if self.num_views <= 0:
+            raise ValueError("model.geofusion_view_names must contain at least one view")
         self.joints = int(getattr(cfg, "geofusion_num_joints", 70))
         self.hidden_dim = int(getattr(cfg, "geofusion_hidden_dim", 128))
         self.dropout = float(getattr(cfg, "geofusion_dropout", 0.1))
@@ -484,7 +500,8 @@ class TriViewKeypointFusionNet(nn.Module):
         num_attention_heads = int(getattr(cfg, "geofusion_attention_num_heads", 4))
         self.cross_view_attention = CrossViewAttention(
             embed_dim=self.hidden_dim,
-            num_heads=num_attention_heads
+            num_heads=num_attention_heads,
+            num_views=self.num_views,
         )
 
         self.gate_head = nn.Sequential(
