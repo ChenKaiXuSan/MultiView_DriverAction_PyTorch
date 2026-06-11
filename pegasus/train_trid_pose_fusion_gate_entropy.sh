@@ -6,24 +6,6 @@
 #PBS -o /work/SKIING/chenkaixu/code/MultiView_DriverAction_PyTorch/logs/pegasus/trid_gate_entropy.out
 #PBS -e /work/SKIING/chenkaixu/code/MultiView_DriverAction_PyTorch/logs/pegasus/trid_gate_entropy.err
 
-set -euo pipefail
-
-# =============================================================================
-# TriPoseFusion 单模块消融：gate_entropy
-# =============================================================================
-# 目的：
-#   单独验证 gate entropy regularization 的贡献。
-#
-# 消融设置：
-#   - 关闭 dilated temporal refiner
-#   - 关闭 multi-scale velocity
-#   - 打开 gate entropy regularization，lambda=0.01
-#   - 关闭 robust canonicalization
-#
-# Fold：
-#   固定只跑 fold 0。
-# =============================================================================
-
 PROJECT_DIR=/work/SKIING/chenkaixu/code/MultiView_DriverAction_PyTorch
 cd "${PROJECT_DIR}"
 mkdir -p "${PROJECT_DIR}/logs/pegasus"
@@ -98,3 +80,19 @@ echo "============================================================"
 echo "Finished ${run_name}"
 echo "End time: $(date)"
 echo "============================================================"
+
+# =============================================================================
+# TriPoseFusion 单模块消融：gate_entropy
+# =============================================================================
+# 目的：
+#   单独验证 gate entropy regularization 的贡献。
+#
+# 消融设置：
+#   - 关闭 dilated temporal refiner
+#   - 关闭 multi-scale velocity
+#   - 打开 gate entropy regularization，lambda=0.01
+#   - 关闭 robust canonicalization
+#
+# Fold：
+#   固定只跑 fold 0。
+# =============================================================================

@@ -6,24 +6,6 @@
 #PBS -o /work/SKIING/chenkaixu/code/MultiView_DriverAction_PyTorch/logs/pegasus/trid_dilated_tcn.out
 #PBS -e /work/SKIING/chenkaixu/code/MultiView_DriverAction_PyTorch/logs/pegasus/trid_dilated_tcn.err
 
-set -euo pipefail
-
-# =============================================================================
-# TriPoseFusion 单模块消融：dilated_tcn
-# =============================================================================
-# 目的：
-#   单独验证 dilated temporal refiner 的贡献。
-#
-# 消融设置：
-#   - 打开 dilated temporal refiner
-#   - 关闭 multi-scale velocity
-#   - 关闭 gate entropy regularization
-#   - 关闭 robust canonicalization
-#
-# Fold：
-#   固定只跑 fold 0。
-# =============================================================================
-
 PROJECT_DIR=/work/SKIING/chenkaixu/code/MultiView_DriverAction_PyTorch
 cd "${PROJECT_DIR}"
 mkdir -p "${PROJECT_DIR}/logs/pegasus"
@@ -98,3 +80,19 @@ echo "============================================================"
 echo "Finished ${run_name}"
 echo "End time: $(date)"
 echo "============================================================"
+
+# =============================================================================
+# TriPoseFusion 单模块消融：dilated_tcn
+# =============================================================================
+# 目的：
+#   单独验证 dilated temporal refiner 的贡献。
+#
+# 消融设置：
+#   - 打开 dilated temporal refiner
+#   - 关闭 multi-scale velocity
+#   - 关闭 gate entropy regularization
+#   - 关闭 robust canonicalization
+#
+# Fold：
+#   固定只跑 fold 0。
+# =============================================================================

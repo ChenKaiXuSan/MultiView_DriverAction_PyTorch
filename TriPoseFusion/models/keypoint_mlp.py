@@ -286,17 +286,25 @@ class RobustCanonicalization(nn.Module):
             Canonicalized pose (B,T,J,3) with outlier handling
         """
         B, T, J, _ = pose.shape
+        if neck.ndim == 3:
+            neck = neck.unsqueeze(2)
+        if left_shoulder.ndim == 3:
+            left_shoulder = left_shoulder.unsqueeze(2)
+        if right_shoulder.ndim == 3:
+            right_shoulder = right_shoulder.unsqueeze(2)
+        if mid_hip is not None and mid_hip.ndim == 3:
+            mid_hip = mid_hip.unsqueeze(2)
 
         # Compute shoulder distance and detect outliers
         shoulder_dist = torch.linalg.norm(left_shoulder - right_shoulder, dim=-1, keepdim=True)
         shoulder_outlier = (shoulder_dist < self.eps) | (shoulder_dist > 2 * self.shoulder_prior)
 
         # Use midpoint between shoulders if outlier detected (fallback to neck-centered frame)
-        left_valid = torch.where(shoulder_outlier.unsqueeze(-1), neck, left_shoulder)
-        right_valid = torch.where(shoulder_outlier.unsqueeze(-1), neck, right_shoulder)
+        left_valid = torch.where(shoulder_outlier, neck, left_shoulder)
+        right_valid = torch.where(shoulder_outlier, neck, right_shoulder)
 
         # Compute x-axis from valid shoulder positions
-        x_axis_raw = right_valid - left_valid
+        x_axis_raw = (right_valid - left_valid).squeeze(2)
         x_axis = F.normalize(x_axis_raw, dim=-1, eps=self.eps)
 
         # Compute y-axis (downward direction)
@@ -304,6 +312,7 @@ class RobustCanonicalization(nn.Module):
             down_raw = mid_hip.squeeze(2) - neck.squeeze(2)
         else:
             shoulder_mid = 0.5 * (left_valid + right_valid)
+            shoulder_mid = shoulder_mid.squeeze(2)
             down_raw = shoulder_mid - neck.squeeze(2)
 
         # Clip extreme values to prevent numerical instability

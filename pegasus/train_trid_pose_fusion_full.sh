@@ -6,24 +6,6 @@
 #PBS -o /work/SKIING/chenkaixu/code/MultiView_DriverAction_PyTorch/logs/pegasus/trid_full.out
 #PBS -e /work/SKIING/chenkaixu/code/MultiView_DriverAction_PyTorch/logs/pegasus/trid_full.err
 
-set -euo pipefail
-
-# =============================================================================
-# TriPoseFusion 完整模型实验：full
-# =============================================================================
-# 目的：
-#   训练完整 TriPoseFusion，作为最终方法。
-#
-# 消融设置：
-#   - 打开 dilated temporal refiner
-#   - 打开 multi-scale velocity
-#   - 打开 gate entropy regularization，lambda=0.01
-#   - 打开 robust canonicalization
-#
-# Fold：
-#   固定只跑 fold 0。
-# =============================================================================
-
 PROJECT_DIR=/work/SKIING/chenkaixu/code/MultiView_DriverAction_PyTorch
 cd "${PROJECT_DIR}"
 mkdir -p "${PROJECT_DIR}/logs/pegasus"
@@ -98,3 +80,19 @@ echo "============================================================"
 echo "Finished ${run_name}"
 echo "End time: $(date)"
 echo "============================================================"
+
+# =============================================================================
+# TriPoseFusion 完整模型实验：full
+# =============================================================================
+# 目的：
+#   训练完整 TriPoseFusion，作为最终方法。
+#
+# 消融设置：
+#   - 打开 dilated temporal refiner
+#   - 打开 multi-scale velocity
+#   - 打开 gate entropy regularization，lambda=0.01
+#   - 打开 robust canonicalization
+#
+# Fold：
+#   固定只跑 fold 0。
+# =============================================================================

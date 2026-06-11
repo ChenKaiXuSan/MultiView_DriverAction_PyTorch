@@ -6,31 +6,10 @@
 #PBS -o /work/SKIING/chenkaixu/code/MultiView_DriverAction_PyTorch/logs/pegasus/trid_base_simple.out
 #PBS -e /work/SKIING/chenkaixu/code/MultiView_DriverAction_PyTorch/logs/pegasus/trid_base_simple.err
 
-set -euo pipefail
-
-# =============================================================================
-# TriPoseFusion baseline 实验：base_simple
-# =============================================================================
-# 目的：
-#   作为最基础的三视角姿态融合 baseline。
-#
-# 消融设置：
-#   - 关闭 dilated temporal refiner
-#   - 关闭 multi-scale velocity
-#   - 关闭 gate entropy regularization
-#   - 关闭 robust canonicalization
-#
-# Fold：
-#   固定只跑 fold 0。
-# =============================================================================
-
 PROJECT_DIR=/work/SKIING/chenkaixu/code/MultiView_DriverAction_PyTorch
 cd "${PROJECT_DIR}"
 mkdir -p "${PROJECT_DIR}/logs/pegasus"
 
-# Pegasus preloads Intel Python/oneAPI on some nodes. Its xgboost deactivate hook
-# reads OCL_ICD_FILENAMES_RESET without guarding for nounset, so relax -u only
-# while conda switches environments and restore strict mode immediately after.
 set +u
 source activate /home/SKIING/chenkaixu/miniconda3/envs/direction
 set -u
@@ -101,3 +80,24 @@ echo "============================================================"
 echo "Finished ${run_name}"
 echo "End time: $(date)"
 echo "============================================================"
+
+# =============================================================================
+# TriPoseFusion baseline 实验：base_simple
+# =============================================================================
+# 目的：
+#   作为最基础的三视角姿态融合 baseline。
+#
+# 消融设置：
+#   - 关闭 dilated temporal refiner
+#   - 关闭 multi-scale velocity
+#   - 关闭 gate entropy regularization
+#   - 关闭 robust canonicalization
+#
+# Fold：
+#   固定只跑 fold 0。
+#
+# 环境说明：
+#   Pegasus 部分节点会预加载 Intel Python/oneAPI。其 xgboost deactivate hook
+#   在 nounset 模式下可能读取未定义的 OCL_ICD_FILENAMES_RESET，因此这里只在
+#   conda 切换环境期间临时关闭 nounset，切换完成后立即恢复。
+# =============================================================================
