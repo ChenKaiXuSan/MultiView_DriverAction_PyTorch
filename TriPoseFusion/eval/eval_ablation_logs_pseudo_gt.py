@@ -10,7 +10,7 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable, Sequence
+from typing import Any, Callable, Iterable, Sequence
 
 
 @dataclass(frozen=True)
@@ -110,6 +110,12 @@ def build_eval_command(
     fold: str,
     extra_overrides: Sequence[str] = (),
 ) -> list[str]:
+    eval_script = eval_script.expanduser().resolve()
+    run_dir = run_dir.expanduser().resolve()
+    ckpt_path = ckpt_path.expanduser().resolve()
+    output_dir = output_dir.expanduser().resolve()
+    gt_root = gt_root.expanduser().resolve()
+
     return [
         python_executable,
         str(eval_script),
@@ -119,11 +125,21 @@ def build_eval_command(
         "config",
         f"eval.ckpt_path={ckpt_path}",
         f"eval.output_dir={output_dir}",
-        f"eval.triangulated_gt_root={gt_root}",
+        f"++eval.triangulated_gt_root={gt_root}",
         f"eval.split={split}",
         f"eval.fold={fold}",
         f"hydra.run.dir={output_dir / 'hydra_run'}",
         *extra_overrides,
+    ]
+
+
+def default_data_overrides(data_root: Path, sam3d_root: Path) -> list[str]:
+    data_root = data_root.expanduser().resolve()
+    sam3d_root = sam3d_root.expanduser().resolve()
+    return [
+        f"paths.root_path={data_root}",
+        f"paths.index_mapping={data_root / 'index_mapping'}",
+        f"paths.sam3d_results_path={sam3d_root}",
     ]
 
 
@@ -201,17 +217,48 @@ def _print_command(command: Iterable[str]) -> None:
     print(" ".join(str(part) for part in command))
 
 
+def iter_jobs_with_progress(
+    jobs: Sequence[EvalJob],
+    tqdm_factory: Callable[..., Iterable[EvalJob]] | None = None,
+) -> Iterable[EvalJob]:
+    if tqdm_factory is None:
+        try:
+            from tqdm.auto import tqdm as tqdm_factory
+        except ImportError:
+            return jobs
+
+    return tqdm_factory(
+        jobs,
+        total=len(jobs),
+        desc="ablation eval",
+        unit="job",
+        dynamic_ncols=True,
+    )
+
+
 def main() -> None:
     repo_root = _repo_root()
     parser = argparse.ArgumentParser(
         description="Evaluate each TriPoseFusion ablation run against triangulated pseudo GT."
     )
     parser.add_argument("--logs-root", type=Path, default=repo_root / "logs" / "train")
-    parser.add_argument("--output-root", type=Path, default=repo_root / "logs" / "eval_ablation_pseudo_gt")
+    parser.add_argument("--output-root", type=Path, default=repo_root / "eval" / "logs" / "eval_ablation_pseudo_gt")
     parser.add_argument(
         "--gt-root",
         type=Path,
         default=Path("/home/data/xchen/drive/sam3d_body_triangulated_gt"),
+    )
+    parser.add_argument(
+        "--data-root",
+        type=Path,
+        default=Path("/home/data/xchen/drive/multi_view_driver_action"),
+        help="Dataset root used to override paths.root_path and paths.index_mapping in old Hydra configs.",
+    )
+    parser.add_argument(
+        "--sam3d-root",
+        type=Path,
+        default=Path("/home/data/xchen/drive/sam3d_body_results_right"),
+        help="SAM3D result root used to override paths.sam3d_results_path in old Hydra configs.",
     )
     parser.add_argument("--pattern", type=str, default="trifusion_*")
     parser.add_argument("--ckpt-policy", choices=("best", "last", "all"), default="best")
@@ -230,6 +277,10 @@ def main() -> None:
         help="Additional Hydra overrides forwarded to eval_trifusion_pesudo_gt.py.",
     )
     args = parser.parse_args()
+    forwarded_overrides = [
+        *default_data_overrides(data_root=args.data_root, sam3d_root=args.sam3d_root),
+        *args.overrides,
+    ]
 
     jobs = build_jobs(
         logs_root=args.logs_root,
@@ -241,16 +292,22 @@ def main() -> None:
         fold=args.fold,
         python_executable=args.python_executable,
         eval_script=args.eval_script,
-        extra_overrides=args.overrides,
+        extra_overrides=forwarded_overrides,
     )
     if not jobs:
         raise RuntimeError(f"No eval jobs found under {args.logs_root} with pattern {args.pattern!r}")
 
     rows: list[dict[str, Any]] = []
-    for job in jobs:
-        print(f"Run: {job.run_dir}")
-        print(f"Ckpt: {job.ckpt_path}")
-        print(f"Out : {job.output_dir}")
+    progress = iter_jobs_with_progress(jobs)
+    for job_idx, job in enumerate(progress, start=1):
+        run_label = job.run_dir.parent.parent.name
+        ckpt_label = job.ckpt_path.name
+        if hasattr(progress, "set_postfix"):
+            progress.set_postfix(run=run_label[:32], ckpt=ckpt_label[:24])
+
+        print(f"\n[{job_idx}/{len(jobs)}] Run: {job.run_dir}", flush=True)
+        print(f"[{job_idx}/{len(jobs)}] Ckpt: {job.ckpt_path}", flush=True)
+        print(f"[{job_idx}/{len(jobs)}] Out : {job.output_dir}", flush=True)
         _print_command(job.command)
         if args.dry_run:
             rows.append(_flatten_summary(job, {}))
@@ -258,6 +315,8 @@ def main() -> None:
 
         subprocess.run(job.command, check=True)
         rows.append(_flatten_summary(job, _load_eval_metrics(job.output_dir)))
+        if hasattr(progress, "set_postfix"):
+            progress.set_postfix(done=job_idx, run=run_label[:32])
 
     write_summary(args.output_root, rows)
     print(f"Saved summary: {args.output_root / 'summary.csv'}")

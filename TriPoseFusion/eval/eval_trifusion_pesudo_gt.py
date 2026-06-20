@@ -18,9 +18,9 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List
 
+import torch
 import hydra
 import numpy as np
-import torch
 from dataloader.data_loader import DriverKPTDataModule
 from map_config import KEEP_KEYPOINT_INDICES
 from omegaconf import DictConfig, ListConfig, OmegaConf
