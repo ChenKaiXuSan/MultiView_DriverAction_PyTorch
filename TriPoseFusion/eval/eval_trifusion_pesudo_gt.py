@@ -419,6 +419,54 @@ def _save_person_env_results(
     logger.info("Saved person/env metrics CSV : %s", csv_path)
 
 
+def _save_joint_gate_results(
+    output_dir: Path,
+    fold: int,
+    view_names: List[str],
+    alpha_sum: torch.Tensor | None,
+    alpha_count: torch.Tensor | None,
+) -> None:
+    if alpha_sum is None or alpha_count is None:
+        return
+
+    count = alpha_count.clamp_min(1.0).unsqueeze(-1)
+    alpha_mean = (alpha_sum / count).detach().cpu().numpy()
+    counts = alpha_count.detach().cpu().numpy()
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    json_path = output_dir / f"joint_gate_weights_fold_{fold}.json"
+    csv_path = output_dir / f"joint_gate_weights_fold_{fold}.csv"
+
+    rows = []
+    for joint_idx in range(alpha_mean.shape[0]):
+        weights = {
+            str(name): float(alpha_mean[joint_idx, view_idx])
+            for view_idx, name in enumerate(view_names)
+        }
+        rows.append(
+            {
+                "joint_index": int(joint_idx),
+                "count": float(counts[joint_idx]),
+                "view_weights": weights,
+            }
+        )
+
+    with open(json_path, "w", encoding="utf-8") as f:
+        json.dump({"view_names": list(view_names), "joints": rows}, f, indent=2)
+
+    with open(csv_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["joint_index", "count"] + list(view_names))
+        for row in rows:
+            writer.writerow(
+                [row["joint_index"], row["count"]]
+                + [row["view_weights"].get(str(name), "") for name in view_names]
+            )
+
+    logger.info("Saved joint gate weights JSON: %s", json_path)
+    logger.info("Saved joint gate weights CSV : %s", csv_path)
+
+
 def _to_m(value: Any) -> float | None:
     if value is None:
         return None
@@ -646,6 +694,8 @@ def _evaluate_fold(
     sequence_cache: Dict[tuple[str, str], TriangulatedSequence] = {}
     item_metrics: list[Dict[str, float]] = []
     item_records: List[Dict[str, Any]] = []
+    joint_alpha_sum: torch.Tensor | None = None
+    joint_alpha_count: torch.Tensor | None = None
     skipped_samples = 0
     split_key = "train" if split == "train" else "val"
     sample_lookup = _build_sample_lookup(fold_dataset[split_key])
@@ -735,6 +785,17 @@ def _evaluate_fold(
                 )
                 if sample_metrics:
                     item_metrics.append(sample_metrics)
+                    alpha_sample = out["alpha"][sample_idx].detach()
+                    valid_for_alpha = valid_tensor[: alpha_sample.shape[0], : alpha_sample.shape[1]].bool()
+                    alpha_valid = alpha_sample * valid_for_alpha.unsqueeze(-1).to(alpha_sample.dtype)
+                    per_joint_sum = alpha_valid.sum(dim=0)
+                    per_joint_count = valid_for_alpha.sum(dim=0).to(alpha_sample.dtype)
+                    if joint_alpha_sum is None:
+                        joint_alpha_sum = torch.zeros_like(per_joint_sum)
+                        joint_alpha_count = torch.zeros_like(per_joint_count)
+                    joint_alpha_sum += per_joint_sum
+                    joint_alpha_count += per_joint_count
+
                     alpha_mean = out["alpha"][sample_idx].mean(dim=(0, 1))
                     item_records.append(
                         {
@@ -759,6 +820,13 @@ def _evaluate_fold(
     person_env_results = _aggregate_person_env_metrics(item_records)
     _save_person_env_results(
         output_dir=output_dir, fold=fold, person_env_results=person_env_results
+    )
+    _save_joint_gate_results(
+        output_dir=output_dir,
+        fold=fold,
+        view_names=list(module.model.view_names),
+        alpha_sum=joint_alpha_sum,
+        alpha_count=joint_alpha_count,
     )
 
     logger.info("Fold %d metrics: %s", fold, fold_metrics)
