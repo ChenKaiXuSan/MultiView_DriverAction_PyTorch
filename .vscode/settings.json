@@ -18,4 +18,27 @@
             "packageManager": "ms-python.python:conda"
         }
     ],
+    "latex-workshop.latex.tools": [
+  {
+    "name": "pdflatex",
+    "command": "/home/workspace/kaixu/texlive/2026/bin/x86_64-linux/pdflatex",
+    "args": [
+      "-synctex=1",
+      "-interaction=nonstopmode",
+      "-file-line-error",
+      "%DOC%"
+    ]
+  },
+  {
+    "name": "bibtex",
+    "command": "/home/workspace/kaixu/texlive/2026/bin/x86_64-linux/bibtex",
+    "args": ["%DOCFILE%"]
+  }
+],
+"latex-workshop.latex.recipes": [
+  {
+    "name": "pdflatex -> bibtex -> pdflatex*2",
+    "tools": ["pdflatex", "bibtex", "pdflatex", "pdflatex"]
+  }
+]
 }
